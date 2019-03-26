@@ -18,7 +18,7 @@
 typedef void (*onIndicationReceivedLocked_cb_f)(wpc_frame_t * frame,
                                                 unsigned long long timestamp_ms);
 /**
- * \brief   Function to send a request
+ * \brief   Function to send a request and wait for confirm for default timeout
  * \param   frame
  *          The request to send
  * \param   confirm
@@ -26,11 +26,27 @@ typedef void (*onIndicationReceivedLocked_cb_f)(wpc_frame_t * frame,
  * \return  0 if successful or negative value if an error happen
  *
  * \note    This method can be called from different context at the same time
- *          or before the last is acknowledged from the stack. Thus, the calling
- *          thread can be locked
+ *          thus, the calling thread can be locked
  */
 int WPC_Int_send_request(wpc_frame_t *frame,
                          wpc_frame_t *confirm);
+
+/**
+ * \brief   Function to send a request and wait for confirm for given timeout
+ * \param   frame
+ *          The request to send
+ * \param   confirm
+ *          The confirm received by the stack
+ * \param   timeout_ms
+ *          Timeout to wait for confirm in ms
+ * \return  0 if successful or negative value if an error happen
+ *
+ * \note    This method can be called from different context at the same time
+ *          thus, the calling thread can be locked
+ */
+int WPC_Int_send_request_timeout(wpc_frame_t *frame,
+                                 wpc_frame_t *confirm,
+                                 uint16_t timeout_ms);
 
 /**
  * \brief   Function to retrieved indication

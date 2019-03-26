@@ -222,8 +222,11 @@ int msap_scratchpad_start_request(uint32_t length,
     request.payload.msap_image_start_request_payload.scratchpad_sequence_number = seq;
     request.payload_length = sizeof(msap_image_start_req_pl_t);
 
-    res = WPC_Int_send_request(&request,
-                               &confirm);
+    // Starting a scrtachpad may trigger an erase of scratchpad area so can be quite long operartion
+    // and confirm can be delayed for quite a long time. So set tiemout to high value (up to 5 sec).
+    res = WPC_Int_send_request_timeout(&request,
+                                       &confirm,
+                                       5000);
 
     if (res < 0)
         return res;

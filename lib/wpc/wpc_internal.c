@@ -28,7 +28,7 @@
 // from stack after a poll request
 #define TIMEOUT_INDICATION_MS 500
 
-// This is the timeout in millisecond to receive a confirm from
+// This is the default timeout in millisecond to receive a confirm from
 // the stack for a request
 #define TIMEOUT_CONFIRM_MS 500
 
@@ -81,12 +81,15 @@ static int send_response_to_stack(uint8_t primitive_id,
  *          The request to send
  * \param   confirm
  *          The confirm received by the stack
+ * \param   timeout_ms
+ *          Timeout to wait for confirm after request in ms
  * \return  0 if success, a negative value otherwise
  *
  * \note    This function MUST be called with sending_mutex locked
  */
 static int send_request_locked(wpc_frame_t * request,
-                               wpc_frame_t * confirm)
+                               wpc_frame_t * confirm,
+                               uint16_t timeout_ms)
 {
     static uint8_t frame_id = 0;
     int confirm_size;
@@ -109,7 +112,7 @@ static int send_request_locked(wpc_frame_t * request,
     while (attempt < MAX_CONFIRM_ATTEMPT)
     {
         // Wait for confirm during TIMEOUT_CONFIRM seconds
-        confirm_size = Slip_get_buffer(buffer, sizeof(buffer), TIMEOUT_CONFIRM_MS);
+        confirm_size = Slip_get_buffer(buffer, sizeof(buffer), timeout_ms);
         if (confirm_size < 0)
         {
             LOGE("Didn't receive answer to the request 0x%02x\n", request->primitive_id);
@@ -256,7 +259,9 @@ static int get_indication_locked(unsigned int max_ind,
     request.payload_length = 0;
 
     LOGD("Start a poll request\n");
-    if (send_request_locked(&request, &confirm) < 0)
+    if (send_request_locked(&request,
+                            &confirm,
+                            TIMEOUT_CONFIRM_MS) < 0)
     {
         LOGE("Unable to poll for request\n");
         return -1;
@@ -293,14 +298,22 @@ int WPC_Int_get_indication(unsigned int max_ind,
     return res;
 }
 
-int WPC_Int_send_request(wpc_frame_t *frame,
-                         wpc_frame_t *confirm)
+int WPC_Int_send_request_timeout(wpc_frame_t *frame,
+                                 wpc_frame_t *confirm,
+                                 uint16_t timeout_ms)
 {
     Platform_lock_request();
-    int res = send_request_locked(frame, confirm);
+    int res = send_request_locked(frame, confirm, timeout_ms);
     Platform_unlock_request();
 
     return res;
+}
+
+int WPC_Int_send_request(wpc_frame_t *frame,
+                         wpc_frame_t *confirm)
+{
+    // Timeout not specified so use default one
+    return WPC_Int_send_request_timeout(frame, confirm, TIMEOUT_CONFIRM_MS);
 }
 
 int WPC_Int_initialize(char * port_name, unsigned long bitrate)
