@@ -16,7 +16,7 @@
 #include "serial_termios2.h"
 
 #define LOG_MODULE_NAME "SERIAL"
-#define MAX_LOG_LEVEL DEBUG_LOG_LEVEL
+#define MAX_LOG_LEVEL INFO_LOG_LEVEL
 #include "logger.h"
 
 static int fd = -1;
@@ -143,7 +143,7 @@ int Serial_close()
 
     if (close(fd) < 0)
     {
-        LOGD("Error %d closing serial link: %s\n", errno, strerror (errno));
+        LOGW("Error %d closing serial link: %s\n", errno, strerror (errno));
         return -1;
     }
 

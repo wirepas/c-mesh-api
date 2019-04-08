@@ -32,10 +32,13 @@
 // the stack for a request
 #define TIMEOUT_CONFIRM_MS 500
 
-// Attempt to receive confirm. In some seldom use cases it can happen
-// that a previous confirm request was still in the buffer. Just try several
-// times to get the right confirm
-#define MAX_CONFIRM_ATTEMPT 5
+// Attempt to receive confirm from a request.
+// In some cases like OTAP it can happen that Dual MCU app doesn't answer
+// for a long time (can be up to 1mins when exchanging an OTAP with a neighbor).
+// So all the poll requests done during this period can be received in a raw
+// So this mechanism allows to flush previous poll requests. Try several
+// times to get the right confirm.
+#define MAX_CONFIRM_ATTEMPT 50
 
 // Struct that describes a received frame with its timestamp
 typedef struct
@@ -106,7 +109,7 @@ static int send_request_locked(wpc_frame_t * request,
     if (Slip_send_buffer((uint8_t *) request, request->payload_length + 3) < 0)
     {
         LOGE("Cannot send request\n");
-        return -1;
+        return WPC_INT_GEN_ERROR;
     }
 
     while (attempt < MAX_CONFIRM_ATTEMPT)
@@ -116,7 +119,8 @@ static int send_request_locked(wpc_frame_t * request,
         if (confirm_size < 0)
         {
             LOGE("Didn't receive answer to the request 0x%02x\n", request->primitive_id);
-            return -1;
+            // Return confirm_size to propagate the error code
+            return confirm_size;
         }
 
         // Check the confirm
@@ -127,7 +131,7 @@ static int send_request_locked(wpc_frame_t * request,
             LOGW("Waiting confirm for primitive_id 0x%02x but received 0x%02x\n",
                              request->primitive_id + SAP_CONFIRM_OFFSET,
                              rec_confirm->primitive_id);
-            LOG_PRINT_BUFFER(buffer, FRAME_SIZE((wpc_frame_t *) buffer));
+            //LOG_PRINT_BUFFER(buffer, FRAME_SIZE((wpc_frame_t *) buffer));
             attempt++;
             continue;
         }
@@ -136,7 +140,7 @@ static int send_request_locked(wpc_frame_t * request,
             LOGW("Waiting confirm for frame_id 0x%02x but received 0x%02x\n",
                              request->frame_id,
                              rec_confirm->frame_id);
-            LOG_PRINT_BUFFER(buffer, FRAME_SIZE((wpc_frame_t *) buffer));
+            //LOG_PRINT_BUFFER(buffer, FRAME_SIZE((wpc_frame_t *) buffer));
             attempt++;
             continue;
         }
@@ -146,7 +150,7 @@ static int send_request_locked(wpc_frame_t * request,
     if (attempt == MAX_CONFIRM_ATTEMPT)
     {
         LOGE("Synchronization lost\n");
-        return -1;
+        return WPC_INT_SYNC_ERROR;
     }
 
     // Copy the confirm
@@ -209,7 +213,7 @@ static int handle_indication(bool last_one,
     if (res <= 0)
     {
         LOGE("Timeout waiting for indication last_one=%d\n", last_one);
-        return -1;
+        return WPC_INT_TIMEOUT_ERROR;
     }
 
     // Get timestamp just after reception
@@ -246,25 +250,27 @@ static int get_indication_locked(unsigned int max_ind,
     wpc_frame_t request;
     wpc_frame_t confirm;
     int remaining_ind = 1;
+    int ret;
 
     if (max_ind == 0)
     {
         // Poll request cannot be done if no indication
         // can be handled
         LOGE("Wrong number of indication\n");
-        return -1;
+        return WPC_INT_WRONG_PARAM_ERROR;
     }
 
     request.primitive_id = MSAP_INDICATION_POLL_REQUEST;
     request.payload_length = 0;
 
     LOGD("Start a poll request\n");
-    if (send_request_locked(&request,
-                            &confirm,
-                            TIMEOUT_CONFIRM_MS) < 0)
+    ret = send_request_locked(&request,
+                              &confirm,
+                              TIMEOUT_CONFIRM_MS);
+    if (ret < 0)
     {
         LOGE("Unable to poll for request\n");
-        return -1;
+        return ret;
     }
 
     if (confirm.payload.sap_generic_confirm_payload.result == 0)
@@ -281,7 +287,7 @@ static int get_indication_locked(unsigned int max_ind,
         if (remaining_ind < 0)
         {
             LOGE("Cannot get an indication\n");
-            return -1;
+            return remaining_ind;
         }
     }
 
@@ -320,7 +326,7 @@ int WPC_Int_initialize(char * port_name, unsigned long bitrate)
 {
     // Open the serial connection
     if (Serial_open(port_name, bitrate) < 0)
-        return -1;
+        return WPC_INT_GEN_ERROR;
 
     // Initialize the slip module
     Slip_init(&Serial_write, &Serial_read);
@@ -328,7 +334,7 @@ int WPC_Int_initialize(char * port_name, unsigned long bitrate)
     if (!Platform_init())
     {
         Serial_close();
-        return -1;
+        return WPC_INT_GEN_ERROR;
     }
 
     dsap_init();

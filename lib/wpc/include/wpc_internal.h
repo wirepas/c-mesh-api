@@ -8,6 +8,15 @@
 
 #include "wpc_types.h"
 
+typedef enum {
+    WPC_INT_GEN_ERROR = -1,          //< Generic error code
+    WPC_INT_TIMEOUT_ERROR = -2,      //< Timeout error
+    WPC_INT_SYNC_ERROR = -3,         //< Synchronization error
+    WPC_INT_WRONG_PARAM_ERROR = -4,  //< Wrong parameter
+    WPC_INT_WRONG_CRC = -5,          //< Wrong crc
+    WPC_INT_WRONG_BUFFER_SIZE = -6,  //< Wrong provided buffer size
+} WPC_Int_error_code_e;
+
 /**
  * \brief   Callback to be called when an indication is received
  * \param   frame
