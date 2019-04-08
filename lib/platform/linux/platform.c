@@ -214,9 +214,9 @@ static void * poll_for_indication(void * unused)
         }
 
 #if MAX_DURATION_POLL_FAIL_S != 0
-        if (get_ind_res >= 0)
+        if (get_ind_res >= 0 || get_ind_res == WPC_INT_SYNC_ERROR)
         {
-            // Poll request executed fine, reset fail counter
+            // Poll request executed fine or at least com is working with sink, reset fail counter
             m_last_successful_poll_ts = get_timestamp_s();
         }
         else
