@@ -280,6 +280,7 @@ bool Platform_init()
      * to protect the access to critical sections.
      */
     pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
 
     // Initialize mutex to access critical section
