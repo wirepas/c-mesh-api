@@ -34,6 +34,20 @@ static onScanNeighborsDone_cb_f m_scan_neighbor_cb = NULL;
  */
 static onStackStatusReceived_cb_f m_stack_status_cb = NULL;
 
+/**
+ * \brief   Time to wait for scratchpad start request confirm
+ *          It can be long because the start triggers an erase of
+ *          scratchpad area that can be long if external memory used
+ */
+#define SCRATCHPAD_START_TIMEOUT_MS 15000
+
+/**
+ * \brief   Time to wait for scratchpad block request confirm
+ *          It can be long because writing flash can be long
+ *          especially if written in external memory
+ */
+#define SCRATCHPAD_BLOK_TIMEOUT_MS 5000
+
 int msap_stack_start_request(uint8_t start_option)
 {
     wpc_frame_t request, confirm;
@@ -222,9 +236,11 @@ int msap_scratchpad_start_request(uint32_t length, uint8_t seq)
     request.payload_length = sizeof(msap_image_start_req_pl_t);
 
     // Starting a scrtachpad may trigger an erase of scratchpad area so can be
-    // quite long operartion and confirm can be delayed for quite a long time.
-    // So set tiemout to high value (up to 5 sec).
-    res = WPC_Int_send_request_timeout(&request, &confirm, 5000);
+    // quite long operation and confirm can be delayed for quite a long time.
+    // So set timeout to higher value
+    res = WPC_Int_send_request_timeout(&request,
+                                       &confirm,
+                                       SCRATCHPAD_START_TIMEOUT_MS);
 
     if (res < 0)
         return res;
@@ -256,7 +272,9 @@ int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_byte
     // Copy the block to the request
     memcpy(request.payload.msap_image_block_request_payload.bytes, bytes, number_of_bytes);
 
-    res = WPC_Int_send_request(&request, &confirm);
+    res = WPC_Int_send_request_timeout(&request,
+                                       &confirm,
+                                       SCRATCHPAD_BLOK_TIMEOUT_MS);
 
     if (res < 0)
         return res;
