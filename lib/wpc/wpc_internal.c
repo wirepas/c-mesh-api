@@ -23,7 +23,6 @@
 #include <string.h>
 #include <unistd.h>
 
-
 // This is the timeout in milliseconds to receive an indication
 // from stack after a poll request
 #define TIMEOUT_INDICATION_MS 500
@@ -60,9 +59,7 @@ typedef struct
  *          true if more indications must be sent
  * \return  0 if success, negative value otherwise
  */
-static int send_response_to_stack(uint8_t primitive_id,
-                                  uint8_t frame_id,
-                                  bool more_ind)
+static int send_response_to_stack(uint8_t primitive_id, uint8_t frame_id, bool more_ind)
 {
     wpc_frame_t frame;
 
@@ -90,9 +87,7 @@ static int send_response_to_stack(uint8_t primitive_id,
  *
  * \note    This function MUST be called with sending_mutex locked
  */
-static int send_request_locked(wpc_frame_t * request,
-                               wpc_frame_t * confirm,
-                               uint16_t timeout_ms)
+static int send_request_locked(wpc_frame_t * request, wpc_frame_t * confirm, uint16_t timeout_ms)
 {
     static uint8_t frame_id = 0;
     int confirm_size;
@@ -106,17 +101,17 @@ static int send_request_locked(wpc_frame_t * request,
     request->frame_id = frame_id++;
 
     // Send the request
-    if (Slip_send_buffer((uint8_t *) request, request->payload_length + 3) < 0)
+    if(Slip_send_buffer((uint8_t *) request, request->payload_length + 3) < 0)
     {
         LOGE("Cannot send request\n");
         return WPC_INT_GEN_ERROR;
     }
 
-    while (attempt < MAX_CONFIRM_ATTEMPT)
+    while(attempt < MAX_CONFIRM_ATTEMPT)
     {
         // Wait for confirm during TIMEOUT_CONFIRM seconds
         confirm_size = Slip_get_buffer(buffer, sizeof(buffer), timeout_ms);
-        if (confirm_size < 0)
+        if(confirm_size < 0)
         {
             LOGE("Didn't receive answer to the request 0x%02x\n", request->primitive_id);
             // Return confirm_size to propagate the error code
@@ -125,29 +120,29 @@ static int send_request_locked(wpc_frame_t * request,
 
         // Check the confirm
         rec_confirm = (wpc_frame_t *) buffer;
-        if ((rec_confirm->primitive_id) !=
-                (request->primitive_id + SAP_CONFIRM_OFFSET))
+        if((rec_confirm->primitive_id) != (request->primitive_id + SAP_CONFIRM_OFFSET))
         {
-            LOGW("Waiting confirm for primitive_id 0x%02x but received 0x%02x\n",
-                             request->primitive_id + SAP_CONFIRM_OFFSET,
-                             rec_confirm->primitive_id);
-            //LOG_PRINT_BUFFER(buffer, FRAME_SIZE((wpc_frame_t *) buffer));
+            LOGW("Waiting confirm for primitive_id 0x%02x but received "
+                 "0x%02x\n",
+                 request->primitive_id + SAP_CONFIRM_OFFSET,
+                 rec_confirm->primitive_id);
+            // LOG_PRINT_BUFFER(buffer, FRAME_SIZE((wpc_frame_t *) buffer));
             attempt++;
             continue;
         }
-        else if (rec_confirm->frame_id != request->frame_id)
+        else if(rec_confirm->frame_id != request->frame_id)
         {
             LOGW("Waiting confirm for frame_id 0x%02x but received 0x%02x\n",
-                             request->frame_id,
-                             rec_confirm->frame_id);
-            //LOG_PRINT_BUFFER(buffer, FRAME_SIZE((wpc_frame_t *) buffer));
+                 request->frame_id,
+                 rec_confirm->frame_id);
+            // LOG_PRINT_BUFFER(buffer, FRAME_SIZE((wpc_frame_t *) buffer));
             attempt++;
             continue;
         }
         break;
     }
 
-    if (attempt == MAX_CONFIRM_ATTEMPT)
+    if(attempt == MAX_CONFIRM_ATTEMPT)
     {
         LOGE("Synchronization lost\n");
         return WPC_INT_SYNC_ERROR;
@@ -161,33 +156,34 @@ static int send_request_locked(wpc_frame_t * request,
 /*****************************************************************************/
 /*                Indication implementation                                  */
 /*****************************************************************************/
-void WPC_Int_dispatch_indication(wpc_frame_t * frame,
-                                 unsigned long long timestamp_ms)
+void WPC_Int_dispatch_indication(wpc_frame_t * frame, unsigned long long timestamp_ms)
 {
-    switch (frame->primitive_id)
+    switch(frame->primitive_id)
     {
-    case DSAP_DATA_TX_INDICATION:
-        dsap_data_tx_indication_handler(&frame->payload.dsap_data_tx_indication_payload);
-        break;
-    case DSAP_DATA_RX_INDICATION:
-        dsap_data_rx_indication_handler(&frame->payload.dsap_data_rx_indication_payload,
-                                        timestamp_ms);
-        break;
-    case MSAP_STACK_STATE_INDICATION:
-        msap_stack_state_indication_handler(&frame->payload.msap_stack_state_indication_payload);
-        break;
-    case MSAP_APP_CONFIG_DATA_RX_INDICATION:
-        msap_app_config_data_rx_indication_handler(&frame->payload.msap_app_config_data_rx_indication_payload);
-        break;
-    case MSAP_SCRATCH_REMOTE_STATUS_INDICATION:
-        msap_image_remote_status_indication_handler(&frame->payload.msap_image_remote_status_indication_payload);
-        break;
-    case MSAP_SCAN_NBORS_INDICATION:
-        msap_scan_nbors_indication_handler(&frame->payload.msap_scan_nbors_indication_payload);
-        break;
-    default:
-        LOGE("Unknown indication 0x%02x\n", frame->primitive_id);
-        LOG_PRINT_BUFFER((uint8_t *)frame, FRAME_SIZE(frame));
+        case DSAP_DATA_TX_INDICATION:
+            dsap_data_tx_indication_handler(&frame->payload.dsap_data_tx_indication_payload);
+            break;
+        case DSAP_DATA_RX_INDICATION:
+            dsap_data_rx_indication_handler(&frame->payload.dsap_data_rx_indication_payload,
+                                            timestamp_ms);
+            break;
+        case MSAP_STACK_STATE_INDICATION:
+            msap_stack_state_indication_handler(&frame->payload.msap_stack_state_indication_payload);
+            break;
+        case MSAP_APP_CONFIG_DATA_RX_INDICATION:
+            msap_app_config_data_rx_indication_handler(
+                &frame->payload.msap_app_config_data_rx_indication_payload);
+            break;
+        case MSAP_SCRATCH_REMOTE_STATUS_INDICATION:
+            msap_image_remote_status_indication_handler(
+                &frame->payload.msap_image_remote_status_indication_payload);
+            break;
+        case MSAP_SCAN_NBORS_INDICATION:
+            msap_scan_nbors_indication_handler(&frame->payload.msap_scan_nbors_indication_payload);
+            break;
+        default:
+            LOGE("Unknown indication 0x%02x\n", frame->primitive_id);
+            LOG_PRINT_BUFFER((uint8_t *) frame, FRAME_SIZE(frame));
     }
 }
 
@@ -200,8 +196,7 @@ void WPC_Int_dispatch_indication(wpc_frame_t * frame,
  * \return  negative value in case of error, 0 if no more indication,
  *          1 if indication still pending
  */
-static int handle_indication(bool last_one,
-                              onIndicationReceivedLocked_cb_f cb_locked)
+static int handle_indication(bool last_one, onIndicationReceivedLocked_cb_f cb_locked)
 {
     int res;
     int remaining_ind;
@@ -210,7 +205,7 @@ static int handle_indication(bool last_one,
 
     LOGD("Pending indication from stack, wait for it\n");
     res = Slip_get_buffer((uint8_t *) &frame, sizeof(wpc_frame_t), TIMEOUT_INDICATION_MS);
-    if (res <= 0)
+    if(res <= 0)
     {
         LOGE("Timeout waiting for indication last_one=%d\n", last_one);
         return WPC_INT_TIMEOUT_ERROR;
@@ -244,15 +239,14 @@ static int handle_indication(bool last_one,
  *          0 if no more indication pending
  *          1 if at least 1 indications is still pending
  */
-static int get_indication_locked(unsigned int max_ind,
-                                 onIndicationReceivedLocked_cb_f cb_locked)
+static int get_indication_locked(unsigned int max_ind, onIndicationReceivedLocked_cb_f cb_locked)
 {
     wpc_frame_t request;
     wpc_frame_t confirm;
     int remaining_ind = 1;
     int ret;
 
-    if (max_ind == 0)
+    if(max_ind == 0)
     {
         // Poll request cannot be done if no indication
         // can be handled
@@ -264,27 +258,25 @@ static int get_indication_locked(unsigned int max_ind,
     request.payload_length = 0;
 
     LOGD("Start a poll request\n");
-    ret = send_request_locked(&request,
-                              &confirm,
-                              TIMEOUT_CONFIRM_MS);
-    if (ret < 0)
+    ret = send_request_locked(&request, &confirm, TIMEOUT_CONFIRM_MS);
+    if(ret < 0)
     {
         LOGE("Unable to poll for request\n");
         return ret;
     }
 
-    if (confirm.payload.sap_generic_confirm_payload.result == 0)
+    if(confirm.payload.sap_generic_confirm_payload.result == 0)
     {
         // There is no pending indication
         return 0;
     }
 
     remaining_ind = 1;
-    while (max_ind-- && remaining_ind)
+    while(max_ind-- && remaining_ind)
     {
         bool last_one = (max_ind == 0);
         remaining_ind = handle_indication(last_one, cb_locked);
-        if (remaining_ind < 0)
+        if(remaining_ind < 0)
         {
             LOGE("Cannot get an indication\n");
             return remaining_ind;
@@ -294,8 +286,7 @@ static int get_indication_locked(unsigned int max_ind,
     return remaining_ind > 0 ? 1 : 0;
 }
 
-int WPC_Int_get_indication(unsigned int max_ind,
-                           onIndicationReceivedLocked_cb_f cb_locked)
+int WPC_Int_get_indication(unsigned int max_ind, onIndicationReceivedLocked_cb_f cb_locked)
 {
     Platform_lock_request();
     int res = get_indication_locked(max_ind, cb_locked);
@@ -304,9 +295,7 @@ int WPC_Int_get_indication(unsigned int max_ind,
     return res;
 }
 
-int WPC_Int_send_request_timeout(wpc_frame_t *frame,
-                                 wpc_frame_t *confirm,
-                                 uint16_t timeout_ms)
+int WPC_Int_send_request_timeout(wpc_frame_t * frame, wpc_frame_t * confirm, uint16_t timeout_ms)
 {
     Platform_lock_request();
     int res = send_request_locked(frame, confirm, timeout_ms);
@@ -315,8 +304,7 @@ int WPC_Int_send_request_timeout(wpc_frame_t *frame,
     return res;
 }
 
-int WPC_Int_send_request(wpc_frame_t *frame,
-                         wpc_frame_t *confirm)
+int WPC_Int_send_request(wpc_frame_t * frame, wpc_frame_t * confirm)
 {
     // Timeout not specified so use default one
     return WPC_Int_send_request_timeout(frame, confirm, TIMEOUT_CONFIRM_MS);
@@ -325,13 +313,13 @@ int WPC_Int_send_request(wpc_frame_t *frame,
 int WPC_Int_initialize(char * port_name, unsigned long bitrate)
 {
     // Open the serial connection
-    if (Serial_open(port_name, bitrate) < 0)
+    if(Serial_open(port_name, bitrate) < 0)
         return WPC_INT_GEN_ERROR;
 
     // Initialize the slip module
     Slip_init(&Serial_write, &Serial_read);
 
-    if (!Platform_init())
+    if(!Platform_init())
     {
         Serial_close();
         return WPC_INT_GEN_ERROR;

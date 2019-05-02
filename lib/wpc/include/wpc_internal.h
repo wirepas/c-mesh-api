@@ -8,7 +8,8 @@
 
 #include "wpc_types.h"
 
-typedef enum {
+typedef enum
+{
     WPC_INT_GEN_ERROR = -1,          //< Generic error code
     WPC_INT_TIMEOUT_ERROR = -2,      //< Timeout error
     WPC_INT_SYNC_ERROR = -3,         //< Synchronization error
@@ -37,8 +38,7 @@ typedef void (*onIndicationReceivedLocked_cb_f)(wpc_frame_t * frame,
  * \note    This method can be called from different context at the same time
  *          thus, the calling thread can be locked
  */
-int WPC_Int_send_request(wpc_frame_t *frame,
-                         wpc_frame_t *confirm);
+int WPC_Int_send_request(wpc_frame_t * frame, wpc_frame_t * confirm);
 
 /**
  * \brief   Function to send a request and wait for confirm for given timeout
@@ -53,9 +53,7 @@ int WPC_Int_send_request(wpc_frame_t *frame,
  * \note    This method can be called from different context at the same time
  *          thus, the calling thread can be locked
  */
-int WPC_Int_send_request_timeout(wpc_frame_t *frame,
-                                 wpc_frame_t *confirm,
-                                 uint16_t timeout_ms);
+int WPC_Int_send_request_timeout(wpc_frame_t * frame, wpc_frame_t * confirm, uint16_t timeout_ms);
 
 /**
  * \brief   Function to retrieved indication
@@ -67,10 +65,10 @@ int WPC_Int_send_request_timeout(wpc_frame_t *frame,
  *          0 if successfull and no more indication pending
  *          1 if at least one indication is still pending
  * \note    It is up to the platform implementation to call this method at
- *          the right place from the decided context (polling Thread for example)
+ *          the right place from the decided context (polling Thread for
+ * example)
  */
-int WPC_Int_get_indication(unsigned int max_ind,
-                           onIndicationReceivedLocked_cb_f cb_locked);
+int WPC_Int_get_indication(unsigned int max_ind, onIndicationReceivedLocked_cb_f cb_locked);
 
 /**
  * \brief   Dispatch a received indication
@@ -81,8 +79,7 @@ int WPC_Int_get_indication(unsigned int max_ind,
  * \note    It is up to the platform implementation to call this method at
  *          the right place
  */
-void WPC_Int_dispatch_indication(wpc_frame_t * frame,
-                                 unsigned long long timestamp_ms);
+void WPC_Int_dispatch_indication(wpc_frame_t * frame, unsigned long long timestamp_ms);
 
 int WPC_Int_initialize(char * port_name, unsigned long bitrate);
 

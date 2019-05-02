@@ -22,7 +22,7 @@ static inline void print_prefix(char level, char * module)
 {
     char timestamp[26];
     get_timestamp(timestamp);
-    printf("[%s][%s] %c:" , module, timestamp, level);
+    printf("[%s][%s] %c:", module, timestamp, level);
 }
 
 void Platform_LOG(char level, char * module, char * format, va_list args)
@@ -34,8 +34,9 @@ void Platform_LOG(char level, char * module, char * format, va_list args)
 void Platform_print_buffer(uint8_t * buffer, int size)
 {
     int i;
-    for (i = 0; i < size; i++) {
-        if ((i & 0xF) == 0xF)
+    for(i = 0; i < size; i++)
+    {
+        if((i & 0xF) == 0xF)
             printf("\n");
         printf("%02x ", buffer[i]);
     }

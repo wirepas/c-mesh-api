@@ -8,53 +8,53 @@
 
 #include <stdint.h>
 #include <string.h>
-#include "wpc.h" //For onAppConfigDataReceived_cb_f
+#include "wpc.h"  //For onAppConfigDataReceived_cb_f
 #include "wpc_constants.h"
 #include "attribute.h"
 #include "util.h"
 
 /* Attributes ID */
-#define MSAP_STACK_STATUS           1
-#define MSAP_PDU_BUFFER_USAGE       2
-#define MSAP_PDU_BUFFER_CAPACITY    3
-#define MSAP_ENERGY                 5
-#define MSAP_AUTOSTART              6
-#define MSAP_ROUTE_COUNT            7
-#define MSAP_SYSTEM_TIME            8
-#define MSAP_ACCESS_CYCLE_RANGE     9
-#define MSAP_ACCESS_CYCLE_LIMITS    10
-#define MSAP_CURRENT_ACCESS_CYCLE   11
-#define MSAP_SCRATCHPAD_BLOCK_MAX   12
+#define MSAP_STACK_STATUS 1
+#define MSAP_PDU_BUFFER_USAGE 2
+#define MSAP_PDU_BUFFER_CAPACITY 3
+#define MSAP_ENERGY 5
+#define MSAP_AUTOSTART 6
+#define MSAP_ROUTE_COUNT 7
+#define MSAP_SYSTEM_TIME 8
+#define MSAP_ACCESS_CYCLE_RANGE 9
+#define MSAP_ACCESS_CYCLE_LIMITS 10
+#define MSAP_CURRENT_ACCESS_CYCLE 11
+#define MSAP_SCRATCHPAD_BLOCK_MAX 12
 
 /* General constant */
-#define MAXIMUM_SCRATCHPAD_BLOCK_SIZE    112
+#define MAXIMUM_SCRATCHPAD_BLOCK_SIZE 112
 
 /* Maximum number of neighbors in a */
-#define MAXIMUM_NUMBER_OF_NEIGHBOR       8
+#define MAXIMUM_NUMBER_OF_NEIGHBOR 8
 
 #ifdef LEGACY_APP_CONFIG
-#define MAXIMUM_APP_CONFIG_SIZE          16
+#    define MAXIMUM_APP_CONFIG_SIZE 16
 #else
-#define MAXIMUM_APP_CONFIG_SIZE          80
-#endif // LEGACY_APP_CONFIG
+#    define MAXIMUM_APP_CONFIG_SIZE 80
+#endif  // LEGACY_APP_CONFIG
 
 typedef struct __attribute__((__packed__))
 {
-    uint8_t  start_option;
+    uint8_t start_option;
 } msap_stack_start_req_pl_t;
 
 typedef struct __attribute__((__packed__))
 {
-    uint8_t  sequence_number;
+    uint8_t sequence_number;
     uint16_t diag_data_interval;
-    uint8_t  app_config_data[MAXIMUM_APP_CONFIG_SIZE];
+    uint8_t app_config_data[MAXIMUM_APP_CONFIG_SIZE];
 } msap_app_config_data_write_req_pl_t;
 
 typedef struct __attribute__((__packed__))
 {
     uint16_t attribute_id;
-    uint8_t  attribute_length;
-    uint8_t  attribute_value[16];
+    uint8_t attribute_length;
+    uint8_t attribute_value[16];
 } msap_attribute_write_req_pl_t;
 
 typedef struct __attribute__((__packed__))
@@ -65,14 +65,14 @@ typedef struct __attribute__((__packed__))
 typedef struct __attribute__((__packed__))
 {
     uint32_t scratchpad_length;
-    uint8_t  scratchpad_sequence_number;
+    uint8_t scratchpad_sequence_number;
 } msap_image_start_req_pl_t;
 
 typedef struct __attribute__((__packed__))
 {
     uint32_t start_add;
-    uint8_t  number_of_bytes;
-    uint8_t  bytes[MAXIMUM_SCRATCHPAD_BLOCK_SIZE];
+    uint8_t number_of_bytes;
+    uint8_t bytes[MAXIMUM_SCRATCHPAD_BLOCK_SIZE];
 } msap_image_block_req_pl_t;
 
 typedef struct __attribute__((__packed__))
@@ -83,7 +83,7 @@ typedef struct __attribute__((__packed__))
 typedef struct __attribute__((__packed__))
 {
     uint32_t target;
-    uint8_t  seq;
+    uint8_t seq;
     uint16_t delay_s;
 
 } msap_image_remote_update_req_pl_t;
@@ -91,13 +91,13 @@ typedef struct __attribute__((__packed__))
 typedef struct __attribute__((__packed__))
 {
     uint32_t add;
-    uint8_t  link_rel;
-    uint8_t  norm_rssi;
-    uint8_t  cost;
-    uint8_t  channel;
-    uint8_t  nbor_type;
-    uint8_t  tx_power;
-    uint8_t  rx_power;
+    uint8_t link_rel;
+    uint8_t norm_rssi;
+    uint8_t cost;
+    uint8_t channel;
+    uint8_t nbor_type;
+    uint8_t tx_power;
+    uint8_t rx_power;
     uint16_t last_update;
 } neighbor_info_t;
 
@@ -109,8 +109,8 @@ typedef struct __attribute__((__packed__))
 
 typedef struct __attribute__((__packed__))
 {
-    uint8_t  indication_status;
-    uint8_t  scan_ready;
+    uint8_t indication_status;
+    uint8_t scan_ready;
 } msap_scan_nbors_ind_pl_t;
 
 typedef struct __attribute__((__packed__))
@@ -120,78 +120,83 @@ typedef struct __attribute__((__packed__))
 
 typedef struct __attribute__((__packed__))
 {
-    uint8_t  result;
-    uint8_t  cost;
+    uint8_t result;
+    uint8_t cost;
 } msap_sink_cost_read_conf_pl_t;
 
 typedef struct __attribute__((__packed__))
 {
-    uint8_t  indication_status;
-    uint8_t  status;
+    uint8_t indication_status;
+    uint8_t status;
 } msap_stack_state_ind_pl_t;
 
 typedef struct __attribute__((__packed__))
 {
-    uint8_t  indication_status;
-    uint8_t  sequence_number;
+    uint8_t indication_status;
+    uint8_t sequence_number;
     uint16_t diag_data_interval;
-    uint8_t  app_config_data[MAXIMUM_APP_CONFIG_SIZE];
+    uint8_t app_config_data[MAXIMUM_APP_CONFIG_SIZE];
 } msap_app_config_data_rx_ind_pl_t;
 
 typedef struct __attribute__((__packed__))
 {
-    uint8_t  result;
-    uint8_t  sequence_number;
+    uint8_t result;
+    uint8_t sequence_number;
     uint16_t diag_data_interval;
-    uint8_t  app_config_data[MAXIMUM_APP_CONFIG_SIZE];
+    uint8_t app_config_data[MAXIMUM_APP_CONFIG_SIZE];
 } msap_app_config_data_read_conf_pl_t;
 
 typedef struct __attribute__((__packed__))
 {
-    uint8_t  result;
+    uint8_t result;
     uint16_t attribute_id;
-    uint8_t  attribute_length;
-    uint8_t  attribute_value[16];
+    uint8_t attribute_length;
+    uint8_t attribute_value[16];
 } msap_attribute_read_conf_pl_t;
 
 typedef struct __attribute__((__packed__))
 {
     uint32_t scrat_len;
     uint16_t scrat_crc;
-    uint8_t  scrat_seq_number;
-    uint8_t  scrat_type;
-    uint8_t  scrat_status;
+    uint8_t scrat_seq_number;
+    uint8_t scrat_type;
+    uint8_t scrat_status;
     uint32_t processed_scrat_len;
     uint16_t processed_scrat_crc;
-    uint8_t  processed_scrat_seq_number;
+    uint8_t processed_scrat_seq_number;
     uint32_t firmware_memory_area_id;
-    uint8_t  firmware_major_ver;
-    uint8_t  firmware_minor_ver;
-    uint8_t  firmware_maint_ver;
-    uint8_t  firmware_dev_ver;
+    uint8_t firmware_major_ver;
+    uint8_t firmware_minor_ver;
+    uint8_t firmware_maint_ver;
+    uint8_t firmware_dev_ver;
 } msap_scratchpad_status_conf_pl_t;
 
 typedef struct __attribute__((__packed__))
 {
-    uint8_t  indication_status;
+    uint8_t indication_status;
     uint32_t source_address;
     msap_scratchpad_status_conf_pl_t status;
     uint16_t update_timeout;
 } msap_image_remote_status_ind_pl_t;
 
-static inline void convert_internal_to_app_scratchpad_status(app_scratchpad_status_t * status_p,
-                                                             msap_scratchpad_status_conf_pl_t * internal_status_p)
+static inline void
+convert_internal_to_app_scratchpad_status(app_scratchpad_status_t * status_p,
+                                          msap_scratchpad_status_conf_pl_t * internal_status_p)
 {
-    // Copy internal payload to app return code. Cannot use memcpy as structures may have different alignment
+    // Copy internal payload to app return code. Cannot use memcpy as structures
+    // may have different alignment
     status_p->scrat_len = uint32_decode_le((uint8_t *) &internal_status_p->scrat_len);
     status_p->scrat_crc = uint16_decode_le((uint8_t *) &internal_status_p->scrat_crc);
     status_p->scrat_seq_number = internal_status_p->scrat_seq_number;
     status_p->scrat_type = internal_status_p->scrat_type;
     status_p->scrat_status = internal_status_p->scrat_status;
-    status_p->processed_scrat_len = uint32_decode_le((uint8_t *) &internal_status_p->processed_scrat_len);
-    status_p->processed_scrat_crc = uint16_decode_le((uint8_t *) &internal_status_p->processed_scrat_crc);
+    status_p->processed_scrat_len =
+        uint32_decode_le((uint8_t *) &internal_status_p->processed_scrat_len);
+    status_p->processed_scrat_crc =
+        uint16_decode_le((uint8_t *) &internal_status_p->processed_scrat_crc);
     status_p->processed_scrat_seq_number = internal_status_p->processed_scrat_seq_number;
-    status_p->firmware_memory_area_id = uint32_decode_le((uint8_t *) &internal_status_p->firmware_memory_area_id);
+    status_p->firmware_memory_area_id =
+        uint32_decode_le((uint8_t *) &internal_status_p->firmware_memory_area_id);
     status_p->firmware_major_ver = internal_status_p->firmware_major_ver;
     status_p->firmware_minor_ver = internal_status_p->firmware_minor_ver;
     status_p->firmware_maint_ver = internal_status_p->firmware_maint_ver;
@@ -199,22 +204,24 @@ static inline void convert_internal_to_app_scratchpad_status(app_scratchpad_stat
 }
 
 /**
- * \brief   Convert internal neighbors list returned by get_neighbors to API representation
- * \param   neighbors_p
- *          Pointer to public API neighbor list structure
- * \param   internal_neighbors_p
- *          Pointer to internal msap neighbor list structure
+ * \brief   Convert internal neighbors list returned by get_neighbors to API
+ * representation \param   neighbors_p Pointer to public API neighbor list
+ * structure \param   internal_neighbors_p Pointer to internal msap neighbor
+ * list structure
  */
-static inline void convert_internal_to_app_neighbors_status(app_nbors_t * neighbors_p,
-                                                            msap_get_nbors_conf_pl_t * internal_neighbors_p)
+static inline void
+convert_internal_to_app_neighbors_status(app_nbors_t * neighbors_p,
+                                         msap_get_nbors_conf_pl_t * internal_neighbors_p)
 {
-    // Copy internal payload to app return code. Cannot use memcpy as structures may have different alignment
+    // Copy internal payload to app return code. Cannot use memcpy as structures
+    // may have different alignment
     memset(neighbors_p, 0, sizeof(app_nbors_t));
 
     neighbors_p->number_of_neighbors = internal_neighbors_p->number_of_neighbors;
-    for (uint8_t i = 0; i < neighbors_p->number_of_neighbors; i++)
+    for(uint8_t i = 0; i < neighbors_p->number_of_neighbors; i++)
     {
-        neighbors_p->nbors[i].add = uint32_decode_le((uint8_t *) &internal_neighbors_p->nbors[i].add);
+        neighbors_p->nbors[i].add =
+            uint32_decode_le((uint8_t *) &internal_neighbors_p->nbors[i].add);
         neighbors_p->nbors[i].channel = internal_neighbors_p->nbors[i].channel;
         neighbors_p->nbors[i].cost = internal_neighbors_p->nbors[i].cost;
         neighbors_p->nbors[i].link_rel = internal_neighbors_p->nbors[i].link_rel;
@@ -222,7 +229,8 @@ static inline void convert_internal_to_app_neighbors_status(app_nbors_t * neighb
         neighbors_p->nbors[i].norm_rssi = internal_neighbors_p->nbors[i].norm_rssi;
         neighbors_p->nbors[i].rx_power = internal_neighbors_p->nbors[i].rx_power;
         neighbors_p->nbors[i].tx_power = internal_neighbors_p->nbors[i].tx_power;
-        neighbors_p->nbors[i].last_update = uint16_decode_le((uint8_t *) &internal_neighbors_p->nbors[i].last_update);
+        neighbors_p->nbors[i].last_update =
+            uint16_decode_le((uint8_t *) &internal_neighbors_p->nbors[i].last_update);
     }
 }
 
@@ -255,10 +263,7 @@ int msap_stack_stop_request();
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_app_config_data_write_request(uint8_t seq,
-                                       uint16_t interval,
-                                       uint8_t * config_p,
-                                       uint8_t size);
+int msap_app_config_data_write_request(uint8_t seq, uint16_t interval, uint8_t * config_p, uint8_t size);
 
 /**
  * \brief    Request to read data config
@@ -273,10 +278,7 @@ int msap_app_config_data_write_request(uint8_t seq,
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_app_config_data_read_request(uint8_t * seq,
-                                      uint16_t * interval,
-                                      uint8_t * config_p,
-                                      uint8_t size);
+int msap_app_config_data_read_request(uint8_t * seq, uint16_t * interval, uint8_t * config_p, uint8_t size);
 
 /**
  * \brief    Request to write sink cost
@@ -322,8 +324,7 @@ int msap_scan_nbors_request();
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_scratchpad_start_request(uint32_t length,
-                                  uint8_t seq);
+int msap_scratchpad_start_request(uint32_t length, uint8_t seq);
 
 /**
  * \brief    Request to send a scratchpad block
@@ -337,9 +338,7 @@ int msap_scratchpad_start_request(uint32_t length,
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_scratchpad_block_request(uint32_t start_address,
-                                  uint8_t number_of_bytes,
-                                  uint8_t * bytes);
+int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_bytes, uint8_t * bytes);
 
 /**
  * \brief    Get the status of currently stored and processed scratchpad
@@ -387,28 +386,20 @@ int msap_scratchpad_remote_status(app_addr_t destination_address);
  * \return  negative value if the request fails,
  *          a Mesh positive result otherwise
  */
-int msap_scratchpad_remote_update(app_addr_t destination_address,
-                                  uint8_t sequence,
-                                  uint16_t delay_s);
+int msap_scratchpad_remote_update(app_addr_t destination_address, uint8_t sequence, uint16_t delay_s);
 
 static inline int msap_attribute_write_request(uint16_t attribute_id,
                                                uint8_t attribute_length,
                                                uint8_t * attribute_value_p)
 {
-    return attribute_write_request(MSAP_ATTRIBUTE_WRITE_REQUEST,
-                                   attribute_id,
-                                   attribute_length,
-                                   attribute_value_p);
+    return attribute_write_request(MSAP_ATTRIBUTE_WRITE_REQUEST, attribute_id, attribute_length, attribute_value_p);
 }
 
 static inline int msap_attribute_read_request(uint16_t attribute_id,
                                               uint8_t attribute_length,
                                               uint8_t * attribute_value_p)
 {
-    return attribute_read_request(MSAP_ATTRIBUTE_READ_REQUEST,
-                                  attribute_id,
-                                  attribute_length,
-                                  attribute_value_p);
+    return attribute_read_request(MSAP_ATTRIBUTE_READ_REQUEST, attribute_id, attribute_length, attribute_value_p);
 }
 
 /**

@@ -14,11 +14,10 @@
  *          Buffer where the encoded data is to be written.
  * \return  Number of bytes written.
  */
-static inline uint8_t uint16_encode_le(uint16_t value,
-                                       uint8_t * p_encoded_data)
+static inline uint8_t uint16_encode_le(uint16_t value, uint8_t * p_encoded_data)
 {
-    p_encoded_data[0] = (uint8_t) ((value & 0x00FF) >> 0);
-    p_encoded_data[1] = (uint8_t) ((value & 0xFF00) >> 8);
+    p_encoded_data[0] = (uint8_t)((value & 0x00FF) >> 0);
+    p_encoded_data[1] = (uint8_t)((value & 0xFF00) >> 8);
     return sizeof(uint16_t);
 }
 
@@ -30,13 +29,12 @@ static inline uint8_t uint16_encode_le(uint16_t value,
  *          Buffer where the encoded data is to be written.
  * \return  Number of bytes written.
  */
-static inline uint8_t uint32_encode_le(uint32_t value,
-                                       uint8_t * p_encoded_data)
+static inline uint8_t uint32_encode_le(uint32_t value, uint8_t * p_encoded_data)
 {
-    p_encoded_data[0] = (uint8_t) ((value & 0x000000FF) >> 0);
-    p_encoded_data[1] = (uint8_t) ((value & 0x0000FF00) >> 8);
-    p_encoded_data[2] = (uint8_t) ((value & 0x00FF0000) >> 16);
-    p_encoded_data[3] = (uint8_t) ((value & 0xFF000000) >> 24);
+    p_encoded_data[0] = (uint8_t)((value & 0x000000FF) >> 0);
+    p_encoded_data[1] = (uint8_t)((value & 0x0000FF00) >> 8);
+    p_encoded_data[2] = (uint8_t)((value & 0x00FF0000) >> 16);
+    p_encoded_data[3] = (uint8_t)((value & 0xFF000000) >> 24);
     return sizeof(uint32_t);
 }
 
@@ -48,8 +46,8 @@ static inline uint8_t uint32_encode_le(uint32_t value,
  */
 static inline uint16_t uint16_decode_le(const uint8_t * p_encoded_data)
 {
-        return ( (((uint16_t)((uint8_t *)p_encoded_data)[0])) |
-                 (((uint16_t)((uint8_t *)p_encoded_data)[1]) << 8 ));
+    return ((((uint16_t)((uint8_t *) p_encoded_data)[0])) |
+            (((uint16_t)((uint8_t *) p_encoded_data)[1]) << 8));
 }
 
 /**
@@ -60,10 +58,10 @@ static inline uint16_t uint16_decode_le(const uint8_t * p_encoded_data)
  */
 static inline uint32_t uint32_decode_le(const uint8_t * p_encoded_data)
 {
-    return ( (((uint32_t)((uint8_t *)p_encoded_data)[0]) << 0)  |
-             (((uint32_t)((uint8_t *)p_encoded_data)[1]) << 8)  |
-             (((uint32_t)((uint8_t *)p_encoded_data)[2]) << 16) |
-             (((uint32_t)((uint8_t *)p_encoded_data)[3]) << 24 ));
+    return ((((uint32_t)((uint8_t *) p_encoded_data)[0]) << 0) |
+            (((uint32_t)((uint8_t *) p_encoded_data)[1]) << 8) |
+            (((uint32_t)((uint8_t *) p_encoded_data)[2]) << 16) |
+            (((uint32_t)((uint8_t *) p_encoded_data)[3]) << 24));
 }
 
 #define MAX_INTERNAL_TIME_FOR_FULL_PRECISION (((uint32_t)(-1)) / 1000)
@@ -80,7 +78,7 @@ static inline uint32_t internal_time_to_ms(uint32_t internal_time)
 {
     // Check the internal time to give a good conversion and
     // avoid using 64bits computation
-    if (internal_time < MAX_INTERNAL_TIME_FOR_FULL_PRECISION)
+    if(internal_time < MAX_INTERNAL_TIME_FOR_FULL_PRECISION)
     {
         return (internal_time * 1000) >> 7;
     }
@@ -114,7 +112,7 @@ static inline uint32_t internal_time_to_s(uint32_t internal_time)
  */
 static inline uint32_t ms_to_internal_time(uint32_t time_in_ms)
 {
-    if (time_in_ms < MAX_MS_TIME_FOR_FULL_PRECISION)
+    if(time_in_ms < MAX_MS_TIME_FOR_FULL_PRECISION)
     {
         return (time_in_ms << 7) / 1000;
     }

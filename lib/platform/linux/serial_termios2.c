@@ -29,7 +29,8 @@ int Serial_set_termios2_bitrate(int fd, unsigned long bitrate)
     tty2.c_ispeed = bitrate;
     tty2.c_ospeed = bitrate;
 
-    if(ioctl(fd, TCSETS2, &tty2) < 0) {
+    if(ioctl(fd, TCSETS2, &tty2) < 0)
+    {
         LOGE("Error %d from TCSETS2", errno);
         return -1;
     }

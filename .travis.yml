@@ -5,5 +5,7 @@ compiler: gcc
 dist: "xenial"
 
 script:
+  - "./.ci/fetch-clangformat.sh"
+  - "./.ci/check-clangformat.sh"
   - "./.ci/build-test.sh"
   - "./.ci/build-lib.sh"
