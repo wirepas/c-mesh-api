@@ -1,0 +1,9 @@
+language: c
+
+compiler: gcc
+
+dist: "xenial"
+
+script:
+  - "./.ci/build-test.sh"
+  - "./.ci/build-lib.sh"
