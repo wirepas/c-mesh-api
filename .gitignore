@@ -4,3 +4,5 @@
 *.flake8
 .ci/manifest/*
 .clang-format
+.pre-commit*
+dev-requirements.txt
