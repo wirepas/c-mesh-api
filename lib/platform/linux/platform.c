@@ -21,10 +21,9 @@
 // Polling interval to check for indication
 #define POLLING_INTERVAL_MS 20
 
-// Maximum duration in s of failed poll request to declare the link broken (unplugged)
-// Set it to 0 to disable
-// 60 sec is long period but it must cover the OTAP exchange with neighbors that can
-// be long with some profiles
+// Maximum duration in s of failed poll request to declare the link broken
+// (unplugged) Set it to 0 to disable 60 sec is long period but it must cover
+// the OTAP exchange with neighbors that can be long with some profiles
 #define MAX_DURATION_POLL_FAIL_S 60
 
 // Mutex for sending, ie serial access
@@ -49,8 +48,9 @@ static time_t m_last_successful_poll_ts;
 // In most of the cases, the dispatcher is supposed to be faster and the
 // queue will have only one element
 // But if some execution handling are too long or require to send something over
-// UART, the dispatching thread will be hanged until the poll thread finish its work
-#define MAX_NUMBER_INDICATION_QUEUE     (MAX_NUMBER_INDICATION * 2)
+// UART, the dispatching thread will be hanged until the poll thread finish its
+// work
+#define MAX_NUMBER_INDICATION_QUEUE (MAX_NUMBER_INDICATION * 2)
 
 // Struct that describes a received frame with its timestamp
 typedef struct
@@ -75,7 +75,6 @@ static bool m_queue_empty = true;
 static pthread_mutex_t m_queue_mutex;
 static pthread_cond_t m_queue_not_empty_cond = PTHREAD_COND_INITIALIZER;
 
-
 /*****************************************************************************/
 /*                Dispatch indication Thread implementation                  */
 /*****************************************************************************/
@@ -87,7 +86,6 @@ static void * dispatch_indication(void * unused)
     pthread_mutex_lock(&m_queue_mutex);
     while (true)
     {
-
         if (m_queue_empty)
         {
             // Queue is empty, wait
@@ -122,8 +120,7 @@ static void * dispatch_indication(void * unused)
 /*****************************************************************************/
 /*                Polling Thread implementation                              */
 /*****************************************************************************/
-static void onIndicationReceivedLocked(wpc_frame_t * frame,
-                                       unsigned long long timestamp_ms)
+static void onIndicationReceivedLocked(wpc_frame_t * frame, unsigned long long timestamp_ms)
 {
     LOGD("Frame received with timestamp = %lld\n", timestamp_ms);
     pthread_mutex_lock(&m_queue_mutex);
@@ -193,12 +190,12 @@ static void * poll_for_indication(void * unused)
             free_buffer_room = m_ind_queue_write - m_ind_queue_read % MAX_NUMBER_INDICATION_QUEUE;
         }
         max_num_indication = free_buffer_room > MAX_NUMBER_INDICATION ?
-                            MAX_NUMBER_INDICATION : free_buffer_room;
+                                 MAX_NUMBER_INDICATION :
+                                 free_buffer_room;
 
         LOGD("Poll for %d indications\n", max_num_indication);
 
-        get_ind_res = WPC_Int_get_indication(max_num_indication,
-                                             onIndicationReceivedLocked);
+        get_ind_res = WPC_Int_get_indication(max_num_indication, onIndicationReceivedLocked);
 
         if (get_ind_res == 1)
         {
@@ -216,7 +213,8 @@ static void * poll_for_indication(void * unused)
 #if MAX_DURATION_POLL_FAIL_S != 0
         if (get_ind_res >= 0 || get_ind_res == WPC_INT_SYNC_ERROR)
         {
-            // Poll request executed fine or at least com is working with sink, reset fail counter
+            // Poll request executed fine or at least com is working with sink,
+            // reset fail counter
             m_last_successful_poll_ts = get_timestamp_s();
         }
         else
@@ -266,8 +264,7 @@ unsigned long long Platform_get_timestamp_ms_epoch()
 
     // Get timestamp in ms since epoch
     clock_gettime(CLOCK_REALTIME, &spec);
-    return ((unsigned long long) spec.tv_sec) * 1000
-           + (spec.tv_nsec) / 1000 / 1000;
+    return ((unsigned long long) spec.tv_sec) * 1000 + (spec.tv_nsec) / 1000 / 1000;
 }
 
 bool Platform_init()
@@ -298,20 +295,14 @@ bool Platform_init()
     }
 
     // Start a thread to poll for indication
-    if (pthread_create(&thread_polling,
-                       NULL,
-                       poll_for_indication,
-                       NULL) < 0)
+    if (pthread_create(&thread_polling, NULL, poll_for_indication, NULL) < 0)
     {
         LOGE("Cannot create polling thread\n");
         goto error3;
     }
 
     // Start a thread to dispatch indication
-    if (pthread_create(&thread_dispatch,
-                       NULL,
-                       dispatch_indication,
-                       NULL) < 0)
+    if (pthread_create(&thread_dispatch, NULL, dispatch_indication, NULL) < 0)
     {
         LOGE("Cannot create dispatch thread\n");
         goto error4;

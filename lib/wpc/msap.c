@@ -45,13 +45,13 @@ int msap_stack_start_request(uint8_t start_option)
 
     request.payload_length = sizeof(msap_stack_start_req_pl_t);
 
-    res = WPC_Int_send_request(&request,
-                       &confirm);
+    res = WPC_Int_send_request(&request, &confirm);
 
     if (res < 0)
         return res;
 
-    LOGI("Start request result = 0x%02x\n", confirm.payload.sap_generic_confirm_payload.result);
+    LOGI("Start request result = 0x%02x\n",
+         confirm.payload.sap_generic_confirm_payload.result);
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
@@ -63,12 +63,12 @@ int msap_stack_stop_request()
     request.primitive_id = MSAP_STACK_STOP_REQUEST;
     request.payload_length = 0;
 
-    res = WPC_Int_send_request(&request,
-                       &confirm);
+    res = WPC_Int_send_request(&request, &confirm);
     if (res < 0)
         return res;
 
-    LOGI("Stop request result = 0x%02x\n", confirm.payload.sap_generic_confirm_payload.result);
+    LOGI("Stop request result = 0x%02x\n",
+         confirm.payload.sap_generic_confirm_payload.result);
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
@@ -80,19 +80,21 @@ int msap_app_config_data_write_request(uint8_t seq, uint16_t interval, uint8_t *
     request.primitive_id = MSAP_APP_CONFIG_DATA_WRITE_REQUEST;
     request.payload.msap_app_config_data_write_request_payload.sequence_number = seq;
     request.payload.msap_app_config_data_write_request_payload.diag_data_interval = interval;
-    //Initialize config data to 0
-    memset(request.payload.msap_app_config_data_write_request_payload.app_config_data, 0, MAXIMUM_APP_CONFIG_SIZE);
+    // Initialize config data to 0
+    memset(request.payload.msap_app_config_data_write_request_payload.app_config_data,
+           0,
+           MAXIMUM_APP_CONFIG_SIZE);
     memcpy(request.payload.msap_app_config_data_write_request_payload.app_config_data, config_p, size);
 
     request.payload_length = sizeof(msap_app_config_data_write_req_pl_t);
 
-    res = WPC_Int_send_request(&request,
-                       &confirm);
+    res = WPC_Int_send_request(&request, &confirm);
 
     if (res < 0)
         return res;
 
-    LOGI("App config write result = 0x%02x\n", confirm.payload.sap_generic_confirm_payload.result);
+    LOGI("App config write result = 0x%02x\n",
+         confirm.payload.sap_generic_confirm_payload.result);
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
@@ -104,8 +106,7 @@ int msap_app_config_data_read_request(uint8_t * seq, uint16_t * interval, uint8_
     request.primitive_id = MSAP_APP_CONFIG_DATA_READ_REQUEST;
     request.payload_length = 0;
 
-    res = WPC_Int_send_request(&request,
-                       &confirm);
+    res = WPC_Int_send_request(&request, &confirm);
 
     if (res < 0)
         return res;
@@ -137,13 +138,13 @@ int msap_sink_cost_write_request(uint8_t cost)
     request.payload.msap_sink_cost_write_request_payload.cost = cost;
     request.payload_length = sizeof(msap_sink_cost_write_req_pl_t);
 
-    res = WPC_Int_send_request(&request,
-                       &confirm);
+    res = WPC_Int_send_request(&request, &confirm);
 
     if (res < 0)
         return res;
 
-    LOGD(" Cost write request result = 0x%02x\n", confirm.payload.sap_generic_confirm_payload.result);
+    LOGD(" Cost write request result = 0x%02x\n",
+         confirm.payload.sap_generic_confirm_payload.result);
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
@@ -155,8 +156,7 @@ int msap_sink_cost_read_request(uint8_t * cost_p)
     request.primitive_id = MSAP_SINK_COST_READ_REQUEST;
     request.payload_length = 0;
 
-    res = WPC_Int_send_request(&request,
-                       &confirm);
+    res = WPC_Int_send_request(&request, &confirm);
 
     if (res < 0)
         return res;
@@ -182,12 +182,12 @@ int msap_get_nbors_request(msap_get_nbors_conf_pl_t * neigbors_p)
     request.primitive_id = MSAP_GET_NBORS_REQUEST;
     request.payload_length = 0;
 
-    res = WPC_Int_send_request(&request,
-                       &confirm);
+    res = WPC_Int_send_request(&request, &confirm);
     if (res < 0)
         return res;
 
-    LOGI("Get nbors request result. Found %d neighbors\n", confirm.payload.msap_get_nbors_confirm_payload.number_of_neighbors);
+    LOGI("Get nbors request result. Found %d neighbors\n",
+         confirm.payload.msap_get_nbors_confirm_payload.number_of_neighbors);
     memcpy((uint8_t *) neigbors_p,
            (uint8_t *) &confirm.payload.msap_get_nbors_confirm_payload,
            sizeof(msap_scratchpad_status_conf_pl_t));
@@ -202,17 +202,16 @@ int msap_scan_nbors_request()
     request.primitive_id = MSAP_SCAN_NBORS_REQUEST;
     request.payload_length = 0;
 
-    res = WPC_Int_send_request(&request,
-                       &confirm);
+    res = WPC_Int_send_request(&request, &confirm);
     if (res < 0)
         return res;
 
-    LOGI("Scan nbors request result = 0x%02x\n", confirm.payload.sap_generic_confirm_payload.result);
+    LOGI("Scan nbors request result = 0x%02x\n",
+         confirm.payload.sap_generic_confirm_payload.result);
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
-int msap_scratchpad_start_request(uint32_t length,
-                                  uint8_t seq)
+int msap_scratchpad_start_request(uint32_t length, uint8_t seq)
 {
     wpc_frame_t request, confirm;
     int res;
@@ -222,22 +221,20 @@ int msap_scratchpad_start_request(uint32_t length,
     request.payload.msap_image_start_request_payload.scratchpad_sequence_number = seq;
     request.payload_length = sizeof(msap_image_start_req_pl_t);
 
-    // Starting a scrtachpad may trigger an erase of scratchpad area so can be quite long operartion
-    // and confirm can be delayed for quite a long time. So set tiemout to high value (up to 5 sec).
-    res = WPC_Int_send_request_timeout(&request,
-                                       &confirm,
-                                       5000);
+    // Starting a scrtachpad may trigger an erase of scratchpad area so can be
+    // quite long operartion and confirm can be delayed for quite a long time.
+    // So set tiemout to high value (up to 5 sec).
+    res = WPC_Int_send_request_timeout(&request, &confirm, 5000);
 
     if (res < 0)
         return res;
 
-    LOGI("Start request result = 0x%02x\n", confirm.payload.sap_generic_confirm_payload.result);
+    LOGI("Start request result = 0x%02x\n",
+         confirm.payload.sap_generic_confirm_payload.result);
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
-int msap_scratchpad_block_request(uint32_t start_address,
-                                  uint8_t number_of_bytes,
-                                  uint8_t * bytes)
+int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_bytes, uint8_t * bytes)
 {
     wpc_frame_t request, confirm;
     int res;
@@ -253,18 +250,19 @@ int msap_scratchpad_block_request(uint32_t start_address,
     request.primitive_id = MSAP_SCRATCH_BLOCK_REQUEST;
     request.payload.msap_image_block_request_payload.start_add = start_address;
     request.payload.msap_image_block_request_payload.number_of_bytes = number_of_bytes;
-    request.payload_length = sizeof(msap_image_block_req_pl_t) - (MAXIMUM_SCRATCHPAD_BLOCK_SIZE - number_of_bytes);
+    request.payload_length = sizeof(msap_image_block_req_pl_t) -
+                             (MAXIMUM_SCRATCHPAD_BLOCK_SIZE - number_of_bytes);
 
     // Copy the block to the request
     memcpy(request.payload.msap_image_block_request_payload.bytes, bytes, number_of_bytes);
 
-    res = WPC_Int_send_request(&request,
-                               &confirm);
+    res = WPC_Int_send_request(&request, &confirm);
 
     if (res < 0)
         return res;
 
-    LOGD("Block request result = 0x%02x\n", confirm.payload.sap_generic_confirm_payload.result);
+    LOGD("Block request result = 0x%02x\n",
+         confirm.payload.sap_generic_confirm_payload.result);
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
@@ -276,8 +274,7 @@ int msap_scratchpad_status_request(msap_scratchpad_status_conf_pl_t * status_p)
     request.primitive_id = MSAP_SCRATCH_STATUS_REQUEST;
     request.payload_length = 0;
 
-    res = WPC_Int_send_request(&request,
-                               &confirm);
+    res = WPC_Int_send_request(&request, &confirm);
 
     if (res < 0)
         return res;
@@ -296,13 +293,13 @@ int msap_scratchpad_update_request()
     request.primitive_id = MSAP_SCRATCH_UPDATE_REQUEST;
     request.payload_length = 0;
 
-    res = WPC_Int_send_request(&request,
-                               &confirm);
+    res = WPC_Int_send_request(&request, &confirm);
 
     if (res < 0)
         return res;
 
-    LOGI("Update request result = 0x%02x\n", confirm.payload.sap_generic_confirm_payload.result);
+    LOGI("Update request result = 0x%02x\n",
+         confirm.payload.sap_generic_confirm_payload.result);
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
@@ -314,13 +311,13 @@ int msap_scratchpad_clear_request()
     request.primitive_id = MSAP_SCRATCH_CLEAR_REQUEST;
     request.payload_length = 0;
 
-    res = WPC_Int_send_request(&request,
-                               &confirm);
+    res = WPC_Int_send_request(&request, &confirm);
 
     if (res < 0)
         return res;
 
-    LOGI("Clear request result = 0x%02x\n", confirm.payload.sap_generic_confirm_payload.result);
+    LOGI("Clear request result = 0x%02x\n",
+         confirm.payload.sap_generic_confirm_payload.result);
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
@@ -333,19 +330,17 @@ int msap_scratchpad_remote_status(app_addr_t destination_address)
     request.payload.msap_image_remote_status_request_payload.target = destination_address;
     request.payload_length = sizeof(msap_image_remote_status_req_pl_t);
 
-    res = WPC_Int_send_request(&request,
-                               &confirm);
+    res = WPC_Int_send_request(&request, &confirm);
 
     if (res < 0)
         return res;
 
-    LOGI("Remote status request result = 0x%02x\n", confirm.payload.sap_generic_confirm_payload.result);
+    LOGI("Remote status request result = 0x%02x\n",
+         confirm.payload.sap_generic_confirm_payload.result);
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
-int msap_scratchpad_remote_update(app_addr_t destination_address,
-                                  uint8_t sequence,
-                                  uint16_t delay_s)
+int msap_scratchpad_remote_update(app_addr_t destination_address, uint8_t sequence, uint16_t delay_s)
 {
     wpc_frame_t request, confirm;
     int res;
@@ -356,13 +351,13 @@ int msap_scratchpad_remote_update(app_addr_t destination_address,
     request.payload.msap_image_remote_update_request_payload.delay_s = delay_s;
     request.payload_length = sizeof(msap_image_remote_update_req_pl_t);
 
-    res = WPC_Int_send_request(&request,
-                               &confirm);
+    res = WPC_Int_send_request(&request, &confirm);
 
     if (res < 0)
         return res;
 
-    LOGD("Remote update request result = 0x%02x\n", confirm.payload.sap_generic_confirm_payload.result);
+    LOGD("Remote update request result = 0x%02x\n",
+         confirm.payload.sap_generic_confirm_payload.result);
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
@@ -381,8 +376,8 @@ void msap_app_config_data_rx_indication_handler(msap_app_config_data_rx_ind_pl_t
     if (m_app_conf_cb != NULL)
     {
         m_app_conf_cb(payload->sequence_number,
-                    payload->diag_data_interval,
-                    payload->app_config_data);
+                      payload->diag_data_interval,
+                      payload->app_config_data);
     }
 }
 
@@ -393,9 +388,7 @@ void msap_image_remote_status_indication_handler(msap_image_remote_status_ind_pl
     if (m_remote_status_cb != NULL)
     {
         convert_internal_to_app_scratchpad_status(&app_status, &payload->status);
-        m_remote_status_cb(payload->source_address,
-                           &app_status,
-                           payload->update_timeout);
+        m_remote_status_cb(payload->source_address, &app_status, payload->update_timeout);
     }
 }
 
@@ -409,31 +402,33 @@ void msap_scan_nbors_indication_handler(msap_scan_nbors_ind_pl_t * payload)
 }
 
 // Macro to avoid code duplication
-#define REGISTER_CB(cb, internal_cb)  ({\
-    bool res = true;                    \
-    do {                                \
-    Platform_lock_request();            \
-    if (internal_cb != NULL)            \
-        res = false;                    \
-    else                                \
-        internal_cb = cb;               \
-    Platform_unlock_request();          \
-    }                                   \
-    while(0);                           \
-    res;                                \
-})
+#define REGISTER_CB(cb, internal_cb)   \
+    ({                                 \
+        bool res = true;               \
+        do                             \
+        {                              \
+            Platform_lock_request();   \
+            if (internal_cb != NULL)   \
+                res = false;           \
+            else                       \
+                internal_cb = cb;      \
+            Platform_unlock_request(); \
+        } while (0);                   \
+        res;                           \
+    })
 
-#define UNREGISTER_CB(internal_cb)  ({  \
-    bool res = true;                    \
-    do {                                \
-    Platform_lock_request();            \
-    res = (internal_cb != NULL);        \
-    internal_cb = NULL;                 \
-    Platform_unlock_request();          \
-    }                                   \
-    while(0);                           \
-    res;                                \
-})
+#define UNREGISTER_CB(internal_cb)       \
+    ({                                   \
+        bool res = true;                 \
+        do                               \
+        {                                \
+            Platform_lock_request();     \
+            res = (internal_cb != NULL); \
+            internal_cb = NULL;          \
+            Platform_unlock_request();   \
+        } while (0);                     \
+        res;                             \
+    })
 
 bool msap_register_for_app_config(onAppConfigDataReceived_cb_f cb)
 {

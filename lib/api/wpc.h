@@ -39,22 +39,22 @@ typedef uint8_t net_channel_t;
  */
 typedef enum
 {
-    APP_ROLE_SINK = 1,    //!< Node is sink
-    APP_ROLE_HEADNODE = 2,//!< Node is headnode
-    APP_ROLE_SUBNODE = 3, //!< Node is subnode (no routing of other's traffic)
-    APP_ROLE_UNKNOWN      //!< Erroneous role
+    APP_ROLE_SINK = 1,      //!< Node is sink
+    APP_ROLE_HEADNODE = 2,  //!< Node is headnode
+    APP_ROLE_SUBNODE = 3,   //!< Node is subnode (no routing of other's traffic)
+    APP_ROLE_UNKNOWN        //!< Erroneous role
 } app_role_e;
 
-#define APP_ROLE_MASK   0xf
+#define APP_ROLE_MASK 0xf
 
 /**
  * \brief Role options
  */
 typedef enum
 {
-    APP_ROLE_OPTION_LL = 0x10,      // !< Node is in low latency
-    APP_ROLE_OPTION_RELAY = 0x20,   // !< Node is only a relay
-    APP_ROLE_OPTION_AUTOROLE = 0x30 // !< Node is autorole
+    APP_ROLE_OPTION_LL = 0x10,       // !< Node is in low latency
+    APP_ROLE_OPTION_RELAY = 0x20,    // !< Node is only a relay
+    APP_ROLE_OPTION_AUTOROLE = 0x30  // !< Node is autorole
 } app_role_option_e;
 
 #define APP_ROLE_OPTION_MASK 0xf0
@@ -62,9 +62,10 @@ typedef enum
 /**
  * Various macros to manipulate roles
  */
-#define GET_BASE_ROLE(role)         (role & APP_ROLE_MASK)
-#define GET_ROLE_OPTIONS(role)      (role & APP_ROLE_OPTION_MASK)
-#define CREATE_ROLE(base, options)  ((base & APP_ROLE_MASK) | (options & APP_ROLE_OPTION_MASK))
+#define GET_BASE_ROLE(role) (role & APP_ROLE_MASK)
+#define GET_ROLE_OPTIONS(role) (role & APP_ROLE_OPTION_MASK)
+#define CREATE_ROLE(base, options) \
+    ((base & APP_ROLE_MASK) | (options & APP_ROLE_OPTION_MASK))
 
 /**
  * \brief   Application data QoS
@@ -80,8 +81,8 @@ typedef enum
  */
 typedef enum
 {
-    APP_ADDR_ANYSINK     = 0,          //!< Address is to any sink
-    APP_ADDR_BROADCAST   = 0xffffffff, //!< Address is broadcast to all
+    APP_ADDR_ANYSINK = 0,             //!< Address is to any sink
+    APP_ADDR_BROADCAST = 0xffffffff,  //!< Address is broadcast to all
 } app_special_addr_e;
 
 /**
@@ -101,35 +102,35 @@ typedef enum
  */
 typedef enum
 {
-    APP_RES_OK,                      //!< Everything is ok
-    APP_RES_STACK_NOT_STOPPED,       //!< Stack is not stopped
-    APP_RES_STACK_ALREADY_STOPPED,   //!< Stack is already stopped
-    APP_RES_STACK_ALREADY_STARTED,   //!< Stack is already started
-    APP_RES_INVALID_VALUE,           //!< A parameter has an invalid value
-    APP_RES_ROLE_NOT_SET,            //!< The node role is not set
-    APP_RES_NODE_ADD_NOT_SET,        //!< The node address is not set
-    APP_RES_NET_ADD_NOT_SET,         //!< The network address is not set
-    APP_RES_NET_CHAN_NOT_SET,        //!< The network channel is not set
-    APP_RES_STACK_IS_STOPPED,        //!< Stack is stopped
-    APP_RES_NODE_NOT_A_SINK,         //!< Node is not a sink
-    APP_RES_UNKNOWN_DEST,            //!< Unknown destination address
-    APP_RES_NO_CONFIG,               //!< No configuration received/set
-    APP_RES_ALREADY_REGISTERED,      //!< Cannot register several times
-    APP_RES_NOT_REGISTERED,          //!< Cannot unregister if not registered first
-    APP_RES_ATTRIBUTE_NOT_SET,       //!< Attribute is not set yet
-    APP_RES_ACCESS_DENIED,           //!< Access denied
-    APP_RES_DATA_ERROR,              //!< Error in data
-    APP_RES_NO_SCRATCHPAD_START,     //!< No scratchpad start request sent
-    APP_RES_NO_VALID_SCRATCHPAD,     //!< No valid scratchpad
-    APP_RES_NOT_A_SINK,              //!< Stack is not a sink
-    APP_RES_OUT_OF_MEMORY,           //!< Out of memory
-    APP_RES_INVALID_DIAG_INTERVAL,   //!< Invalid diag interval
-    APP_RES_INVALID_SEQ,             //!< Invalid sequence number
-    APP_RES_INVALID_START_ADDRESS,   //!< Start address is invalid
-    APP_RES_INVALID_NUMBER_OF_BYTES, //!< Invalid number of bytes
-    APP_RES_INVALID_SCRATCHPAD,      //!< Scratchpad is not valid
-    APP_RES_INVALID_REBOOT_DELAY,    //!< Invalid reboot delay
-    APP_RES_INTERNAL_ERROR           //!< WPC internal error
+    APP_RES_OK,                     //!< Everything is ok
+    APP_RES_STACK_NOT_STOPPED,      //!< Stack is not stopped
+    APP_RES_STACK_ALREADY_STOPPED,  //!< Stack is already stopped
+    APP_RES_STACK_ALREADY_STARTED,  //!< Stack is already started
+    APP_RES_INVALID_VALUE,          //!< A parameter has an invalid value
+    APP_RES_ROLE_NOT_SET,           //!< The node role is not set
+    APP_RES_NODE_ADD_NOT_SET,       //!< The node address is not set
+    APP_RES_NET_ADD_NOT_SET,        //!< The network address is not set
+    APP_RES_NET_CHAN_NOT_SET,       //!< The network channel is not set
+    APP_RES_STACK_IS_STOPPED,       //!< Stack is stopped
+    APP_RES_NODE_NOT_A_SINK,        //!< Node is not a sink
+    APP_RES_UNKNOWN_DEST,           //!< Unknown destination address
+    APP_RES_NO_CONFIG,              //!< No configuration received/set
+    APP_RES_ALREADY_REGISTERED,     //!< Cannot register several times
+    APP_RES_NOT_REGISTERED,       //!< Cannot unregister if not registered first
+    APP_RES_ATTRIBUTE_NOT_SET,    //!< Attribute is not set yet
+    APP_RES_ACCESS_DENIED,        //!< Access denied
+    APP_RES_DATA_ERROR,           //!< Error in data
+    APP_RES_NO_SCRATCHPAD_START,  //!< No scratchpad start request sent
+    APP_RES_NO_VALID_SCRATCHPAD,  //!< No valid scratchpad
+    APP_RES_NOT_A_SINK,           //!< Stack is not a sink
+    APP_RES_OUT_OF_MEMORY,        //!< Out of memory
+    APP_RES_INVALID_DIAG_INTERVAL,    //!< Invalid diag interval
+    APP_RES_INVALID_SEQ,              //!< Invalid sequence number
+    APP_RES_INVALID_START_ADDRESS,    //!< Start address is invalid
+    APP_RES_INVALID_NUMBER_OF_BYTES,  //!< Invalid number of bytes
+    APP_RES_INVALID_SCRATCHPAD,       //!< Scratchpad is not valid
+    APP_RES_INVALID_REBOOT_DELAY,     //!< Invalid reboot delay
+    APP_RES_INTERNAL_ERROR            //!< WPC internal error
 } app_res_e;
 
 /**
@@ -137,19 +138,21 @@ typedef enum
  */
 typedef struct
 {
-    uint32_t scrat_len;                 //!< Stored scratchpad length in bytes
-    uint16_t scrat_crc;                 //!< Stored scratchpad crc
-    uint8_t  scrat_seq_number;          //!< Stored scratchpad sequence number
-    uint8_t  scrat_type;                //!< Stored scratchpad type
-    uint8_t  scrat_status;              //!< Stored scratchpad status
-    uint32_t processed_scrat_len;       //!< Processed scratchpad length in bytes
-    uint16_t processed_scrat_crc;       //!< Processed scratchpad crc
-    uint8_t  processed_scrat_seq_number;//!< Processed scratchpad sequence number
-    uint32_t firmware_memory_area_id;   //!< Firmware memory id
-    uint8_t  firmware_major_ver;        //!< Firmware major version of running firmware
-    uint8_t  firmware_minor_ver;        //!< Firmware minor version of running firmware
-    uint8_t  firmware_maint_ver;        //!< Firmware maintenance version of running firmware
-    uint8_t  firmware_dev_ver;          //!< Firmware development version of running firmware
+    uint32_t scrat_len;            //!< Stored scratchpad length in bytes
+    uint16_t scrat_crc;            //!< Stored scratchpad crc
+    uint8_t scrat_seq_number;      //!< Stored scratchpad sequence number
+    uint8_t scrat_type;            //!< Stored scratchpad type
+    uint8_t scrat_status;          //!< Stored scratchpad status
+    uint32_t processed_scrat_len;  //!< Processed scratchpad length in bytes
+    uint16_t processed_scrat_crc;  //!< Processed scratchpad crc
+    uint8_t processed_scrat_seq_number;  //!< Processed scratchpad sequence number
+    uint32_t firmware_memory_area_id;    //!< Firmware memory id
+    uint8_t firmware_major_ver;  //!< Firmware major version of running firmware
+    uint8_t firmware_minor_ver;  //!< Firmware minor version of running firmware
+    uint8_t firmware_maint_ver;  //!< Firmware maintenance version of running
+                                 //!< firmware
+    uint8_t firmware_dev_ver;    //!< Firmware development version of running
+                                 //!< firmware
 } app_scratchpad_status_t;
 
 /**
@@ -158,13 +161,13 @@ typedef struct
 typedef struct
 {
     uint32_t add;
-    uint8_t  link_rel;
-    uint8_t  norm_rssi;
-    uint8_t  cost;
-    uint8_t  channel;
-    uint8_t  nbor_type;
-    uint8_t  tx_power;
-    uint8_t  rx_power;
+    uint8_t link_rel;
+    uint8_t norm_rssi;
+    uint8_t cost;
+    uint8_t channel;
+    uint8_t nbor_type;
+    uint8_t tx_power;
+    uint8_t rx_power;
     uint16_t last_update;
 } app_nbor_info_t;
 
@@ -176,32 +179,31 @@ typedef struct
  *          Time spent in stack buffers in ms
  * \param   result
  */
-typedef void (*onDataSent_cb_f)(uint16_t pduid,
-                                uint32_t buffering_delay,
-                                uint8_t result);
+typedef void (*onDataSent_cb_f)(uint16_t pduid, uint32_t buffering_delay, uint8_t result);
 
 /**
  * \brief   Message to send
  */
 typedef struct
 {
-    const uint8_t * bytes;              //!< Payload
-    app_addr_t dst_addr;                //!< Destination address
-    onDataSent_cb_f on_data_sent_cb;    //!< Callback to call when message is sent (can be NULL)
-    uint32_t buffering_delay;           //!< Initial buffering delay
-    uint16_t pdu_id;                    //!< Pdu id (only needed if cb set)
-    uint8_t num_bytes;                  //!< Size of payload
-    uint8_t src_ep;                     //!< Source endpoint
-    uint8_t dst_ep;                     //!< Destination endpoint
-    uint8_t hop_limit;                  //!< Hop limit for this transmission
-    app_qos_e qos;                      //!< QoS to use for transmission
-    bool is_unack_csma_ca;              //!< If true, only sent to CB-MAC nodes
+    const uint8_t * bytes;            //!< Payload
+    app_addr_t dst_addr;              //!< Destination address
+    onDataSent_cb_f on_data_sent_cb;  //!< Callback to call when message is
+                                      //!< sent (can be NULL)
+    uint32_t buffering_delay;         //!< Initial buffering delay
+    uint16_t pdu_id;                  //!< Pdu id (only needed if cb set)
+    uint8_t num_bytes;                //!< Size of payload
+    uint8_t src_ep;                   //!< Source endpoint
+    uint8_t dst_ep;                   //!< Destination endpoint
+    uint8_t hop_limit;                //!< Hop limit for this transmission
+    app_qos_e qos;                    //!< QoS to use for transmission
+    bool is_unack_csma_ca;            //!< If true, only sent to CB-MAC nodes
 } app_message_t;
 
 /**
  * \brief   Maximum number of neighbors (defined in protocol)
  */
-#define MAXIMUM_NUMBER_OF_NEIGHBOR    8
+#define MAXIMUM_NUMBER_OF_NEIGHBOR 8
 
 /**
  * \brief   Neighbors info list
@@ -384,8 +386,7 @@ app_res_e WPC_get_firmware_version(uint16_t version[4]);
  *          Pointer to store the last available channel
  * \return  Return code of the operation
  */
-app_res_e WPC_get_channel_limits(uint8_t * first_channel_p,
-                                 uint8_t * last_channel_p);
+app_res_e WPC_get_channel_limits(uint8_t * first_channel_p, uint8_t * last_channel_p);
 
 /**
  * \brief   Clear all persistent attributes
@@ -459,10 +460,7 @@ app_res_e WPC_get_app_config_data_size(uint8_t * value_p);
  * \return  Return code of the operation
  * \note    This call can only be made from a sink node
  */
-app_res_e WPC_set_app_config_data(uint8_t seq,
-                                  uint16_t interval,
-                                  uint8_t * config_p,
-                                  uint8_t size);
+app_res_e WPC_set_app_config_data(uint8_t seq, uint16_t interval, uint8_t * config_p, uint8_t size);
 
 /**
  * \brief   Get app config data
@@ -478,10 +476,8 @@ app_res_e WPC_set_app_config_data(uint8_t seq,
  *          or lower to size returned by WPC_get_app_config_data_size
  * \return  Return code of the operation
  */
-app_res_e WPC_get_app_config_data(uint8_t * seq_p,
-                                  uint16_t * interval_p,
-                                  uint8_t * config_p,
-                                  uint8_t size);
+app_res_e
+WPC_get_app_config_data(uint8_t * seq_p, uint16_t * interval_p, uint8_t * config_p, uint8_t size);
 
 /**
  * \brief   Set sink cost
@@ -511,9 +507,7 @@ app_res_e WPC_get_sink_cost(uint8_t * cost_p);
  *          Pointer to the received config data
  *          Size is equal to returned size by WPC_get_app_config_data_size
  */
-typedef void (*onAppConfigDataReceived_cb_f)(uint8_t  seq,
-                                             uint16_t interval,
-                                             uint8_t * config_p);
+typedef void (*onAppConfigDataReceived_cb_f)(uint8_t seq, uint16_t interval, uint8_t * config_p);
 
 /**
  * \brief   Register for receiving app config data
@@ -571,12 +565,12 @@ app_res_e WPC_get_PDU_buffer_capacity(uint8_t * capacity_p);
 app_res_e WPC_get_remaining_energy(uint8_t * energy_p);
 
 /**
-* \brief   Set the remaining energy
-* \param   energy
-*          New energy value in 0 - 255 range
-* \return  Return code of the operation
-* \note    See WP-RM-100 document for more details
-*/
+ * \brief   Set the remaining energy
+ * \param   energy
+ *          New energy value in 0 - 255 range
+ * \return  Return code of the operation
+ * \note    See WP-RM-100 document for more details
+ */
 app_res_e WPC_set_remaining_energy(uint8_t energy);
 
 /**
@@ -589,12 +583,12 @@ app_res_e WPC_set_remaining_energy(uint8_t energy);
 app_res_e WPC_get_autostart(uint8_t * enable_p);
 
 /**
-* \brief   Set the autostart state
-* \param   enable
-*          True to enable autostart, false otherwise
-* \return  Return code of the operation
-* \note    See WP-RM-100 document for more details
-*/
+ * \brief   Set the autostart state
+ * \param   enable
+ *          True to enable autostart, false otherwise
+ * \return  Return code of the operation
+ * \note    See WP-RM-100 document for more details
+ */
 app_res_e WPC_set_autostart(uint8_t enable);
 
 /**
@@ -625,8 +619,7 @@ app_res_e WPC_get_system_time(uint32_t * time_p);
  *          Updated if return code is APP_RES_OK
  * \return  Return code of the operation
  */
-app_res_e WPC_get_access_cycle_range(uint16_t * min_ac_p,
-                                     uint16_t * max_ac_p);
+app_res_e WPC_get_access_cycle_range(uint16_t * min_ac_p, uint16_t * max_ac_p);
 
 /**
  * \brief   Set the current access cycle range
@@ -636,8 +629,7 @@ app_res_e WPC_get_access_cycle_range(uint16_t * min_ac_p,
  *          New maximum access cycle
  * \return  Return code of the operation
  */
-app_res_e WPC_set_access_cycle_range(uint16_t min_ac,
-                                     uint16_t max_ac);
+app_res_e WPC_set_access_cycle_range(uint16_t min_ac, uint16_t max_ac);
 
 /**
  * \brief   Get the current access cycle limits range
@@ -649,8 +641,7 @@ app_res_e WPC_set_access_cycle_range(uint16_t min_ac,
  *          Updated if return code is APP_RES_OK
  * \return  Return code of the operation
  */
-app_res_e WPC_get_access_cycle_limits(uint16_t * min_ac_l_p,
-                                      uint16_t * max_ac_l_p);
+app_res_e WPC_get_access_cycle_limits(uint16_t * min_ac_l_p, uint16_t * max_ac_l_p);
 
 /**
  * \brief   Get the current access cycle
@@ -688,8 +679,7 @@ app_res_e WPC_get_local_scratchpad_status(app_scratchpad_status_t * status);
  *          Sequence of the scratchpad to upload
  * \return  Return code of the operation
  */
-app_res_e WPC_start_local_scratchpad_update(uint32_t len,
-                                            uint8_t seq);
+app_res_e WPC_start_local_scratchpad_update(uint32_t len, uint8_t seq);
 
 /**
  * \brief   Upload a scratchpad block
@@ -701,9 +691,7 @@ app_res_e WPC_start_local_scratchpad_update(uint32_t len,
  *          Offset of the block relatively to the beginning of scratchpad
  * \return  Return code of the operation
  */
-app_res_e WPC_upload_local_block_scratchpad(uint32_t len,
-                                            uint8_t * bytes,
-                                            uint32_t start);
+app_res_e WPC_upload_local_block_scratchpad(uint32_t len, uint8_t * bytes, uint32_t start);
 
 /**
  * \brief   Upload a full scratchpad
@@ -715,9 +703,7 @@ app_res_e WPC_upload_local_block_scratchpad(uint32_t len,
  *          Sequence of the scratchpad to upload
  * \return  Return code of the operation
  */
-app_res_e WPC_upload_local_scratchpad(uint32_t len,
-                                      uint8_t * bytes,
-                                      uint8_t seq);
+app_res_e WPC_upload_local_scratchpad(uint32_t len, uint8_t * bytes, uint8_t seq);
 
 /**
  * \brief   Clear the local stored scratchpad
@@ -859,8 +845,7 @@ typedef bool (*onDataReceived_cb_f)(const uint8_t * bytes,
  *          so the handling of callback must be kept as simple
  *          as possible or dispatched to another thread for long operations.
  */
-app_res_e WPC_register_for_data(uint8_t dst_ep,
-                                onDataReceived_cb_f onDataReceived);
+app_res_e WPC_register_for_data(uint8_t dst_ep, onDataReceived_cb_f onDataReceived);
 
 /**
  * \brief   Unregister for receiving data
@@ -907,7 +892,7 @@ app_res_e WPC_unregister_for_remote_status();
  * \param   scan_ready
  *          1 if scan is done
  */
-typedef void (*onScanNeighborsDone_cb_f)(uint8_t  scan_ready);
+typedef void (*onScanNeighborsDone_cb_f)(uint8_t scan_ready);
 
 /**
  * \brief   Register for receiving scan neighbors done event
@@ -949,6 +934,5 @@ app_res_e WPC_register_for_stack_status(onStackStatusReceived_cb_f onStackStatus
  * \return  Return code of the operation
  */
 app_res_e WPC_unregister_from_stack_status();
-
 
 #endif

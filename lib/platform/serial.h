@@ -32,10 +32,10 @@ int Serial_close(void);
  *          the buffer to store read char
  * \param   timeout_ms
  *          timeout in ms to receive char
- * \return  the number of bytes read, 0 in case of timeout or -1 in case of error
+ * \return  the number of bytes read, 0 in case of timeout or -1 in case of
+ * error
  */
-int Serial_read(unsigned char * c,
-                unsigned int timeout_ms);
+int Serial_read(unsigned char * c, unsigned int timeout_ms);
 
 /**
  * \brief   Write data from the serial link
@@ -46,4 +46,3 @@ int Serial_read(unsigned char * c,
  * \return  The number of written char or a negative value in case of error
  */
 int Serial_write(const unsigned char * buffer, unsigned int buffer_size);
-
