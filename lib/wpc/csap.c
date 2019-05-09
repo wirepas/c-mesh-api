@@ -28,7 +28,7 @@ int csap_factory_reset_request()
 
     res = WPC_Int_send_request(&request, &confirm);
 
-    if(res < 0)
+    if (res < 0)
         return res;
 
     LOGI("Reset request result = 0x%02x\n",

@@ -75,7 +75,7 @@ static uint16_t crc_fromBuffer(uint8_t * buf, uint32_t len)
     uint8_t index;
     uint32_t i;
 
-    for(i = 0; i < len; i++)
+    for (i = 0; i < len; i++)
     {
         index = buf[i] ^ (crc >> 8);
         crc = crc_ccitt_lut[index] ^ (crc << 8);
@@ -95,10 +95,10 @@ static uint32_t slip_decode_buffer(uint8_t * buffer, uint32_t len)
 {
     uint8_t write = 0;
     uint32_t read;
-    for(read = 0; read < len; read++)
+    for (read = 0; read < len; read++)
     {
         uint8_t current = buffer[read];
-        if(current == ESC_SLIP_OCTET)
+        if (current == ESC_SLIP_OCTET)
         {
             read++;
             current = (buffer[read] == END_SUBS_OCTET ? END_SLIP_OCTET : ESC_SLIP_OCTET);
@@ -126,19 +126,19 @@ slip_encode_buffer(uint8_t * buffer, uint32_t len, uint8_t * buffer_escaped, uin
 {
     uint8_t write = 0;
     uint32_t read;
-    for(read = 0; read < len; read++)
+    for (read = 0; read < len; read++)
     {
         uint8_t current = buffer[read];
-        if(current == END_SLIP_OCTET || current == ESC_SLIP_OCTET)
+        if (current == END_SLIP_OCTET || current == ESC_SLIP_OCTET)
         {
             // Check for buffer_escaped overflow
-            if(write >= len_escaped)
+            if (write >= len_escaped)
                 return WPC_INT_WRONG_BUFFER_SIZE;
             buffer_escaped[write++] = ESC_SLIP_OCTET;
             current = (current == END_SLIP_OCTET ? END_SUBS_OCTET : ESC_SUBS_OCTET);
         }
         // Check for buffer_escaped overflow
-        if(write >= len_escaped)
+        if (write >= len_escaped)
             return WPC_INT_WRONG_BUFFER_SIZE;
 
         buffer_escaped[write++] = current;
@@ -157,7 +157,7 @@ int Slip_decode(uint8_t * buffer, uint32_t len)
     /* Get crc from frame */
     crc_from_frame = uint16_decode_le((uint8_t *) (buffer + decoded_len - 2));
     /* Compare crc */
-    if(crc != crc_from_frame)
+    if (crc != crc_from_frame)
     {
         LOG_PRINT_BUFFER(buffer, len);
         LOGE("Wrong crc 0x%04x (computed) vs 0x%04x (received)\n", crc, crc_from_frame);
@@ -179,7 +179,7 @@ int Slip_encode(uint8_t * buffer_in, uint32_t len_in, uint8_t * buffer_out, uint
     total_size = slip_encode_buffer(buffer_in, len_in, buffer_out, len_out);
 
     // Check that the buffer is big enough
-    if(total_size == -1)
+    if (total_size == -1)
     {
         LOGE("Provided buffer in encode is too small\n");
         return WPC_INT_WRONG_BUFFER_SIZE;
@@ -187,12 +187,12 @@ int Slip_encode(uint8_t * buffer_in, uint32_t len_in, uint8_t * buffer_out, uint
 
     // Add the escaped crc to the end of the buffer in LE
     i = 0;
-    while(i < 2)
+    while (i < 2)
     {
         uint8_t temp = (crc >> (8 * i)) & 0xff;
         int temp_size;
         temp_size = slip_encode_buffer(&temp, 1, buffer_out + total_size, len_out - total_size);
-        if(temp_size == -1)
+        if (temp_size == -1)
         {
             LOGE("Provided buffer in encode is too small\n");
             return WPC_INT_WRONG_BUFFER_SIZE;
@@ -213,7 +213,7 @@ int Slip_send_buffer(uint8_t * buffer, uint32_t len)
     uint8_t encoded_buffer[MAX_SIZE_ENCODED_BUFFER(len)];
 
     // Add 3 end symbols at the beginning
-    for(int i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
         encoded_buffer[i] = END_SLIP_OCTET;
 
     size = Slip_encode(buffer, len, encoded_buffer + 3, sizeof(encoded_buffer) - 3);
@@ -224,7 +224,7 @@ int Slip_send_buffer(uint8_t * buffer, uint32_t len)
     LOG_PRINT_BUFFER(encoded_buffer, size + 4);
 
     written_size = write_function(encoded_buffer, size + 4);
-    if(written_size != size + 4)
+    if (written_size != size + 4)
     {
         LOGE("Not able to write all the encoded packet %d vs %d\n", written_size, size + 4);
         return WPC_INT_GEN_ERROR;
@@ -243,7 +243,7 @@ int Slip_get_buffer(uint8_t * buffer, uint32_t len, uint16_t timeout_ms)
     bool start_of_frame_detected = false;
 
     // LOGD("In Slip_get_buffer with timeout = %d\n", timeout_s);
-    while(1)
+    while (1)
     {
         // Blocking call for timeout_ms
         // In theory, once size is different than 0, timeout
@@ -251,26 +251,26 @@ int Slip_get_buffer(uint8_t * buffer, uint32_t len, uint16_t timeout_ms)
         // change anything as once first byte is received, others
         // are following.
         res = read_function(&read, timeout_ms);
-        if(res == 0)
+        if (res == 0)
         {
             LOGW("Timeout to receive frame (size=%d)\n", size);
             return WPC_INT_TIMEOUT_ERROR;
         }
-        else if(res < 0 || res > 1)
+        else if (res < 0 || res > 1)
         {
             LOGE("Problem in getting buffer res = %d\n", res);
         }
-        else if(read == END_SLIP_OCTET)
+        else if (read == END_SLIP_OCTET)
         {
 #ifdef PRINT_RECEIVED_CHAR
             LOG_PRINT_BUFFER(&read, 1);
 #endif
-            if(start_of_frame_detected)
+            if (start_of_frame_detected)
             {
                 // End of the frame, exit the loop
                 // Bugfix: sometimes 00 and C0 bytes can be sent while switching
                 // off the stack. It results in synchronization lost.
-                if(size < 4)
+                if (size < 4)
                 {
                     // It was probably a wrong frame and it is
                     // the start of a frame instead of the end
@@ -278,7 +278,7 @@ int Slip_get_buffer(uint8_t * buffer, uint32_t len, uint16_t timeout_ms)
                     size = 0;
                     continue;
                 }
-                else if(receiving_buffer[0] == 0x7F)
+                else if (receiving_buffer[0] == 0x7F)
                 {
                     // Id 0x7f is used for internal debugging
                     // It shouldn't be produced in released builds but
@@ -296,14 +296,14 @@ int Slip_get_buffer(uint8_t * buffer, uint32_t len, uint16_t timeout_ms)
                 start_of_frame_detected = true;
             }
         }
-        else if(start_of_frame_detected)
+        else if (start_of_frame_detected)
         {
 #ifdef PRINT_RECEIVED_CHAR
             LOG_PRINT_BUFFER(&read, 1);
 #endif
             receiving_buffer[size] = read;
             size++;
-            if(size > sizeof(receiving_buffer))
+            if (size > sizeof(receiving_buffer))
             {
                 LOGE("Receiving too much bytes from serial line %d vs %d\n",
                      size,
@@ -319,7 +319,7 @@ int Slip_get_buffer(uint8_t * buffer, uint32_t len, uint16_t timeout_ms)
 
     // Now, decode the frame
     decoded_size = Slip_decode(receiving_buffer, size);
-    if(decoded_size > 0 && decoded_size <= len)
+    if (decoded_size > 0 && decoded_size <= len)
     {
         memcpy(buffer, receiving_buffer, decoded_size);
     }
@@ -331,7 +331,7 @@ int Slip_get_buffer(uint8_t * buffer, uint32_t len, uint16_t timeout_ms)
 
 int Slip_init(write_f write, read_f read)
 {
-    if(!write || !read)
+    if (!write || !read)
         return WPC_INT_WRONG_PARAM_ERROR;
 
     write_function = write;

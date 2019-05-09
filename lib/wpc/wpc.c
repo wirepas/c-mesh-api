@@ -24,7 +24,7 @@
 #define convert_error_code(LUT, error)          \
     ({                                          \
         app_res_e ret = APP_RES_INTERNAL_ERROR; \
-        if(error >= 0 && error < sizeof(LUT))   \
+        if (error >= 0 && error < sizeof(LUT))  \
         {                                       \
             ret = LUT[error];                   \
         }                                       \
@@ -83,7 +83,7 @@ app_res_e WPC_get_node_address(app_addr_t * addr_p)
     int res = csap_attribute_read_request(C_NODE_ADDRESS_ID, 4, att);
 
     ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
-    if(ret != APP_RES_OK)
+    if (ret != APP_RES_OK)
     {
         return ret;
     }
@@ -111,7 +111,7 @@ app_res_e WPC_get_network_address(net_addr_t * addr_p)
     int res = csap_attribute_read_request(C_NETWORK_ADDRESS_ID, 3, att);
 
     ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
-    if(ret != APP_RES_OK)
+    if (ret != APP_RES_OK)
     {
         return ret;
     }
@@ -170,7 +170,7 @@ app_res_e WPC_get_mesh_API_version(uint16_t * value_p)
     int res = csap_attribute_read_request(C_MESH_API_VER_ID, 2, att);
 
     ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
-    if(ret != APP_RES_OK)
+    if (ret != APP_RES_OK)
     {
         return ret;
     }
@@ -184,13 +184,13 @@ app_res_e WPC_get_firmware_version(uint16_t version[4])
     app_res_e ret;
     const uint8_t IDs[4] = {C_FIRMWARE_MAJOR_ID, C_FIRMWARE_MINOR_ID, C_FIRMWARE_MAINT_ID, C_FIRMWARE_DEV_ID};
 
-    for(int i = 0; i < sizeof(IDs); i++)
+    for (int i = 0; i < sizeof(IDs); i++)
     {
         uint8_t att[2];
         int res = csap_attribute_read_request(IDs[i], 2, att);
 
         ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
-        if(ret != APP_RES_OK)
+        if (ret != APP_RES_OK)
         {
             return ret;
         }
@@ -213,7 +213,7 @@ app_res_e WPC_is_cipher_key_set(bool * set_p)
     uint8_t key[16];
     // Try to read the key only to get the error code
     int res = csap_attribute_read_request(C_CIPHER_KEY_ID, 16, key);
-    if(res < 0)
+    if (res < 0)
     {
         return APP_RES_INTERNAL_ERROR;
     }
@@ -242,7 +242,7 @@ app_res_e WPC_is_authentication_key_set(bool * set_p)
     // Try to read the key only to get the error code
     int res = csap_attribute_read_request(C_AUTH_KEY_ID, 16, key);
 
-    if(res < 0)
+    if (res < 0)
     {
         return APP_RES_INTERNAL_ERROR;
     }
@@ -266,7 +266,7 @@ app_res_e WPC_get_channel_limits(uint8_t * first_channel_p, uint8_t * last_chann
     int res = csap_attribute_read_request(C_CHANNEL_LIM_ID, 2, att);
 
     ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
-    if(ret != APP_RES_OK)
+    if (ret != APP_RES_OK)
     {
         return ret;
     }
@@ -305,7 +305,7 @@ app_res_e WPC_get_hw_magic(uint16_t * value_p)
     int res = csap_attribute_read_request(C_HW_MAGIC, 2, att);
 
     ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
-    if(ret != APP_RES_OK)
+    if (ret != APP_RES_OK)
     {
         return ret;
     }
@@ -321,7 +321,7 @@ app_res_e WPC_get_stack_profile(uint16_t * value_p)
     int res = csap_attribute_read_request(C_STACK_PROFILE, 2, att);
 
     ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
-    if(ret != APP_RES_OK)
+    if (ret != APP_RES_OK)
     {
         return ret;
     }
@@ -337,7 +337,7 @@ app_res_e WPC_get_channel_map(uint32_t * value_p)
     int res = csap_attribute_read_request(C_CHANNEL_MAP, 4, att);
 
     ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
-    if(ret != APP_RES_OK)
+    if (ret != APP_RES_OK)
     {
         return ret;
     }
@@ -371,20 +371,20 @@ app_res_e WPC_get_app_config_data(uint8_t * seq_p, uint16_t * interval_p, uint8_
 
     // First get max app config size
     app_res_e max_size_res = WPC_get_app_config_data_size(&max_size);
-    if(max_size_res != APP_RES_OK)
+    if (max_size_res != APP_RES_OK)
     {
         return max_size_res;
     }
 
     // Check with provided size
-    if(size > max_size)
+    if (size > max_size)
     {
         return APP_RES_INVALID_VALUE;
     }
 
     res = msap_app_config_data_read_request(seq_p, &interval_le, config, size);
     ret = convert_error_code(APP_CONFIG_READ_ERROR_CODE_LUT, res);
-    if(ret != APP_RES_OK)
+    if (ret != APP_RES_OK)
     {
         return ret;
     }
@@ -411,13 +411,13 @@ app_res_e WPC_set_app_config_data(uint8_t seq, uint16_t interval, uint8_t * conf
 
     // First get max app config size
     app_res_e max_size_res = WPC_get_app_config_data_size(&max_size);
-    if(max_size_res != APP_RES_OK)
+    if (max_size_res != APP_RES_OK)
     {
         return max_size_res;
     }
 
     // Check with provided size
-    if(size > max_size)
+    if (size > max_size)
     {
         return APP_RES_INVALID_VALUE;
     }
@@ -457,12 +457,12 @@ static bool get_statck_status()
     uint8_t status;
     uint8_t max_attempt = MAX_GET_STATUS_ATTEMPT;
 
-    while(WPC_get_stack_status(&status) != APP_RES_OK && max_attempt-- > 0)
+    while (WPC_get_stack_status(&status) != APP_RES_OK && max_attempt-- > 0)
     {
         LOGD("Cannot get status after start/stop, try again...\n");
     }
 
-    if(max_attempt == 0)
+    if (max_attempt == 0)
     {
         LOGE("Cannot get stack status after %d attempts\n", MAX_GET_STATUS_ATTEMPT);
         return false;
@@ -473,23 +473,23 @@ static bool get_statck_status()
 app_res_e WPC_start_stack(void)
 {
     int res = msap_stack_start_request(0);
-    if((res & 0x1) == 0x01)
+    if ((res & 0x1) == 0x01)
     {
         return APP_RES_STACK_ALREADY_STARTED;
     }
-    else if((res & 0x2) == 0x2)
+    else if ((res & 0x2) == 0x2)
     {
         return APP_RES_NET_ADD_NOT_SET;
     }
-    else if((res & 0x4) == 0x4)
+    else if ((res & 0x4) == 0x4)
     {
         return APP_RES_NODE_ADD_NOT_SET;
     }
-    else if((res & 0x8) == 0x8)
+    else if ((res & 0x8) == 0x8)
     {
         return APP_RES_ROLE_NOT_SET;
     }
-    else if(res != 0)
+    else if (res != 0)
     {
         return APP_RES_INTERNAL_ERROR;
     }
@@ -498,7 +498,7 @@ app_res_e WPC_start_stack(void)
     // of service but let's poll for it to be symetric with stop
     // and for some reason it was seen on some platforms that the
     // first request following a start is lost
-    if(!get_statck_status())
+    if (!get_statck_status())
     {
         return APP_RES_INTERNAL_ERROR;
     }
@@ -510,18 +510,18 @@ app_res_e WPC_stop_stack(void)
 {
     int res = msap_stack_stop_request();
 
-    if(res == 1)
+    if (res == 1)
     {
         return APP_RES_STACK_ALREADY_STOPPED;
     }
-    else if(res < 0)
+    else if (res < 0)
     {
         return APP_RES_INTERNAL_ERROR;
     }
 
     // A stop of the stack will reboot the device
     // Wait for the stack to be up again
-    if(!get_statck_status())
+    if (!get_statck_status())
     {
         return APP_RES_INTERNAL_ERROR;
     }
@@ -590,7 +590,7 @@ app_res_e WPC_get_system_time(uint32_t * time_p)
     int res = msap_attribute_read_request(MSAP_SYSTEM_TIME, 4, att);
 
     ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
-    if(ret != APP_RES_OK)
+    if (ret != APP_RES_OK)
     {
         return ret;
     }
@@ -607,7 +607,7 @@ app_res_e WPC_get_access_cycle_range(uint16_t * min_ac_p, uint16_t * max_ac_p)
     int res = msap_attribute_read_request(MSAP_ACCESS_CYCLE_RANGE, 4, att);
 
     ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
-    if(ret != APP_RES_OK)
+    if (ret != APP_RES_OK)
     {
         return ret;
     }
@@ -635,7 +635,7 @@ app_res_e WPC_get_access_cycle_limits(uint16_t * min_ac_l_p, uint16_t * max_ac_l
     int res = msap_attribute_read_request(MSAP_ACCESS_CYCLE_LIMITS, 4, att);
 
     ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
-    if(ret != APP_RES_OK)
+    if (ret != APP_RES_OK)
     {
         return ret;
     }
@@ -652,7 +652,7 @@ app_res_e WPC_get_current_access_cycle(uint16_t * cur_ac_p)
     int res = msap_attribute_read_request(MSAP_CURRENT_ACCESS_CYCLE, 2, att);
 
     ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
-    if(ret != APP_RES_OK)
+    if (ret != APP_RES_OK)
     {
         return ret;
     }
@@ -673,7 +673,7 @@ app_res_e WPC_get_local_scratchpad_status(app_scratchpad_status_t * status_p)
 
     // There is no return code from this request
     res = msap_scratchpad_status_request(&internal_status);
-    if(res != 0)
+    if (res != 0)
     {
         return APP_RES_INTERNAL_ERROR;
     }
@@ -690,7 +690,7 @@ app_res_e WPC_upload_local_scratchpad(uint32_t len, uint8_t * bytes, uint8_t seq
     app_res_e res;
 
     res = WPC_start_local_scratchpad_update(len, seq);
-    if(res != APP_RES_OK)
+    if (res != APP_RES_OK)
     {
         LOGE("Cannot start scratchpad update\n");
         return res;
@@ -738,13 +738,13 @@ app_res_e WPC_upload_local_block_scratchpad(uint32_t len, uint8_t * bytes, uint3
     uint8_t max_block_size, block_size;
 
     app_res = WPC_get_scratchpad_block_max(&max_block_size);
-    if(app_res != APP_RES_OK)
+    if (app_res != APP_RES_OK)
     {
         LOGE("Cannot get max block scratchpad size\n");
         return app_res;
     }
 
-    while(loaded < len)
+    while (loaded < len)
     {
         uint32_t remaining = len - loaded;
         block_size = (remaining > max_block_size) ? max_block_size : remaining;
@@ -752,13 +752,13 @@ app_res_e WPC_upload_local_block_scratchpad(uint32_t len, uint8_t * bytes, uint3
         uint32_encode_le(start + loaded, (uint8_t *) &addr_le);
 
         res = msap_scratchpad_block_request(addr_le, block_size, bytes + loaded);
-        if(res > 1)
+        if (res > 1)
         {
             LOGE("Error in loading scratchpad block -> %d\n", res);
             return convert_error_code(SCRATCHPAD_LOCAL_BLOCK_ERROR_CODE_LUT, res);
         }
 
-        if(res == 1)
+        if (res == 1)
         {
             LOGD("Last block loaded\n");
         }
@@ -854,7 +854,7 @@ app_res_e WPC_get_neighbors(app_nbors_t * nbors_list_p)
     msap_get_nbors_conf_pl_t internal_list;
     int res = msap_get_nbors_request(&internal_list);
 
-    if(res != 0)
+    if (res != 0)
     {
         return APP_RES_INTERNAL_ERROR;
     }

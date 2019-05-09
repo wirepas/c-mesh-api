@@ -23,17 +23,17 @@ int main(int argc, char * argv[])
 {
     unsigned long bitrate = DEFAULT_BITRATE;
 
-    if(argc > 1)
+    if (argc > 1)
     {
         port_name = argv[1];
     }
 
-    if(argc > 2)
+    if (argc > 2)
     {
         bitrate = strtoul(argv[2], NULL, 0);
     }
 
-    if(WPC_initialize(port_name, bitrate) != APP_RES_OK)
+    if (WPC_initialize(port_name, bitrate) != APP_RES_OK)
         return -1;
 
     Test_runAll();

@@ -27,7 +27,7 @@ static int set_interface_attribs(int fd, unsigned long bitrate, int parity)
     struct serial_struct serial_s;
 
     memset(&tty, 0, sizeof tty);
-    if(tcgetattr(fd, &tty) != 0)
+    if (tcgetattr(fd, &tty) != 0)
     {
         LOGE("Error %d from tcgetattr", errno);
         return -1;
@@ -65,13 +65,13 @@ static int set_interface_attribs(int fd, unsigned long bitrate, int parity)
     tty.c_cflag &= ~CSTOPB;
     tty.c_cflag &= ~CRTSCTS;
 
-    if(tcsetattr(fd, TCSANOW, &tty) != 0)
+    if (tcsetattr(fd, TCSANOW, &tty) != 0)
     {
         LOGE("Error %d from tcsetattr", errno);
         return -1;
     }
 
-    if(Serial_set_termios2_bitrate(fd, bitrate) != 0)
+    if (Serial_set_termios2_bitrate(fd, bitrate) != 0)
     {
         return -1;
     }
@@ -88,7 +88,7 @@ static void set_blocking(int fd, int should_block)
 {
     struct termios tty;
     memset(&tty, 0, sizeof tty);
-    if(tcgetattr(fd, &tty) != 0)
+    if (tcgetattr(fd, &tty) != 0)
     {
         LOGE("Error %d from tggetattr", errno);
         return;
@@ -98,7 +98,7 @@ static void set_blocking(int fd, int should_block)
     // No timeout
     tty.c_cc[VTIME] = 0;
 
-    if(tcsetattr(fd, TCSANOW, &tty) != 0)
+    if (tcsetattr(fd, TCSANOW, &tty) != 0)
         LOGE("Error %d setting term attributes", errno);
 }
 
@@ -108,14 +108,14 @@ static void set_blocking(int fd, int should_block)
 int Serial_open(const char * port_name, unsigned long bitrate)
 {
     fd = open(port_name, O_RDWR | O_NOCTTY | O_SYNC);
-    if(fd < 0)
+    if (fd < 0)
     {
         LOGE("Error %d opening serial link %s: %s\n", errno, port_name, strerror(errno));
         return -1;
     }
 
     // set the requested bitrate, 8n1, no parity
-    if(set_interface_attribs(fd, bitrate, 0) < 0)
+    if (set_interface_attribs(fd, bitrate, 0) < 0)
     {
         close(fd);
         fd = -1;
@@ -131,13 +131,13 @@ int Serial_open(const char * port_name, unsigned long bitrate)
 
 int Serial_close()
 {
-    if(fd < 0)
+    if (fd < 0)
     {
         LOGW("Link already closed\n");
         return -1;
     }
 
-    if(close(fd) < 0)
+    if (close(fd) < 0)
     {
         LOGW("Error %d closing serial link: %s\n", errno, strerror(errno));
         return -1;
@@ -154,7 +154,7 @@ int Serial_read(unsigned char * c, unsigned int timeout_ms)
     struct timeval tv;
     int retval;
 
-    if(fd < 0)
+    if (fd < 0)
     {
         LOGE("No serial link opened\n");
         return -1;
@@ -172,10 +172,10 @@ int Serial_read(unsigned char * c, unsigned int timeout_ms)
     retval = select(fd + 1, &rfds, NULL, NULL, &tv);
 
     /* Check the reason for exiting the select */
-    if(retval > 0)
+    if (retval > 0)
     {
         /* Useless test as only one single fd monitored */
-        if(FD_ISSET(fd, &rfds))
+        if (FD_ISSET(fd, &rfds))
         {
             // LOGD("Data available on serial\n");
             return read(fd, c, 1);
@@ -186,7 +186,7 @@ int Serial_read(unsigned char * c, unsigned int timeout_ms)
             return -1;
         }
     }
-    else if(retval == 0)
+    else if (retval == 0)
     {
         LOGD("Timeout to wait for char on serial line\n");
         return 0;
@@ -200,7 +200,7 @@ int Serial_read(unsigned char * c, unsigned int timeout_ms)
 
 int Serial_write(const unsigned char * buffer, unsigned int buffer_size)
 {
-    if(fd < 0)
+    if (fd < 0)
     {
         LOGE("No serial link opened\n");
         return -1;

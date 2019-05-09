@@ -30,9 +30,9 @@ static bool set_indication_cb(onDataSent_cb_f cb, uint16_t pdu_id)
 {
     int i;
 
-    for(i = 0; i < MAX_SENT_PACKET_WITH_INDICATION; i++)
+    for (i = 0; i < MAX_SENT_PACKET_WITH_INDICATION; i++)
     {
-        if(!indication_sent_cb_table[i].busy)
+        if (!indication_sent_cb_table[i].busy)
         {
             indication_sent_cb_table[i].busy = true;
             indication_sent_cb_table[i].cb = cb;
@@ -48,9 +48,9 @@ static onDataSent_cb_f get_indication_cb(uint16_t pdu_id)
 {
     onDataSent_cb_f cb = NULL;
 
-    for(int i = 0; i < MAX_SENT_PACKET_WITH_INDICATION; i++)
+    for (int i = 0; i < MAX_SENT_PACKET_WITH_INDICATION; i++)
     {
-        if(indication_sent_cb_table[i].busy && indication_sent_cb_table[i].pdu_id == pdu_id)
+        if (indication_sent_cb_table[i].busy && indication_sent_cb_table[i].pdu_id == pdu_id)
         {
             // Release entry
             indication_sent_cb_table[i].busy = false;
@@ -128,17 +128,17 @@ int dsap_data_tx_request(const uint8_t * buffer,
     uint8_t confirm_res;
     uint8_t tx_options = 0;
 
-    if(len > MAX_DATA_PDU_SIZE)
+    if (len > MAX_DATA_PDU_SIZE)
         return -1;
 
     // Fill the tx options
-    if(on_data_sent_cb != NULL)
+    if (on_data_sent_cb != NULL)
     {
         tx_options |= 0x1;
     }
 
     // Is it a unack_csma_ca transmission
-    if(is_unack_csma_ca)
+    if (is_unack_csma_ca)
     {
         tx_options |= 0x2;
     }
@@ -147,7 +147,7 @@ int dsap_data_tx_request(const uint8_t * buffer,
     tx_options |= (hop_limit & 0xf) << 2;
 
     // Create the frame
-    if(buffering_delay == 0)
+    if (buffering_delay == 0)
     {
         request.primitive_id = DSAP_DATA_TX_REQUEST;
         fill_tx_request(&request, buffer, len, pdu_id, dest_add, qos, src_ep, dest_ep, tx_options);
@@ -165,13 +165,13 @@ int dsap_data_tx_request(const uint8_t * buffer,
     // Do the sending
     res = WPC_Int_send_request(&request, &confirm);
 
-    if(res < 0)
+    if (res < 0)
         return res;
 
     confirm_res = confirm.payload.dsap_data_tx_confirm_payload.result;
 
     // If success, register the callback
-    if(confirm_res == 0 && on_data_sent_cb != NULL)
+    if (confirm_res == 0 && on_data_sent_cb != NULL)
     {
         set_indication_cb(on_data_sent_cb, pdu_id);
     }
@@ -191,7 +191,7 @@ void dsap_data_tx_indication_handler(dsap_data_tx_ind_pl_t * payload)
          "%d\n",
          payload->indication_status,
          payload->buffering_delay);
-    if(cb != NULL)
+    if (cb != NULL)
     {
         LOGD("App cb set, call it...\n");
         cb(payload->pdu_id,
@@ -216,11 +216,11 @@ void dsap_data_rx_indication_handler(dsap_data_rx_ind_pl_t * payload,
          payload->dest_endpoint,
          timestamp_ms_epoch);
 
-    if(data_cb_table[payload->dest_endpoint] != 0)
+    if (data_cb_table[payload->dest_endpoint] != 0)
     {
         // Create the qos
         qos = APP_QOS_NORMAL;
-        if(payload->qos_hop_count & 0x01)
+        if (payload->qos_hop_count & 0x01)
         {
             qos = APP_QOS_HIGH;
         }
@@ -247,7 +247,7 @@ bool dsap_register_for_data(uint8_t dst_ep, onDataReceived_cb_f onDataReceived)
     bool ret = false;
 
     Platform_lock_request();
-    if(dst_ep < MAX_NUMBER_EP && data_cb_table[dst_ep] == NULL)
+    if (dst_ep < MAX_NUMBER_EP && data_cb_table[dst_ep] == NULL)
     {
         data_cb_table[dst_ep] = onDataReceived;
         ret = true;
@@ -262,7 +262,7 @@ bool dsap_unregister_for_data(uint8_t dst_ep)
     bool ret = false;
 
     Platform_lock_request();
-    if(dst_ep < MAX_NUMBER_EP && data_cb_table[dst_ep] != NULL)
+    if (dst_ep < MAX_NUMBER_EP && data_cb_table[dst_ep] != NULL)
     {
         data_cb_table[dst_ep] = NULL;
         ret = true;

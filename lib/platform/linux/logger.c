@@ -34,9 +34,9 @@ void Platform_LOG(char level, char * module, char * format, va_list args)
 void Platform_print_buffer(uint8_t * buffer, int size)
 {
     int i;
-    for(i = 0; i < size; i++)
+    for (i = 0; i < size; i++)
     {
-        if((i & 0xF) == 0xF)
+        if ((i & 0xF) == 0xF)
             printf("\n");
         printf("%02x ", buffer[i]);
     }

@@ -20,7 +20,7 @@ int attribute_write_request(uint8_t primitive_id,
     int res;
     wpc_frame_t request, confirm;
 
-    if(attribute_length > 16)
+    if (attribute_length > 16)
         return -1;
 
     request.primitive_id = primitive_id;
@@ -36,7 +36,7 @@ int attribute_write_request(uint8_t primitive_id,
 
     res = WPC_Int_send_request(&request, &confirm);
 
-    if(res < 0)
+    if (res < 0)
         return res;
 
     LOGD("Attribute write result = %d\n",
@@ -60,16 +60,16 @@ int attribute_read_request(uint8_t primitive_id,
 
     res = WPC_Int_send_request(&request, &confirm);
 
-    if(res < 0)
+    if (res < 0)
         return res;
 
     LOGD("Attribute Id = %d read result = %d\n",
          confirm.payload.attribute_read_confirm_payload.attribute_id,
          confirm.payload.attribute_read_confirm_payload.result);
 
-    if(confirm.payload.attribute_read_confirm_payload.result == 0)
+    if (confirm.payload.attribute_read_confirm_payload.result == 0)
     {
-        if(attribute_length != confirm.payload.attribute_read_confirm_payload.attribute_length)
+        if (attribute_length != confirm.payload.attribute_read_confirm_payload.attribute_length)
         {
             LOGE("Attribute read: wrong attribute size\n");
             return -1;

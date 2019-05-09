@@ -47,7 +47,7 @@ int msap_stack_start_request(uint8_t start_option)
 
     res = WPC_Int_send_request(&request, &confirm);
 
-    if(res < 0)
+    if (res < 0)
         return res;
 
     LOGI("Start request result = 0x%02x\n",
@@ -64,7 +64,7 @@ int msap_stack_stop_request()
     request.payload_length = 0;
 
     res = WPC_Int_send_request(&request, &confirm);
-    if(res < 0)
+    if (res < 0)
         return res;
 
     LOGI("Stop request result = 0x%02x\n",
@@ -90,7 +90,7 @@ int msap_app_config_data_write_request(uint8_t seq, uint16_t interval, uint8_t *
 
     res = WPC_Int_send_request(&request, &confirm);
 
-    if(res < 0)
+    if (res < 0)
         return res;
 
     LOGI("App config write result = 0x%02x\n",
@@ -108,10 +108,10 @@ int msap_app_config_data_read_request(uint8_t * seq, uint16_t * interval, uint8_
 
     res = WPC_Int_send_request(&request, &confirm);
 
-    if(res < 0)
+    if (res < 0)
         return res;
 
-    if(confirm.payload.sap_generic_confirm_payload.result == 0)
+    if (confirm.payload.sap_generic_confirm_payload.result == 0)
     {
         *seq = confirm.payload.msap_app_config_data_read_confirm_payload.sequence_number;
         *interval = confirm.payload.msap_app_config_data_read_confirm_payload.diag_data_interval;
@@ -140,7 +140,7 @@ int msap_sink_cost_write_request(uint8_t cost)
 
     res = WPC_Int_send_request(&request, &confirm);
 
-    if(res < 0)
+    if (res < 0)
         return res;
 
     LOGD(" Cost write request result = 0x%02x\n",
@@ -158,10 +158,10 @@ int msap_sink_cost_read_request(uint8_t * cost_p)
 
     res = WPC_Int_send_request(&request, &confirm);
 
-    if(res < 0)
+    if (res < 0)
         return res;
 
-    if(confirm.payload.msap_sink_cost_read_confirm_payload.result == 0)
+    if (confirm.payload.msap_sink_cost_read_confirm_payload.result == 0)
     {
         *cost_p = confirm.payload.msap_sink_cost_read_confirm_payload.cost;
         LOGD("Sink Cost Read : %d\n", *cost_p);
@@ -183,7 +183,7 @@ int msap_get_nbors_request(msap_get_nbors_conf_pl_t * neigbors_p)
     request.payload_length = 0;
 
     res = WPC_Int_send_request(&request, &confirm);
-    if(res < 0)
+    if (res < 0)
         return res;
 
     LOGI("Get nbors request result. Found %d neighbors\n",
@@ -203,7 +203,7 @@ int msap_scan_nbors_request()
     request.payload_length = 0;
 
     res = WPC_Int_send_request(&request, &confirm);
-    if(res < 0)
+    if (res < 0)
         return res;
 
     LOGI("Scan nbors request result = 0x%02x\n",
@@ -226,7 +226,7 @@ int msap_scratchpad_start_request(uint32_t length, uint8_t seq)
     // So set tiemout to high value (up to 5 sec).
     res = WPC_Int_send_request_timeout(&request, &confirm, 5000);
 
-    if(res < 0)
+    if (res < 0)
         return res;
 
     LOGI("Start request result = 0x%02x\n",
@@ -239,7 +239,7 @@ int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_byte
     wpc_frame_t request, confirm;
     int res;
 
-    if(number_of_bytes > MAXIMUM_SCRATCHPAD_BLOCK_SIZE)
+    if (number_of_bytes > MAXIMUM_SCRATCHPAD_BLOCK_SIZE)
     {
         LOGE("Block size is too big %d > %d\n", number_of_bytes, MAXIMUM_SCRATCHPAD_BLOCK_SIZE);
         // Not necessary to send the request, directly return the mesh code
@@ -258,7 +258,7 @@ int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_byte
 
     res = WPC_Int_send_request(&request, &confirm);
 
-    if(res < 0)
+    if (res < 0)
         return res;
 
     LOGD("Block request result = 0x%02x\n",
@@ -276,7 +276,7 @@ int msap_scratchpad_status_request(msap_scratchpad_status_conf_pl_t * status_p)
 
     res = WPC_Int_send_request(&request, &confirm);
 
-    if(res < 0)
+    if (res < 0)
         return res;
 
     memcpy((uint8_t *) status_p,
@@ -295,7 +295,7 @@ int msap_scratchpad_update_request()
 
     res = WPC_Int_send_request(&request, &confirm);
 
-    if(res < 0)
+    if (res < 0)
         return res;
 
     LOGI("Update request result = 0x%02x\n",
@@ -313,7 +313,7 @@ int msap_scratchpad_clear_request()
 
     res = WPC_Int_send_request(&request, &confirm);
 
-    if(res < 0)
+    if (res < 0)
         return res;
 
     LOGI("Clear request result = 0x%02x\n",
@@ -332,7 +332,7 @@ int msap_scratchpad_remote_status(app_addr_t destination_address)
 
     res = WPC_Int_send_request(&request, &confirm);
 
-    if(res < 0)
+    if (res < 0)
         return res;
 
     LOGI("Remote status request result = 0x%02x\n",
@@ -353,7 +353,7 @@ int msap_scratchpad_remote_update(app_addr_t destination_address, uint8_t sequen
 
     res = WPC_Int_send_request(&request, &confirm);
 
-    if(res < 0)
+    if (res < 0)
         return res;
 
     LOGD("Remote update request result = 0x%02x\n",
@@ -364,7 +364,7 @@ int msap_scratchpad_remote_update(app_addr_t destination_address, uint8_t sequen
 void msap_stack_state_indication_handler(msap_stack_state_ind_pl_t * payload)
 {
     LOGI("Status is 0x%02x\n", payload->status);
-    if(m_stack_status_cb != NULL)
+    if (m_stack_status_cb != NULL)
     {
         m_stack_status_cb(payload->status);
     }
@@ -373,7 +373,7 @@ void msap_stack_state_indication_handler(msap_stack_state_ind_pl_t * payload)
 void msap_app_config_data_rx_indication_handler(msap_app_config_data_rx_ind_pl_t * payload)
 {
     LOGD("Received config data : [%s] (%d)\n", payload->app_config_data, payload->diag_data_interval);
-    if(m_app_conf_cb != NULL)
+    if (m_app_conf_cb != NULL)
     {
         m_app_conf_cb(payload->sequence_number,
                       payload->diag_data_interval,
@@ -385,7 +385,7 @@ void msap_image_remote_status_indication_handler(msap_image_remote_status_ind_pl
 {
     app_scratchpad_status_t app_status;
     LOGI("Received remote status from %d\n", payload->source_address);
-    if(m_remote_status_cb != NULL)
+    if (m_remote_status_cb != NULL)
     {
         convert_internal_to_app_scratchpad_status(&app_status, &payload->status);
         m_remote_status_cb(payload->source_address, &app_status, payload->update_timeout);
@@ -395,7 +395,7 @@ void msap_image_remote_status_indication_handler(msap_image_remote_status_ind_pl
 void msap_scan_nbors_indication_handler(msap_scan_nbors_ind_pl_t * payload)
 {
     LOGI("Received scan neighbors ind res %d\n", payload->scan_ready);
-    if(m_scan_neighbor_cb != NULL)
+    if (m_scan_neighbor_cb != NULL)
     {
         m_scan_neighbor_cb(payload->scan_ready);
     }
@@ -408,12 +408,12 @@ void msap_scan_nbors_indication_handler(msap_scan_nbors_ind_pl_t * payload)
         do                             \
         {                              \
             Platform_lock_request();   \
-            if(internal_cb != NULL)    \
+            if (internal_cb != NULL)   \
                 res = false;           \
             else                       \
                 internal_cb = cb;      \
             Platform_unlock_request(); \
-        } while(0);                    \
+        } while (0);                   \
         res;                           \
     })
 
@@ -426,7 +426,7 @@ void msap_scan_nbors_indication_handler(msap_scan_nbors_ind_pl_t * payload)
             res = (internal_cb != NULL); \
             internal_cb = NULL;          \
             Platform_unlock_request();   \
-        } while(0);                      \
+        } while (0);                     \
         res;                             \
     })
 

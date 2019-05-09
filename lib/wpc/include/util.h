@@ -78,7 +78,7 @@ static inline uint32_t internal_time_to_ms(uint32_t internal_time)
 {
     // Check the internal time to give a good conversion and
     // avoid using 64bits computation
-    if(internal_time < MAX_INTERNAL_TIME_FOR_FULL_PRECISION)
+    if (internal_time < MAX_INTERNAL_TIME_FOR_FULL_PRECISION)
     {
         return (internal_time * 1000) >> 7;
     }
@@ -112,7 +112,7 @@ static inline uint32_t internal_time_to_s(uint32_t internal_time)
  */
 static inline uint32_t ms_to_internal_time(uint32_t time_in_ms)
 {
-    if(time_in_ms < MAX_MS_TIME_FOR_FULL_PRECISION)
+    if (time_in_ms < MAX_MS_TIME_FOR_FULL_PRECISION)
     {
         return (time_in_ms << 7) / 1000;
     }

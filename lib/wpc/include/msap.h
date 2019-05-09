@@ -218,7 +218,7 @@ convert_internal_to_app_neighbors_status(app_nbors_t * neighbors_p,
     memset(neighbors_p, 0, sizeof(app_nbors_t));
 
     neighbors_p->number_of_neighbors = internal_neighbors_p->number_of_neighbors;
-    for(uint8_t i = 0; i < neighbors_p->number_of_neighbors; i++)
+    for (uint8_t i = 0; i < neighbors_p->number_of_neighbors; i++)
     {
         neighbors_p->nbors[i].add =
             uint32_decode_le((uint8_t *) &internal_neighbors_p->nbors[i].add);
