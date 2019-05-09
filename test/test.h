@@ -13,5 +13,3 @@ int Test_runAll();
  * \brief   Test scratchpad functionality
  */
 int Test_scratchpad();
-
-

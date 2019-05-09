@@ -19,21 +19,21 @@
 char * port_name = "/dev/ttyACM0";
 
 // Node configuration
-#define NODE_ADDRESS    0x1
-#define NODE_ROLE       APP_ROLE_SINK
+#define NODE_ADDRESS 0x1
+#define NODE_ROLE APP_ROLE_SINK
 #define NETWORK_CHANNEL 0x2
 #define NETWORK_ADDRESS 0xABCDEF
 
 static bool onDataReceived(const uint8_t * bytes,
-        uint8_t num_bytes,
-        app_addr_t src_addr,
-        app_addr_t dst_addr,
-        app_qos_e qos,
-        uint8_t src_ep,
-        uint8_t dst_ep,
-        uint32_t travel_time,
-        uint8_t hop_count,
-        unsigned long long timestamp_ms_epoch)
+                           uint8_t num_bytes,
+                           app_addr_t src_addr,
+                           app_addr_t dst_addr,
+                           app_qos_e qos,
+                           uint8_t src_ep,
+                           uint8_t dst_ep,
+                           uint32_t travel_time,
+                           uint8_t hop_count,
+                           unsigned long long timestamp_ms_epoch)
 {
     // Handle Data received here
     LOGI("Data received on EP %d of len %d with id %d from 0x%x to 0x%x\n",
@@ -46,22 +46,22 @@ static bool onDataReceived(const uint8_t * bytes,
 }
 
 static bool onDiagReceived(const uint8_t * bytes,
-        uint8_t num_bytes,
-        app_addr_t src_addr,
-        app_addr_t dst_addr,
-        app_qos_e qos,
-        uint8_t src_ep,
-        uint8_t dst_ep,
-        uint32_t travel_time,
-        uint8_t hop_count,
-        unsigned long long timestamp_ms_epoch)
+                           uint8_t num_bytes,
+                           app_addr_t src_addr,
+                           app_addr_t dst_addr,
+                           app_qos_e qos,
+                           uint8_t src_ep,
+                           uint8_t dst_ep,
+                           uint32_t travel_time,
+                           uint8_t hop_count,
+                           unsigned long long timestamp_ms_epoch)
 {
     // Handle diag packet here
 
     return true;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
     app_res_e res;
     unsigned long bitrate = DEFAULT_BITRATE;
@@ -81,8 +81,7 @@ int main(int argc, char *argv[])
 
     res = WPC_stop_stack();
     sleep(2);
-    if (res != APP_RES_OK &&
-        res != APP_RES_STACK_ALREADY_STOPPED)
+    if (res != APP_RES_OK && res != APP_RES_STACK_ALREADY_STOPPED)
     {
         LOGE("Cannot stop stack %d\n", res);
         goto exit_on_error;
@@ -134,7 +133,8 @@ int main(int argc, char *argv[])
         interval = 30;
     }
 
-    if (NODE_ROLE == APP_ROLE_SINK && WPC_set_app_config_data(seq + 1, 30, config, 16) != APP_RES_OK)
+    if (NODE_ROLE == APP_ROLE_SINK &&
+        WPC_set_app_config_data(seq + 1, 30, config, 16) != APP_RES_OK)
     {
         LOGE("Cannot set config data\n");
         goto exit_on_error;
@@ -150,11 +150,10 @@ int main(int argc, char *argv[])
     LOGI("Stack is started\n");
 
     // Then wait !
-    for(;;)
+    for (;;)
         pause();
 
 exit_on_error:
     WPC_close();
     return -1;
-
 }

@@ -26,8 +26,7 @@ typedef struct
 // Table to store the data sent callbacks status for Tx data
 static packet_with_indication_t indication_sent_cb_table[MAX_SENT_PACKET_WITH_INDICATION];
 
-static bool set_indication_cb(onDataSent_cb_f cb,
-                              uint16_t pdu_id)
+static bool set_indication_cb(onDataSent_cb_f cb, uint16_t pdu_id)
 {
     int i;
 
@@ -51,8 +50,7 @@ static onDataSent_cb_f get_indication_cb(uint16_t pdu_id)
 
     for (int i = 0; i < MAX_SENT_PACKET_WITH_INDICATION; i++)
     {
-        if (indication_sent_cb_table[i].busy
-            && indication_sent_cb_table[i].pdu_id == pdu_id)
+        if (indication_sent_cb_table[i].busy && indication_sent_cb_table[i].pdu_id == pdu_id)
         {
             // Release entry
             indication_sent_cb_table[i].busy = false;
@@ -73,8 +71,7 @@ static void fill_tx_request(wpc_frame_t * request,
                             uint8_t dest_ep,
                             uint8_t tx_options)
 {
-    dsap_data_tx_req_pl_t * payload =
-                &request->payload.dsap_data_tx_request_payload;
+    dsap_data_tx_req_pl_t * payload = &request->payload.dsap_data_tx_request_payload;
 
     payload->pdu_id = pdu_id;
     payload->src_endpoint = src_ep;
@@ -99,8 +96,7 @@ static void fill_tx_tt_request(wpc_frame_t * request,
                                uint8_t tx_options,
                                uint32_t buffering_delay)
 {
-    dsap_data_tx_tt_req_pl_t * payload =
-                &request->payload.dsap_data_tx_tt_request_payload;
+    dsap_data_tx_tt_req_pl_t * payload = &request->payload.dsap_data_tx_tt_request_payload;
 
     payload->pdu_id = pdu_id;
     payload->src_endpoint = src_ep;
@@ -154,21 +150,20 @@ int dsap_data_tx_request(const uint8_t * buffer,
     if (buffering_delay == 0)
     {
         request.primitive_id = DSAP_DATA_TX_REQUEST;
-        fill_tx_request(&request, buffer, len, pdu_id, dest_add,
-                        qos, src_ep, dest_ep, tx_options);
-        request.payload_length = sizeof(dsap_data_tx_req_pl_t) - (MAX_DATA_PDU_SIZE - len);
+        fill_tx_request(&request, buffer, len, pdu_id, dest_add, qos, src_ep, dest_ep, tx_options);
+        request.payload_length =
+            sizeof(dsap_data_tx_req_pl_t) - (MAX_DATA_PDU_SIZE - len);
     }
     else
     {
         request.primitive_id = DSAP_DATA_TX_TT_REQUEST;
-        fill_tx_tt_request(&request, buffer, len, pdu_id, dest_add,
-                           qos, src_ep, dest_ep, tx_options, buffering_delay);
-        request.payload_length = sizeof(dsap_data_tx_tt_req_pl_t) - (MAX_DATA_PDU_SIZE - len);
+        fill_tx_tt_request(&request, buffer, len, pdu_id, dest_add, qos, src_ep, dest_ep, tx_options, buffering_delay);
+        request.payload_length =
+            sizeof(dsap_data_tx_tt_req_pl_t) - (MAX_DATA_PDU_SIZE - len);
     }
 
     // Do the sending
-    res = WPC_Int_send_request(&request,
-                       &confirm);
+    res = WPC_Int_send_request(&request, &confirm);
 
     if (res < 0)
         return res;
@@ -182,8 +177,8 @@ int dsap_data_tx_request(const uint8_t * buffer,
     }
 
     LOGI("Send data result = 0x%02x capacity = %d \n",
-            confirm_res,
-            confirm.payload.dsap_data_tx_confirm_payload.capacity);
+         confirm_res,
+         confirm.payload.dsap_data_tx_confirm_payload.capacity);
 
     return confirm_res;
 }
@@ -192,9 +187,10 @@ void dsap_data_tx_indication_handler(dsap_data_tx_ind_pl_t * payload)
 {
     onDataSent_cb_f cb = get_indication_cb(payload->pdu_id);
 
-    LOGD("Tx indication received: indication_status = %d, buffering_delay = %d\n",
-            payload->indication_status,
-            payload->buffering_delay);
+    LOGD("Tx indication received: indication_status = %d, buffering_delay = "
+         "%d\n",
+         payload->indication_status,
+         payload->buffering_delay);
     if (cb != NULL)
     {
         LOGD("App cb set, call it...\n");
@@ -211,13 +207,14 @@ void dsap_data_rx_indication_handler(dsap_data_rx_ind_pl_t * payload,
     app_qos_e qos;
     uint8_t hop_count;
 
-    LOGI("Data received: indication_status = %d, src_add = %d, lenght=%u, travel time = %d, dst_ep = %d, ts=%llu\n",
-            payload->indication_status,
-            payload->src_add,
-            payload->apdu_length,
-            internal_travel_time,
-            payload->dest_endpoint,
-            timestamp_ms_epoch);
+    LOGI("Data received: indication_status = %d, src_add = %d, lenght=%u, "
+         "travel time = %d, dst_ep = %d, ts=%llu\n",
+         payload->indication_status,
+         payload->src_add,
+         payload->apdu_length,
+         internal_travel_time,
+         payload->dest_endpoint,
+         timestamp_ms_epoch);
 
     if (data_cb_table[payload->dest_endpoint] != 0)
     {
@@ -231,18 +228,17 @@ void dsap_data_rx_indication_handler(dsap_data_rx_ind_pl_t * payload,
         // Get the number of hops
         hop_count = (payload->qos_hop_count & 0x3c) >> 2;
 
-
         // Someone is registered on this endpoint
         data_cb_table[payload->dest_endpoint](payload->apdu,
-                                        payload->apdu_length,
-                                        payload->src_add,
-                                        payload->dest_add,
-                                        qos,
-                                        payload->src_endpoint,
-                                        payload->dest_endpoint,
-                                        internal_time_to_ms(internal_travel_time),
-                                        hop_count,
-                                        timestamp_ms_epoch);
+                                              payload->apdu_length,
+                                              payload->src_add,
+                                              payload->dest_add,
+                                              qos,
+                                              payload->src_endpoint,
+                                              payload->dest_endpoint,
+                                              internal_time_to_ms(internal_travel_time),
+                                              hop_count,
+                                              timestamp_ms_epoch);
     }
 }
 

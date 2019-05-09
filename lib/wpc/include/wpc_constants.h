@@ -3,6 +3,9 @@
  * See file LICENSE for full license details.
  *
  */
+
+// clang-format off
+
 #ifndef WPC_CONSTANTS_H__
 #define WPC_CONSTANTS_H__
 
@@ -101,3 +104,5 @@
 
 
 #endif
+
+// clang-format on

@@ -25,19 +25,22 @@ int attribute_write_request(uint8_t primitive_id,
 
     request.primitive_id = primitive_id;
     uint16_encode_le(attribute_id,
-        (uint8_t *)&(request.payload.attribute_write_request_payload.attribute_id));
+                     (uint8_t *) &(
+                         request.payload.attribute_write_request_payload.attribute_id));
     request.payload.attribute_write_request_payload.attribute_length = attribute_length;
-    memcpy(request.payload.attribute_write_request_payload.attribute_value, attribute_value_p, attribute_length);
+    memcpy(request.payload.attribute_write_request_payload.attribute_value,
+           attribute_value_p,
+           attribute_length);
 
     request.payload_length = sizeof(attribute_write_req_pl_t) - (16 - attribute_length);
 
-    res = WPC_Int_send_request(&request,
-                               &confirm);
+    res = WPC_Int_send_request(&request, &confirm);
 
     if (res < 0)
-       return res;
+        return res;
 
-    LOGD("Attribute write result = %d\n", confirm.payload.sap_generic_confirm_payload.result);
+    LOGD("Attribute write result = %d\n",
+         confirm.payload.sap_generic_confirm_payload.result);
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
@@ -51,18 +54,18 @@ int attribute_read_request(uint8_t primitive_id,
 
     request.primitive_id = primitive_id;
     uint16_encode_le(attribute_id,
-        (uint8_t *)&(request.payload.attribute_read_request_payload.attribute_id));
+                     (uint8_t *) &(
+                         request.payload.attribute_read_request_payload.attribute_id));
     request.payload_length = sizeof(attribute_read_req_pl_t);
 
-    res = WPC_Int_send_request(&request,
-                               &confirm);
+    res = WPC_Int_send_request(&request, &confirm);
 
     if (res < 0)
         return res;
 
     LOGD("Attribute Id = %d read result = %d\n",
-            confirm.payload.attribute_read_confirm_payload.attribute_id,
-            confirm.payload.attribute_read_confirm_payload.result);
+         confirm.payload.attribute_read_confirm_payload.attribute_id,
+         confirm.payload.attribute_read_confirm_payload.result);
 
     if (confirm.payload.attribute_read_confirm_payload.result == 0)
     {
@@ -78,5 +81,3 @@ int attribute_read_request(uint8_t primitive_id,
 
     return confirm.payload.attribute_read_confirm_payload.result;
 }
-
-

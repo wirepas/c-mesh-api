@@ -119,7 +119,8 @@ static bool dumpCSAPAttributes()
     uint8_t mtu, pdus, scratch_seq, first_channel, last_channel, data_size;
     uint16_t firmware[4], api_v, hw_magic, stack_profile;
 
-    if (WPC_get_role(&role) == APP_RES_ATTRIBUTE_NOT_SET) {
+    if (WPC_get_role(&role) == APP_RES_ATTRIBUTE_NOT_SET)
+    {
         LOGW("Role not set\n");
         role = 0;
     }
@@ -185,14 +186,12 @@ static bool testCipherKey()
     if (key_set)
     {
         LOGW("Key already set\n");
-        //return false
+        // return false
     }
 
     LOGI("No cipher key\n");
-    uint8_t key[16] = { 0x00, 0x01, 0x02, 0x03,
-                        0x04, 0x05, 0x06, 0x07,
-                        0x08, 0x09, 0x0a, 0x0b,
-                        0x0c, 0x0d, 0x0e, 0x0f};
+    uint8_t key[16] = {
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
 
     LOGI("Set cipher key\n");
     if (WPC_set_cipher_key(key) != APP_RES_OK)
@@ -246,14 +245,12 @@ static bool testAuthenticationKey()
     if (key_set)
     {
         LOGW("Key already set\n");
-        //return false
+        // return false
     }
 
     LOGI("No authentication key\n");
-    uint8_t key[16] = { 0x00, 0x01, 0x02, 0x03,
-                        0x04, 0x05, 0x06, 0x07,
-                        0x08, 0x09, 0x0a, 0x0b,
-                        0x0c, 0x0d, 0x0e, 0x0f};
+    uint8_t key[16] = {
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
 
     LOGI("Set authentication key\n");
     if (WPC_set_authentication_key(key) != APP_RES_OK)
@@ -296,14 +293,9 @@ static bool testAuthenticationKey()
     return true;
 }
 
-void onDataSent(uint16_t pduid,
-                uint32_t buffering_delay,
-                uint8_t result)
+void onDataSent(uint16_t pduid, uint32_t buffering_delay, uint8_t result)
 {
-    LOGI("Indication received for %d, delay=%d, result=%d\n",
-            pduid,
-            buffering_delay,
-            result);
+    LOGI("Indication received for %d, delay=%d, result=%d\n", pduid, buffering_delay, result);
 }
 
 static bool testSendWithCallbacks()
@@ -312,17 +304,10 @@ static bool testSendWithCallbacks()
     uint8_t data[] = "This is a test message #00 with ind\0";
     for (int i = 0; i < 2; i++)
     {
-        data[24] = i/10 + 0x30;
-        data[25] = i%10 + 0x30;
-        if (WPC_send_data(data,
-                          sizeof(data),
-                          i,
-                          APP_ADDR_ANYSINK,
-                          APP_QOS_HIGH,
-                          50,
-                          50,
-                          onDataSent,
-                          0) != APP_RES_OK)
+        data[24] = i / 10 + 0x30;
+        data[25] = i % 10 + 0x30;
+        if (WPC_send_data(data, sizeof(data), i, APP_ADDR_ANYSINK, APP_QOS_HIGH, 50, 50, onDataSent, 0) !=
+            APP_RES_OK)
         {
             return false;
         }
@@ -336,24 +321,15 @@ static bool testSendWithoutCallbacks()
     uint8_t data[] = "This is a test message #00\0";
     for (int i = 2; i < 4; i++)
     {
-        data[24] = i/10 + 0x30;
-        data[25] = i%10 + 0x30;
-        if (WPC_send_data(data,
-                          sizeof(data),
-                          i,
-                          APP_ADDR_ANYSINK,
-                          APP_QOS_HIGH,
-                          50,
-                          50,
-                          NULL,
-                          0) != APP_RES_OK)
+        data[24] = i / 10 + 0x30;
+        data[25] = i % 10 + 0x30;
+        if (WPC_send_data(data, sizeof(data), i, APP_ADDR_ANYSINK, APP_QOS_HIGH, 50, 50, NULL, 0) != APP_RES_OK)
         {
             return false;
         }
     }
     return true;
 }
-
 
 static bool testSendWithInitialTime()
 {
@@ -361,17 +337,10 @@ static bool testSendWithInitialTime()
     uint8_t data[] = "This is a test message #00\0";
     for (int i = 4; i < 6; i++)
     {
-        data[24] = i/10 + 0x30;
-        data[25] = i%10 + 0x30;
-        if (WPC_send_data(data,
-                          sizeof(data),
-                          i,
-                          APP_ADDR_ANYSINK,
-                          APP_QOS_HIGH,
-                          50,
-                          50,
-                          NULL,
-                          300) != APP_RES_OK)
+        data[24] = i / 10 + 0x30;
+        data[25] = i % 10 + 0x30;
+        if (WPC_send_data(data, sizeof(data), i, APP_ADDR_ANYSINK, APP_QOS_HIGH, 50, 50, NULL, 300) !=
+            APP_RES_OK)
         {
             return false;
         }
@@ -379,9 +348,7 @@ static bool testSendWithInitialTime()
     return true;
 }
 
-static void onAppConfigDataReceived(uint8_t  seq,
-                                    uint16_t interval,
-                                    uint8_t * config_p)
+static void onAppConfigDataReceived(uint8_t seq, uint16_t interval, uint8_t * config_p)
 {
     LOGI("AppConfig received %d, %d, %s\n", seq, interval, config_p);
 }
@@ -391,8 +358,7 @@ static bool testAppConfigData()
     uint8_t new_config[128];
     uint8_t max_size;
 
-    if (WPC_get_app_config_data_size(&max_size) != APP_RES_OK
-            || (max_size > 128))
+    if (WPC_get_app_config_data_size(&max_size) != APP_RES_OK || (max_size > 128))
     {
         LOGE("Cannot get max app config size of bigger than 128 bytes\n");
         return false;
@@ -507,8 +473,8 @@ static bool testMSAPAttributesStackOn()
     {
         if (WPC_get_remaining_energy(&res8) != APP_RES_OK)
         {
-             LOGE("Cannot get just set remaining battery usage\n");
-             return false;
+            LOGE("Cannot get just set remaining battery usage\n");
+            return false;
         }
 
         if (res8 != 128)
@@ -574,9 +540,9 @@ bool testClearScratchpad()
     return true;
 }
 
-#define BLOCK_SIZE      128
-#define SEQ_NUMBER      50
-#define OTAP_FILE_PATH  "source/test/scratchpad_nrf52.otap"
+#define BLOCK_SIZE 128
+#define SEQ_NUMBER 50
+#define OTAP_FILE_PATH "source/test/scratchpad_nrf52.otap"
 bool testLoadScratchpad()
 {
     FILE * fp;
@@ -589,7 +555,9 @@ bool testLoadScratchpad()
     fp = fopen(filename, "rb");
     if (fp == NULL)
     {
-        LOGE("Cannot open file %s. Please update OTAP_FILE_PATH to a valid otap image\n", filename);
+        LOGE("Cannot open file %s. Please update OTAP_FILE_PATH to a valid "
+             "otap image\n",
+             filename);
         return false;
     }
 
@@ -647,7 +615,9 @@ bool testLoadScratchpad()
 
     if (status.scrat_len != file_size)
     {
-        LOGE("Scratchpad is not loaded correctly (wrong size) %d vs %d\n", status.scrat_len, file_size);
+        LOGE("Scratchpad is not loaded correctly (wrong size) %d vs %d\n",
+             status.scrat_len,
+             file_size);
         return false;
     }
 
@@ -665,10 +635,11 @@ static void onRemoteStatusCb(app_addr_t source_address,
                              uint16_t request_timeout)
 {
     LOGI("Received status from %d with tiemout to %d\n", source_address, request_timeout);
-    LOGI("Stored Seq/Crc:%d/0x%04x, Processed Seq/Crc:%d/0x%04x\n", status->scrat_seq_number,
-                                                                status->scrat_crc,
-                                                                status->processed_scrat_seq_number,
-                                                                status->processed_scrat_crc);
+    LOGI("Stored Seq/Crc:%d/0x%04x, Processed Seq/Crc:%d/0x%04x\n",
+         status->scrat_seq_number,
+         status->scrat_crc,
+         status->processed_scrat_seq_number,
+         status->processed_scrat_crc);
 }
 
 static bool testRemoteStatus()
@@ -703,7 +674,7 @@ static bool testRemoteStatus()
 
 static bool testRemoteUpdate()
 {
-    //Send a update with a 0 reboot delay to just test the command
+    // Send a update with a 0 reboot delay to just test the command
     if (WPC_remote_scratchpad_update(APP_ADDR_BROADCAST, 50, 0) != APP_RES_OK)
     {
         LOGE("Cannot send remote update\n");
@@ -734,10 +705,10 @@ static bool testScanNeighbors()
 
     // Ask for a scan
     if (WPC_start_scan_neighbors() != APP_RES_OK)
-        {
-            LOGE("Cannot start scan\n");
-            return false;
-        }
+    {
+        LOGE("Cannot start scan\n");
+        return false;
+    }
 
     LOGI("Wait 5 seconds for scan result\n");
     Platform_usleep(5 * 1000 * 1000);
@@ -759,16 +730,17 @@ static bool testScanNeighbors()
     LOGI("Get neighbors done and node has %d neighbors\n", neighbors_list.number_of_neighbors);
     if (neighbors_list.number_of_neighbors > 0)
     {
-        LOGI("First node: %d, ch=%d, cost=%d, link=%d, type=%d, rssi=%d, tx_power=%d, rx_power=%d, last_update=%d \n",
-                                neighbors_list.nbors[0].add,
-                                neighbors_list.nbors[0].channel,
-                                neighbors_list.nbors[0].cost,
-                                neighbors_list.nbors[0].link_rel,
-                                neighbors_list.nbors[0].nbor_type,
-                                neighbors_list.nbors[0].norm_rssi,
-                                neighbors_list.nbors[0].tx_power,
-                                neighbors_list.nbors[0].rx_power,
-                                neighbors_list.nbors[0].last_update);
+        LOGI("First node: %d, ch=%d, cost=%d, link=%d, type=%d, rssi=%d, "
+             "tx_power=%d, rx_power=%d, last_update=%d \n",
+             neighbors_list.nbors[0].add,
+             neighbors_list.nbors[0].channel,
+             neighbors_list.nbors[0].cost,
+             neighbors_list.nbors[0].link_rel,
+             neighbors_list.nbors[0].nbor_type,
+             neighbors_list.nbors[0].norm_rssi,
+             neighbors_list.nbors[0].tx_power,
+             neighbors_list.nbors[0].rx_power,
+             neighbors_list.nbors[0].last_update);
     }
 
     if (WPC_unregister_from_scan_neighbors_done() != APP_RES_OK)
@@ -795,14 +767,18 @@ static bool testStackStatus()
 }
 
 // Macro to launch a test and check result
-#define RUN_TEST(_test_func_, _expected_result_)       \
-    do {                                               \
-        LOGI("### Starting test %s\n", #_test_func_);  \
-        if (_test_func_() != _expected_result_) {      \
-            LOGE("### Test is FAIL\n\n");              \
-        } else {                                       \
-            LOGI("### Test is PASS\n\n");              \
-        }                                              \
+#define RUN_TEST(_test_func_, _expected_result_)      \
+    do                                                \
+    {                                                 \
+        LOGI("### Starting test %s\n", #_test_func_); \
+        if (_test_func_() != _expected_result_)       \
+        {                                             \
+            LOGE("### Test is FAIL\n\n");             \
+        }                                             \
+        else                                          \
+        {                                             \
+            LOGI("### Test is PASS\n\n");             \
+        }                                             \
     } while (0)
 
 int Test_runAll()

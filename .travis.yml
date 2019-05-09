@@ -1,0 +1,11 @@
+language: c
+
+compiler: gcc
+
+dist: "xenial"
+
+script:
+  - "./.ci/install-devtools.sh"
+  - "./.ci/check-style.sh"
+  - "./.ci/build-test.sh"
+  - "./.ci/build-lib.sh"
