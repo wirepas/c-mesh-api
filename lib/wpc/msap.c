@@ -238,9 +238,7 @@ int msap_scratchpad_start_request(uint32_t length, uint8_t seq)
     // Starting a scrtachpad may trigger an erase of scratchpad area so can be
     // quite long operation and confirm can be delayed for quite a long time.
     // So set timeout to higher value
-    res = WPC_Int_send_request_timeout(&request,
-                                       &confirm,
-                                       SCRATCHPAD_START_TIMEOUT_MS);
+    res = WPC_Int_send_request_timeout(&request, &confirm, SCRATCHPAD_START_TIMEOUT_MS);
 
     if (res < 0)
         return res;
@@ -272,9 +270,7 @@ int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_byte
     // Copy the block to the request
     memcpy(request.payload.msap_image_block_request_payload.bytes, bytes, number_of_bytes);
 
-    res = WPC_Int_send_request_timeout(&request,
-                                       &confirm,
-                                       SCRATCHPAD_BLOK_TIMEOUT_MS);
+    res = WPC_Int_send_request_timeout(&request, &confirm, SCRATCHPAD_BLOK_TIMEOUT_MS);
 
     if (res < 0)
         return res;
