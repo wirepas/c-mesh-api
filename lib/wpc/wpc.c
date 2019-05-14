@@ -14,6 +14,7 @@
 
 #include "wpc.h"  // For DEFAULT_BITRATE
 #include "wpc_internal.h"
+#include "platform.h"  // For Platform_get_timestamp_ms_epoch()
 
 /**
  * \brief   Macro to convert dual_mcu return code
@@ -30,6 +31,13 @@
         }                                       \
         ret;                                    \
     })
+
+/** \brief   Timeout to get a valid stack response after
+ *           a stop stack. It can be quite long in case of
+ *           the bootloader is processing a scratchpad
+ *           (especially from an external memory)
+*/
+#define TIMEOUT_AFTER_STOP_STACK_S 60
 
 app_res_e WPC_initialize(char * port_name, unsigned long bitrate)
 {
@@ -448,23 +456,23 @@ app_res_e WPC_get_sink_cost(uint8_t * cost_p)
     return convert_error_code(SINK_COST_ERROR_CODE_LUT, res);
 }
 
-// Define the maximum number of attempt to get status after a
-// stop or start of stack
-#define MAX_GET_STATUS_ATTEMPT 20
-
-static bool get_statck_status()
+static bool get_statck_status(uint16_t timeout_s)
 {
     uint8_t status;
-    uint8_t max_attempt = MAX_GET_STATUS_ATTEMPT;
+    app_res_e res = APP_RES_INTERNAL_ERROR;
 
-    while (WPC_get_stack_status(&status) != APP_RES_OK && max_attempt-- > 0)
+    // Compute timeout
+    unsigned long long timeout = Platform_get_timestamp_ms_epoch() + timeout_s * 1000;
+
+    while (res != APP_RES_OK && Platform_get_timestamp_ms_epoch() < timeout)
     {
+        res = WPC_get_stack_status(&status);
         LOGD("Cannot get status after start/stop, try again...\n");
     }
 
-    if (max_attempt == 0)
+    if (res != APP_RES_OK)
     {
-        LOGE("Cannot get stack status after %d attempts\n", MAX_GET_STATUS_ATTEMPT);
+        LOGE("Cannot get stack status after %d seconds\n", timeout_s);
         return false;
     }
 
@@ -473,6 +481,13 @@ static bool get_statck_status()
 app_res_e WPC_start_stack(void)
 {
     int res = msap_stack_start_request(0);
+
+    if (res < 0)
+    {
+        // Error in communication
+        return APP_RES_INTERNAL_ERROR;
+    }
+
     if ((res & 0x1) == 0x01)
     {
         return APP_RES_STACK_ALREADY_STARTED;
@@ -495,10 +510,10 @@ app_res_e WPC_start_stack(void)
     }
 
     // A start of the stack shouldn't create any interruption
-    // of service but let's poll for it to be symetric with stop
+    // of service but let's poll for it to be symmetric with stop
     // and for some reason it was seen on some platforms that the
     // first request following a start is lost
-    if (!get_statck_status())
+    if (!get_statck_status(2))
     {
         return APP_RES_INTERNAL_ERROR;
     }
@@ -509,6 +524,12 @@ app_res_e WPC_start_stack(void)
 app_res_e WPC_stop_stack(void)
 {
     int res = msap_stack_stop_request();
+
+    if (res < 0)
+    {
+        // Error in communication
+        return APP_RES_INTERNAL_ERROR;
+    }
 
     if (res == 1)
     {
@@ -521,7 +542,8 @@ app_res_e WPC_stop_stack(void)
 
     // A stop of the stack will reboot the device
     // Wait for the stack to be up again
-    if (!get_statck_status())
+    // It can be quite long in case a scratchpad is processed
+    if (!get_statck_status(TIMEOUT_AFTER_STOP_STACK_S))
     {
         return APP_RES_INTERNAL_ERROR;
     }
