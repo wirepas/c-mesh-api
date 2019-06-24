@@ -177,18 +177,31 @@ static void * poll_for_indication(void * unused)
         /* Ask for maximum room in buffer queue and less than MAX */
         if (!m_queue_empty && (m_ind_queue_write == m_ind_queue_read))
         {
-            // Queue is FULL
+            // Queue is FULL, wait for POLLING INTERVALL to give some
+            // time for the dispatching thread to handle them
             LOGW("Queue is full, do not poll\n");
+            wait_before_next_polling_ms = POLLING_INTERVAL_MS;
             continue;
         }
         else if (m_queue_empty)
         {
+            // Queue is empty
             free_buffer_room = MAX_NUMBER_INDICATION_QUEUE;
         }
         else
         {
-            free_buffer_room = m_ind_queue_write - m_ind_queue_read % MAX_NUMBER_INDICATION_QUEUE;
+            // Queue has elements, determine the number of free buffers
+            if (m_ind_queue_write > m_ind_queue_read)
+            {
+                free_buffer_room = MAX_NUMBER_INDICATION_QUEUE -
+                                   (m_ind_queue_write - m_ind_queue_read);
+            }
+            else
+            {
+                free_buffer_room = m_ind_queue_read - m_ind_queue_write;
+            }
         }
+
         max_num_indication = free_buffer_room > MAX_NUMBER_INDICATION ?
                                  MAX_NUMBER_INDICATION :
                                  free_buffer_room;
