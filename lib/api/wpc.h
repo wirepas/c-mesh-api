@@ -53,8 +53,8 @@ typedef enum
 typedef enum
 {
     APP_ROLE_OPTION_LL = 0x10,       // !< Node is in low latency
-    APP_ROLE_OPTION_RELAY = 0x20,    // !< Node is only a relay
-    APP_ROLE_OPTION_AUTOROLE = 0x30  // !< Node is autorole
+    APP_ROLE_OPTION_RELAY = 0x20,    // !< Node is only a relay (Deprecated)
+    APP_ROLE_OPTION_AUTOROLE = 0x80  // !< Node is autorole
 } app_role_option_e;
 
 #define APP_ROLE_OPTION_MASK 0xf0
