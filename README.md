@@ -24,18 +24,28 @@ your host machine.
 
 Build the tests with
 
-´´´bash
+```shell
     cd test
     make
-´´´
+```
 
 Execute the test suite with
 
-´´´
+```shell
     ./build/meshAPItest
-´´´
+```
+
+## Contributing
+
+We welcome your contributions!
+
+Please read the [instructions on how to do it][here_contribution]
+and please review our [code of conduct][here_code_of_conduct].
 
 ## License
 
 Wirepas Oy licensed under Apache License, Version 2.0 See file LICENSE for
 full license details.
+
+[here_contribution]: https://github.com/wirepas/c-mesh-api/blob/master/CONTRIBUTING.md
+[here_code_of_conduct]: https://github.com/wirepas/c-mesh-api/blob/master/CODE_OF_CONDUCT.md
