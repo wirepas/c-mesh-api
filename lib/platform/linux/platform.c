@@ -222,7 +222,7 @@ static void * poll_for_indication(void * unused)
             wait_before_next_polling_ms = POLLING_INTERVAL_MS;
         }
 
-        if ((m_max_poll_fail_duration_s > 0)
+        if (m_max_poll_fail_duration_s > 0)
         {
             if (get_ind_res >= 0 || get_ind_res == WPC_INT_SYNC_ERROR)
             {
