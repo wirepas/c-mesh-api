@@ -338,7 +338,7 @@ error1:
 
 bool Platform_set_max_poll_fail_duration(unsigned long duration_s)
 {
-    if ((m_max_poll_fail_duration_s == 0) && (duration_s > 0 ))
+    if ((m_max_poll_fail_duration_s == 0) && (duration_s > 0))
     {
         m_last_successful_poll_ts = get_timestamp_s();
     }
