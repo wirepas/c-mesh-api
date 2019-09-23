@@ -71,6 +71,18 @@ static const app_res_e ATT_WRITE_ERROR_CODE_LUT[] = {
     APP_RES_ACCESS_DENIED       // 6
 };
 
+app_res_e WPC_set_max_poll_fail_duration(unsigned long duration_s)
+{
+    if (Platform_set_max_poll_fail_duration(duration_s))
+    {
+        return APP_RES_OK;
+    }
+    else
+    {
+        return APP_RES_ACCESS_DENIED;
+    }
+}
+
 app_res_e WPC_get_role(app_role_t * role_p)
 {
     int res = csap_attribute_read_request(C_NODE_ROLE_ID, 1, role_p);

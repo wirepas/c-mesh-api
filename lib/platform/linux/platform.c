@@ -24,7 +24,7 @@
 // Maximum duration in s of failed poll request to declare the link broken
 // (unplugged) Set it to 0 to disable 60 sec is long period but it must cover
 // the OTAP exchange with neighbors that can be long with some profiles
-#define MAX_DURATION_POLL_FAIL_S 60
+#define DEFAULT_MAX_POLL_FAIL_DURATION_S 60
 
 // Mutex for sending, ie serial access
 static pthread_mutex_t sending_mutex;
@@ -35,10 +35,9 @@ static pthread_t thread_polling;
 // This thread is used to dispatch indication
 static pthread_t thread_dispatch;
 
-#if MAX_DURATION_POLL_FAIL_S != 0
 // Last successful poll request
 static time_t m_last_successful_poll_ts;
-#endif
+static unsigned int m_max_poll_fail_duration_s;
 
 /*****************************************************************************/
 /*                Indication queue related variables                        */
@@ -223,22 +222,23 @@ static void * poll_for_indication(void * unused)
             wait_before_next_polling_ms = POLLING_INTERVAL_MS;
         }
 
-#if MAX_DURATION_POLL_FAIL_S != 0
-        if (get_ind_res >= 0 || get_ind_res == WPC_INT_SYNC_ERROR)
+        if (m_max_poll_fail_duration_s > 0)
         {
-            // Poll request executed fine or at least com is working with sink,
-            // reset fail counter
-            m_last_successful_poll_ts = get_timestamp_s();
-        }
-        else
-        {
-            if (get_timestamp_s() - m_last_successful_poll_ts > MAX_DURATION_POLL_FAIL_S)
+            if (get_ind_res >= 0 || get_ind_res == WPC_INT_SYNC_ERROR)
             {
-                // Poll request has failed for too long, just exit
-                break;
+                // Poll request executed fine or at least com is working with sink,
+                // reset fail counter
+                m_last_successful_poll_ts = get_timestamp_s();
+            }
+            else
+            {
+                if (get_timestamp_s() - m_last_successful_poll_ts > m_max_poll_fail_duration_s)
+                {
+                    // Poll request has failed for too long, just exit
+                    break;
+                }
             }
         }
-#endif
     }
 
     LOGE("Exiting polling thread\n");
@@ -321,9 +321,8 @@ bool Platform_init()
         goto error4;
     }
 
-#if MAX_DURATION_POLL_FAIL_S != 0
     m_last_successful_poll_ts = get_timestamp_s();
-#endif
+    m_max_poll_fail_duration_s = DEFAULT_MAX_POLL_FAIL_DURATION_S;
 
     return true;
 
@@ -335,6 +334,12 @@ error2:
     pthread_mutex_destroy(&sending_mutex);
 error1:
     return false;
+}
+
+bool Platform_set_max_poll_fail_duration(unsigned long duration_s)
+{
+    m_max_poll_fail_duration_s = duration_s;
+    return true;
 }
 
 void Platform_close()

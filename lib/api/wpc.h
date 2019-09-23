@@ -229,6 +229,15 @@ app_res_e WPC_initialize(char * port_name, unsigned long bitrate);
 void WPC_close(void);
 
 /**
+ * \brief   Set maximum poll fail duration
+ * \param   duration_s
+ *          the maximum poll fail duration in seconds,
+ *          zero equals forever
+ * \return  Return code of the operation
+ */
+app_res_e WPC_set_max_poll_fail_duration(unsigned long duration_s);
+
+/**
  * \brief   Get the role of the node
  * \param   app_role_e
  *          Pointer to store the result
