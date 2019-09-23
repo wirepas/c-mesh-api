@@ -71,9 +71,9 @@ static const app_res_e ATT_WRITE_ERROR_CODE_LUT[] = {
     APP_RES_ACCESS_DENIED       // 6
 };
 
-app_res_e WPC_set_max_poll_fail_duration(unsigned long duration)
+app_res_e WPC_set_max_poll_fail_duration(unsigned long duration_s)
 {
-    if (Platform_set_max_poll_fail_duration(duration))
+    if (Platform_set_max_poll_fail_duration(duration_s))
     {
         return APP_RES_OK;
     }
