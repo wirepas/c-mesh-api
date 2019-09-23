@@ -36,6 +36,13 @@ bool Platform_lock_request();
  */
 void Platform_unlock_request();
 
+/**
+ * \brief   Set maximum duration the poll requests are accepted to fail
+ * \return  true if setting is available in platform,
+ *          false if setting is not available in platform
+ */
+bool Platform_set_max_poll_fail_duration(unsigned long duration);
+
 void Platform_close();
 
 #endif /* PLATFORM_H_ */

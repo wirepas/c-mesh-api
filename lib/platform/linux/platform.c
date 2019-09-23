@@ -38,6 +38,7 @@ static pthread_t thread_dispatch;
 #if MAX_DURATION_POLL_FAIL_S != 0
 // Last successful poll request
 static time_t m_last_successful_poll_ts;
+static unsigned int max_poll_fail_duration;
 #endif
 
 /*****************************************************************************/
@@ -232,7 +233,8 @@ static void * poll_for_indication(void * unused)
         }
         else
         {
-            if (get_timestamp_s() - m_last_successful_poll_ts > MAX_DURATION_POLL_FAIL_S)
+            if ((max_poll_fail_duration) &&
+                (get_timestamp_s() - m_last_successful_poll_ts > max_poll_fail_duration))
             {
                 // Poll request has failed for too long, just exit
                 break;
@@ -323,6 +325,7 @@ bool Platform_init()
 
 #if MAX_DURATION_POLL_FAIL_S != 0
     m_last_successful_poll_ts = get_timestamp_s();
+    max_poll_fail_duration = MAX_DURATION_POLL_FAIL_S;
 #endif
 
     return true;
@@ -335,6 +338,16 @@ error2:
     pthread_mutex_destroy(&sending_mutex);
 error1:
     return false;
+}
+
+bool Platform_set_max_poll_fail_duration(unsigned long duration)
+{
+#if MAX_DURATION_POLL_FAIL_S != 0
+    max_poll_fail_duration = duration;
+    return true;
+#else
+    return false;
+#endif
 }
 
 void Platform_close()
