@@ -224,9 +224,7 @@ int Serial_write(const unsigned char * buffer, unsigned int buffer_size)
     while (buffer_size > 0)
     {
         unsigned int size = buffer_size > WRITE_CHUNK_SIZE ? WRITE_CHUNK_SIZE : buffer_size;
-        unsigned int partial_written;
-
-        partial_written = write(fd, buffer + written, size);
+        int partial_written = write(fd, buffer + written, size);
         if (partial_written < 0)
         {
             return partial_written;
