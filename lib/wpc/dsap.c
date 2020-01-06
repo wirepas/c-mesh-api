@@ -226,7 +226,7 @@ void dsap_data_rx_indication_handler(dsap_data_rx_ind_pl_t * payload,
         }
 
         // Get the number of hops
-        hop_count = (payload->qos_hop_count & 0x3c) >> 2;
+        hop_count = payload->qos_hop_count >> 2;
 
         // Someone is registered on this endpoint
         data_cb_table[payload->dest_endpoint](payload->apdu,
