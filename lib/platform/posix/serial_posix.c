@@ -11,9 +11,8 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/select.h>
-#include <linux/serial.h>
 
-#include "serial_termios2.h"
+#include "serial_posix.h"
 
 #define LOG_MODULE_NAME "SERIAL"
 #define MAX_LOG_LEVEL INFO_LOG_LEVEL
@@ -24,18 +23,18 @@ static int fd = -1;
 static int set_interface_attribs(int fd, unsigned long bitrate, int parity)
 {
     struct termios tty;
-    struct serial_struct serial_s;
 
     memset(&tty, 0, sizeof tty);
     if (tcgetattr(fd, &tty) != 0)
     {
-        LOGE("Error %d from tcgetattr", errno);
+        LOGE("Error %d from tcgetattr\n", errno);
         return -1;
     }
 
-    // default to 9600 bps, but use TCSETS2 to set the actual bitrate
-    // use a bitrate that is not 115200 or 125000 bps here, to make sure
-    // TCSETS2 actually sets the bitrate
+    // default to 9600 bps, but use Serial_set_custom_bitrate() to set the
+    // actual bitrate in a non-POSIX way. Use a bitrate that is not 115200 or
+    // 125000 bps here, to make sure Serial_set_custom_bitrate() actually sets
+    // the bitrate
     cfsetospeed(&tty, B9600);
     cfsetispeed(&tty, B9600);
 
@@ -67,39 +66,24 @@ static int set_interface_attribs(int fd, unsigned long bitrate, int parity)
 
     if (tcsetattr(fd, TCSANOW, &tty) != 0)
     {
-        LOGE("Error %d from tcsetattr", errno);
+        LOGE("Error %d from tcsetattr\n", errno);
         return -1;
     }
 
-    if (Serial_set_termios2_bitrate(fd, bitrate) != 0)
+    // Use a non-POSIX way to set a non-standard bitrate. Do this last
+    // because tcgetattr() / tcsetattr() fails on some platforms (Darwin)
+    // after a non-standard bitrate is configured
+    if (Serial_set_custom_bitrate(fd, bitrate) != 0)
     {
         return -1;
     }
 
-    // Set low latency flag to serial
-    ioctl(fd, TIOCGSERIAL, &serial_s);
-    serial_s.flags |= ASYNC_LOW_LATENCY;
-    ioctl(fd, TIOCSSERIAL, &serial_s);
+    if (Serial_set_extra_params(fd) != 0)
+    {
+        return -1;
+    }
 
     return 0;
-}
-
-static void set_blocking(int fd, int should_block)
-{
-    struct termios tty;
-    memset(&tty, 0, sizeof tty);
-    if (tcgetattr(fd, &tty) != 0)
-    {
-        LOGE("Error %d from tggetattr", errno);
-        return;
-    }
-
-    tty.c_cc[VMIN] = should_block ? 1 : 0;
-    // No timeout
-    tty.c_cc[VTIME] = 0;
-
-    if (tcsetattr(fd, TCSANOW, &tty) != 0)
-        LOGE("Error %d setting term attributes", errno);
 }
 
 /****************************************************************************/
@@ -121,9 +105,6 @@ int Serial_open(const char * port_name, unsigned long bitrate)
         fd = -1;
         return -1;
     }
-
-    // set no blocking
-    set_blocking(fd, 0);
 
     LOGD("Serial opened\n");
     return 0;
