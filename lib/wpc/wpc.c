@@ -29,8 +29,7 @@
  * \note    Dual-MCU API return codes are not harmonized, so a
  *          different look-up table must be used for each function
  */
-static inline app_res_e
-convert_error_code(const app_res_e * lut, size_t lut_size, unsigned int error)
+static inline app_res_e convert_error_code(const app_res_e * lut, size_t lut_size, int error)
 {
     app_res_e ret = APP_RES_INTERNAL_ERROR;
     if (error >= 0 && error < lut_size)
@@ -774,7 +773,6 @@ static const app_res_e SCRATCHPAD_LOCAL_BLOCK_ERROR_CODE_LUT[] = {
 app_res_e WPC_upload_local_block_scratchpad(uint32_t len, uint8_t * bytes, uint32_t start)
 {
     app_res_e app_res;
-    int res;
     uint32_t loaded = 0;
     uint8_t max_block_size, block_size;
 
@@ -792,14 +790,13 @@ app_res_e WPC_upload_local_block_scratchpad(uint32_t len, uint8_t * bytes, uint3
         uint32_t addr_le;
         uint32_encode_le(start + loaded, (uint8_t *) &addr_le);
 
-        res = msap_scratchpad_block_request(addr_le, block_size, bytes + loaded);
+        int res = msap_scratchpad_block_request(addr_le, block_size, bytes + loaded);
         if (res > 1)
         {
             LOGE("Error in loading scratchpad block -> %d\n", res);
             return CONVERT_ERROR_CODE(SCRATCHPAD_LOCAL_BLOCK_ERROR_CODE_LUT, res);
         }
-
-        if (res == 1)
+        else if (res == 1)
         {
             LOGD("Last block loaded\n");
         }

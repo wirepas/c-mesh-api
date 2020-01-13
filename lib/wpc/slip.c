@@ -155,7 +155,7 @@ int Slip_decode(uint8_t * buffer, size_t len)
     /* Compare CRC */
     if (crc != crc_from_frame)
     {
-        LOG_PRINT_BUFFER(buffer, len);
+        LOG_PRINT_BUFFER(buffer, decoded_len - 2);
         LOGE("Wrong CRC 0x%04x (computed) vs 0x%04x (received)\n", crc, crc_from_frame);
         return WPC_INT_WRONG_CRC;
     }
@@ -169,14 +169,14 @@ int Slip_encode(const uint8_t * buffer_in, size_t len_in, uint8_t * buffer_out, 
     uint16_t crc = crc_fromBuffer(buffer_in, len_in);
 
     // Escape the frame without the CRC
-    size_t total_size = slip_encode_buffer(buffer_in, len_in, buffer_out, len_out);
-
-    // Check that the buffer is big enough
-    if (total_size < 0)
+    int res = slip_encode_buffer(buffer_in, len_in, buffer_out, len_out);
+    if (res < 0)
     {
         LOGE("Provided buffer in encode is too small\n");
-        return WPC_INT_WRONG_BUFFER_SIZE;
+        return res;
     }
+
+    size_t total_size = (size_t) res;
 
     // Add the escaped CRC to the end of the buffer in little-endian byte order
     for (size_t i = 0; i < 2; i++)
