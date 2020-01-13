@@ -21,7 +21,6 @@
 
 #include <stdbool.h>
 #include <string.h>
-#include <unistd.h>
 
 // This is the timeout in milliseconds to receive an indication
 // from stack after a poll request
@@ -90,7 +89,7 @@ static int send_response_to_stack(uint8_t primitive_id, uint8_t frame_id, bool m
 static int send_request_locked(wpc_frame_t * request, wpc_frame_t * confirm, uint16_t timeout_ms)
 {
     static uint8_t frame_id = 0;
-    int confirm_size;
+    int confirm_size = 0;
     int attempt = 0;
     uint8_t buffer[MAX_FRAME_SIZE];
     wpc_frame_t * rec_confirm;

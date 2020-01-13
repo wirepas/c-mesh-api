@@ -774,7 +774,7 @@ static const app_res_e SCRATCHPAD_LOCAL_BLOCK_ERROR_CODE_LUT[] = {
 app_res_e WPC_upload_local_block_scratchpad(uint32_t len, uint8_t * bytes, uint32_t start)
 {
     app_res_e app_res;
-    uint8_t res;
+    int res;
     uint32_t loaded = 0;
     uint8_t max_block_size, block_size;
 
@@ -788,7 +788,7 @@ app_res_e WPC_upload_local_block_scratchpad(uint32_t len, uint8_t * bytes, uint3
     while (loaded < len)
     {
         uint32_t remaining = len - loaded;
-        block_size = (remaining > max_block_size) ? max_block_size : remaining;
+        block_size = (remaining > max_block_size) ? max_block_size : (uint8_t) remaining;
         uint32_t addr_le;
         uint32_encode_le(start + loaded, (uint8_t *) &addr_le);
 

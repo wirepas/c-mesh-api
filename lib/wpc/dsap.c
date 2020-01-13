@@ -79,7 +79,7 @@ static void fill_tx_request(wpc_frame_t * request,
     payload->dest_endpoint = dest_ep;
     payload->qos = qos;
     payload->tx_options = tx_options;
-    payload->apdu_length = len;
+    payload->apdu_length = (uint8_t) len;
 
     // copy the APDU
     memcpy(&payload->apdu, buffer, len);
@@ -104,7 +104,7 @@ static void fill_tx_tt_request(wpc_frame_t * request,
     payload->dest_endpoint = dest_ep;
     payload->qos = qos;
     payload->tx_options = tx_options;
-    payload->apdu_length = len;
+    payload->apdu_length = (uint8_t) len;
     payload->buffering_delay = buffering_delay;
 
     // copy the APDU
@@ -152,14 +152,14 @@ int dsap_data_tx_request(const uint8_t * buffer,
         request.primitive_id = DSAP_DATA_TX_REQUEST;
         fill_tx_request(&request, buffer, len, pdu_id, dest_add, qos, src_ep, dest_ep, tx_options);
         request.payload_length =
-            sizeof(dsap_data_tx_req_pl_t) - (MAX_DATA_PDU_SIZE - len);
+            (uint8_t)(sizeof(dsap_data_tx_req_pl_t) - (MAX_DATA_PDU_SIZE - len));
     }
     else
     {
         request.primitive_id = DSAP_DATA_TX_TT_REQUEST;
         fill_tx_tt_request(&request, buffer, len, pdu_id, dest_add, qos, src_ep, dest_ep, tx_options, buffering_delay);
         request.payload_length =
-            sizeof(dsap_data_tx_tt_req_pl_t) - (MAX_DATA_PDU_SIZE - len);
+            (uint8_t)(sizeof(dsap_data_tx_tt_req_pl_t) - (MAX_DATA_PDU_SIZE - len));
     }
 
     // Do the sending
