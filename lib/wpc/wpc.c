@@ -16,28 +16,35 @@
 #include "wpc_internal.h"
 #include "platform.h"  // For Platform_get_timestamp_ms_epoch()
 
-/**
- * \brief   Macro to convert dual_mcu return code
- *          to library error code based on a LUT
- *          Dual mcu return code are not harmonized so
- *          a different LUT must be used per fonction
- */
-#define convert_error_code(LUT, error)          \
-    ({                                          \
-        app_res_e ret = APP_RES_INTERNAL_ERROR; \
-        if (error >= 0 && error < sizeof(LUT))  \
-        {                                       \
-            ret = LUT[error];                   \
-        }                                       \
-        ret;                                    \
-    })
-
 /** \brief   Timeout to get a valid stack response after
  *           a stop stack. It can be quite long in case of
  *           the bootloader is processing a scratchpad
  *           (especially from an external memory)
 */
 #define TIMEOUT_AFTER_STOP_STACK_S 60
+
+/**
+ * \brief   An inline function to convert Dual-MCU API return
+ *          code to a C Mesh API library error code
+ * \note    Dual-MCU API return codes are not harmonized, so a
+ *          different look-up table must be used for each function
+ */
+static inline app_res_e
+convert_error_code(const app_res_e * lut, size_t lut_size, unsigned int error)
+{
+    app_res_e ret = APP_RES_INTERNAL_ERROR;
+    if (error >= 0 && error < lut_size)
+    {
+        ret = lut[error];
+    }
+    return ret;
+}
+
+/**
+ * \brief   Call \ref convert_error_code() with implicit size of array
+ */
+#define CONVERT_ERROR_CODE(lut, error) \
+    convert_error_code(lut, sizeof(lut), error)
 
 app_res_e WPC_initialize(char * port_name, unsigned long bitrate)
 {
@@ -86,14 +93,14 @@ app_res_e WPC_set_max_poll_fail_duration(unsigned long duration_s)
 app_res_e WPC_get_role(app_role_t * role_p)
 {
     int res = csap_attribute_read_request(C_NODE_ROLE_ID, 1, role_p);
-    return convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_set_role(app_role_t role)
 {
     uint8_t att = role;
     int res = csap_attribute_write_request(C_NODE_ROLE_ID, 1, &att);
-    return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(ATT_WRITE_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_get_node_address(app_addr_t * addr_p)
@@ -102,7 +109,7 @@ app_res_e WPC_get_node_address(app_addr_t * addr_p)
     uint8_t att[4];
     int res = csap_attribute_read_request(C_NODE_ADDRESS_ID, 4, att);
 
-    ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    ret = CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
     if (ret != APP_RES_OK)
     {
         return ret;
@@ -118,7 +125,7 @@ app_res_e WPC_set_node_address(app_addr_t add)
     uint32_encode_le(add, att);
     int res = csap_attribute_write_request(C_NODE_ADDRESS_ID, 4, att);
 
-    return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(ATT_WRITE_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_get_network_address(net_addr_t * addr_p)
@@ -130,7 +137,7 @@ app_res_e WPC_get_network_address(net_addr_t * addr_p)
     att[3] = 00;
     int res = csap_attribute_read_request(C_NETWORK_ADDRESS_ID, 3, att);
 
-    ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    ret = CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
     if (ret != APP_RES_OK)
     {
         return ret;
@@ -146,14 +153,14 @@ app_res_e WPC_set_network_address(net_addr_t add)
     uint32_encode_le(add, att);
     int res = csap_attribute_write_request(C_NETWORK_ADDRESS_ID, 3, att);
 
-    return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(ATT_WRITE_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_get_network_channel(net_channel_t * channel_p)
 {
     int res = csap_attribute_read_request(C_NETWORK_CHANNEL_ID, 1, channel_p);
 
-    return convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_set_network_channel(net_channel_t channel)
@@ -162,25 +169,25 @@ app_res_e WPC_set_network_channel(net_channel_t channel)
     att = channel;
     int res = csap_attribute_write_request(C_NETWORK_CHANNEL_ID, 1, &att);
 
-    return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(ATT_WRITE_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_get_mtu(uint8_t * value_p)
 {
     int res = csap_attribute_read_request(C_MTU_ID, 1, value_p);
-    return convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_get_pdu_buffer_size(uint8_t * value_p)
 {
     int res = csap_attribute_read_request(C_PDU_BUFFER_SIZE_ID, 1, value_p);
-    return convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_get_scratchpad_sequence(uint8_t * value_p)
 {
     int res = csap_attribute_read_request(C_SCRATCHPAD_SEQUENCE_ID, 1, value_p);
-    return convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_get_mesh_API_version(uint16_t * value_p)
@@ -189,7 +196,7 @@ app_res_e WPC_get_mesh_API_version(uint16_t * value_p)
     uint8_t att[2];
     int res = csap_attribute_read_request(C_MESH_API_VER_ID, 2, att);
 
-    ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    ret = CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
     if (ret != APP_RES_OK)
     {
         return ret;
@@ -209,7 +216,7 @@ app_res_e WPC_get_firmware_version(uint16_t version[4])
         uint8_t att[2];
         int res = csap_attribute_read_request(IDs[i], 2, att);
 
-        ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+        ret = CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
         if (ret != APP_RES_OK)
         {
             return ret;
@@ -225,7 +232,7 @@ app_res_e WPC_set_cipher_key(uint8_t key[16])
 {
     int res = csap_attribute_write_request(C_CIPHER_KEY_ID, 16, key);
 
-    return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(ATT_WRITE_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_is_cipher_key_set(bool * set_p)
@@ -253,7 +260,7 @@ app_res_e WPC_remove_cipher_key(void)
 app_res_e WPC_set_authentication_key(uint8_t key[16])
 {
     int res = csap_attribute_write_request(C_AUTH_KEY_ID, 16, key);
-    return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(ATT_WRITE_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_is_authentication_key_set(bool * set_p)
@@ -285,7 +292,7 @@ app_res_e WPC_get_channel_limits(uint8_t * first_channel_p, uint8_t * last_chann
     uint8_t att[2];
     int res = csap_attribute_read_request(C_CHANNEL_LIM_ID, 2, att);
 
-    ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    ret = CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
     if (ret != APP_RES_OK)
     {
         return ret;
@@ -308,14 +315,14 @@ app_res_e WPC_do_factory_reset(void)
 {
     int res = csap_factory_reset_request();
 
-    return convert_error_code(FACT_RESET_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(FACT_RESET_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_get_app_config_data_size(uint8_t * value_p)
 {
     int res = csap_attribute_read_request(C_APP_CONFIG_DATA_SIZE_ID, 1, value_p);
 
-    return convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_get_hw_magic(uint16_t * value_p)
@@ -324,7 +331,7 @@ app_res_e WPC_get_hw_magic(uint16_t * value_p)
     uint8_t att[2];
     int res = csap_attribute_read_request(C_HW_MAGIC, 2, att);
 
-    ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    ret = CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
     if (ret != APP_RES_OK)
     {
         return ret;
@@ -340,7 +347,7 @@ app_res_e WPC_get_stack_profile(uint16_t * value_p)
     uint8_t att[2];
     int res = csap_attribute_read_request(C_STACK_PROFILE, 2, att);
 
-    ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    ret = CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
     if (ret != APP_RES_OK)
     {
         return ret;
@@ -356,7 +363,7 @@ app_res_e WPC_get_channel_map(uint32_t * value_p)
     uint8_t att[4];
     int res = csap_attribute_read_request(C_CHANNEL_MAP, 4, att);
 
-    ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    ret = CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
     if (ret != APP_RES_OK)
     {
         return ret;
@@ -372,7 +379,7 @@ app_res_e WPC_set_channel_map(uint32_t channel_map)
     uint32_encode_le(channel_map, att);
     int res = csap_attribute_write_request(C_CHANNEL_MAP, 4, att);
 
-    return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(ATT_WRITE_ERROR_CODE_LUT, res);
 }
 
 /* Error code LUT for app_config read */
@@ -403,7 +410,7 @@ app_res_e WPC_get_app_config_data(uint8_t * seq_p, uint16_t * interval_p, uint8_
     }
 
     res = msap_app_config_data_read_request(seq_p, &interval_le, config, size);
-    ret = convert_error_code(APP_CONFIG_READ_ERROR_CODE_LUT, res);
+    ret = CONVERT_ERROR_CODE(APP_CONFIG_READ_ERROR_CODE_LUT, res);
     if (ret != APP_RES_OK)
     {
         return ret;
@@ -444,7 +451,7 @@ app_res_e WPC_set_app_config_data(uint8_t seq, uint16_t interval, uint8_t * conf
 
     res = msap_app_config_data_write_request(seq, interval_le, config, size);
 
-    return convert_error_code(APP_CONFIG_WRITE_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(APP_CONFIG_WRITE_ERROR_CODE_LUT, res);
 }
 
 /* Error code LUT for sink cost read/write */
@@ -458,14 +465,14 @@ app_res_e WPC_set_sink_cost(uint8_t cost)
 {
     int res = msap_sink_cost_write_request(cost);
 
-    return convert_error_code(SINK_COST_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(SINK_COST_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_get_sink_cost(uint8_t * cost_p)
 {
     int res = msap_sink_cost_read_request(cost_p);
 
-    return convert_error_code(SINK_COST_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(SINK_COST_ERROR_CODE_LUT, res);
 }
 
 static bool get_statck_status(uint16_t timeout_s)
@@ -569,7 +576,7 @@ static app_res_e read_single_byte_msap(uint8_t att, uint8_t * pointer)
     // app_res_e ret;
     res = msap_attribute_read_request(att, 1, pointer);
 
-    return convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_get_stack_status(uint8_t * status_p)
@@ -596,7 +603,7 @@ app_res_e WPC_set_remaining_energy(uint8_t energy)
 {
     int res = msap_attribute_write_request(MSAP_ENERGY, 1, &energy);
 
-    return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(ATT_WRITE_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_get_autostart(uint8_t * enable_p)
@@ -608,7 +615,7 @@ app_res_e WPC_set_autostart(uint8_t enable)
 {
     int res = msap_attribute_write_request(MSAP_AUTOSTART, 1, &enable);
 
-    return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(ATT_WRITE_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_get_route_count(uint8_t * count_p)
@@ -623,7 +630,7 @@ app_res_e WPC_get_system_time(uint32_t * time_p)
     uint32_t internal_time;
     int res = msap_attribute_read_request(MSAP_SYSTEM_TIME, 4, att);
 
-    ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    ret = CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
     if (ret != APP_RES_OK)
     {
         return ret;
@@ -640,7 +647,7 @@ app_res_e WPC_get_access_cycle_range(uint16_t * min_ac_p, uint16_t * max_ac_p)
     uint8_t att[4];
     int res = msap_attribute_read_request(MSAP_ACCESS_CYCLE_RANGE, 4, att);
 
-    ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    ret = CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
     if (ret != APP_RES_OK)
     {
         return ret;
@@ -659,7 +666,7 @@ app_res_e WPC_set_access_cycle_range(uint16_t min_ac, uint16_t max_ac)
     uint16_encode_le(max_ac, att + 2);
     res = msap_attribute_write_request(MSAP_ACCESS_CYCLE_RANGE, 4, att);
 
-    return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(ATT_WRITE_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_get_access_cycle_limits(uint16_t * min_ac_l_p, uint16_t * max_ac_l_p)
@@ -668,7 +675,7 @@ app_res_e WPC_get_access_cycle_limits(uint16_t * min_ac_l_p, uint16_t * max_ac_l
     uint8_t att[4];
     int res = msap_attribute_read_request(MSAP_ACCESS_CYCLE_LIMITS, 4, att);
 
-    ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    ret = CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
     if (ret != APP_RES_OK)
     {
         return ret;
@@ -685,7 +692,7 @@ app_res_e WPC_get_current_access_cycle(uint16_t * cur_ac_p)
     uint8_t att[2];
     int res = msap_attribute_read_request(MSAP_CURRENT_ACCESS_CYCLE, 2, att);
 
-    ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    ret = CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
     if (ret != APP_RES_OK)
     {
         return ret;
@@ -749,7 +756,7 @@ app_res_e WPC_start_local_scratchpad_update(uint32_t len, uint8_t seq)
     uint32_encode_le(len, (uint8_t *) &len_le);
     res = msap_scratchpad_start_request(len_le, seq);
 
-    return convert_error_code(SCRATCHPAD_LOCAL_START_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(SCRATCHPAD_LOCAL_START_ERROR_CODE_LUT, res);
 }
 
 /* Error code LUT for local block scratchpad */
@@ -789,7 +796,7 @@ app_res_e WPC_upload_local_block_scratchpad(uint32_t len, uint8_t * bytes, uint3
         if (res > 1)
         {
             LOGE("Error in loading scratchpad block -> %d\n", res);
-            return convert_error_code(SCRATCHPAD_LOCAL_BLOCK_ERROR_CODE_LUT, res);
+            return CONVERT_ERROR_CODE(SCRATCHPAD_LOCAL_BLOCK_ERROR_CODE_LUT, res);
         }
 
         if (res == 1)
@@ -813,7 +820,7 @@ app_res_e WPC_clear_local_scratchpad(void)
 {
     int res = msap_scratchpad_clear_request();
 
-    return convert_error_code(SCRATCHPAD_CLEAR_LOCAL_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(SCRATCHPAD_CLEAR_LOCAL_ERROR_CODE_LUT, res);
 }
 
 /* Error code LUT for sink cost read/write */
@@ -828,7 +835,7 @@ app_res_e WPC_update_local_scratchpad(void)
 {
     int res = msap_scratchpad_update_request();
 
-    return convert_error_code(SCRATCHPAD_UPDATE_LOCAL_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(SCRATCHPAD_UPDATE_LOCAL_ERROR_CODE_LUT, res);
 }
 
 /* Error code LUT for scratchpad remote status */
@@ -844,7 +851,7 @@ app_res_e WPC_get_remote_status(app_addr_t destination_address)
     uint32_encode_le(destination_address, (uint8_t *) &destination_address_le);
     int res = msap_scratchpad_remote_status(destination_address_le);
 
-    return convert_error_code(SCRATCHPAD_STATUS_REMOTE_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(SCRATCHPAD_STATUS_REMOTE_ERROR_CODE_LUT, res);
 }
 
 /* Error code LUT for scratchpad remote update */
@@ -866,7 +873,7 @@ app_res_e WPC_remote_scratchpad_update(app_addr_t destination_address, uint8_t s
     uint16_encode_le(reboot_delay_s, (uint8_t *) &reboot_delay_s_le);
     int res = msap_scratchpad_remote_update(destination_address_le, seq, reboot_delay_s_le);
 
-    return convert_error_code(SCRATCHPAD_UPDATE_REMOTE_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(SCRATCHPAD_UPDATE_REMOTE_ERROR_CODE_LUT, res);
 }
 
 /* Error code LUT for scan neighbors */
@@ -880,7 +887,7 @@ app_res_e WPC_start_scan_neighbors(void)
 {
     int res = msap_scan_nbors_request();
 
-    return convert_error_code(SCAN_NEIGHBORS_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(SCAN_NEIGHBORS_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_get_neighbors(app_nbors_t * nbors_list_p)
@@ -934,7 +941,7 @@ app_res_e WPC_send_data_with_options(app_message_t * message_t)
                                message_t->is_unack_csma_ca,
                                message_t->hop_limit);
 
-    return convert_error_code(SEND_DATA_ERROR_CODE_LUT, res);
+    return CONVERT_ERROR_CODE(SEND_DATA_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_send_data(const uint8_t * bytes,
