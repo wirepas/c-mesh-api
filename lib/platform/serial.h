@@ -45,4 +45,4 @@ int Serial_read(unsigned char * c, unsigned int timeout_ms);
  *          The size of the buffer to write
  * \return  The number of written char or a negative value in case of error
  */
-int Serial_write(const unsigned char * buffer, unsigned int buffer_size);
+int Serial_write(const unsigned char * buffer, size_t buffer_size);

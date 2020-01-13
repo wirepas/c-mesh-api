@@ -179,7 +179,7 @@ int Serial_read(unsigned char * c, unsigned int timeout_ms)
     }
 }
 
-int Serial_write(const unsigned char * buffer, unsigned int buffer_size)
+int Serial_write(const unsigned char * buffer, size_t buffer_size)
 {
     if (fd < 0)
     {

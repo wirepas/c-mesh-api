@@ -102,10 +102,6 @@ PACKED_STRUCT_END
 // Max frame size (including crc)
 #define MAX_FRAME_SIZE (sizeof(wpc_frame_t) + 2)
 
-// Max slip frame size (can be 2 times bigger than a frame if every bytes are
-// escaped)
-#define MAX_SLIP_FRAME_SIZE (2 * MAX_FRAME_SIZE)
-
 // Define the function type to handle a received frame from the stack (confirm
 // or indication)
 typedef int (*frame_handler)(wpc_frame_t * frame);
