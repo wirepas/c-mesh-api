@@ -12,6 +12,7 @@
 #include "wpc_constants.h"
 #include "attribute.h"
 #include "util.h"
+#include "compiler_ext.h"
 
 /* Attributes ID */
 #define MSAP_STACK_STATUS 1
@@ -38,57 +39,67 @@
 #    define MAXIMUM_APP_CONFIG_SIZE 80
 #endif  // LEGACY_APP_CONFIG
 
-typedef struct __attribute__((__packed__))
+// Start of packed struct definitions
+PACKED_STRUCT_START
+
+typedef PACKED_STRUCT
 {
     uint8_t start_option;
-} msap_stack_start_req_pl_t;
+}
+msap_stack_start_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t sequence_number;
     uint16_t diag_data_interval;
     uint8_t app_config_data[MAXIMUM_APP_CONFIG_SIZE];
-} msap_app_config_data_write_req_pl_t;
+}
+msap_app_config_data_write_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint16_t attribute_id;
     uint8_t attribute_length;
     uint8_t attribute_value[16];
-} msap_attribute_write_req_pl_t;
+}
+msap_attribute_write_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint16_t attribute_id;
-} msap_attribute_read_req_pl_t;
+}
+msap_attribute_read_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint32_t scratchpad_length;
     uint8_t scratchpad_sequence_number;
-} msap_image_start_req_pl_t;
+}
+msap_image_start_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint32_t start_add;
     uint8_t number_of_bytes;
     uint8_t bytes[MAXIMUM_SCRATCHPAD_BLOCK_SIZE];
-} msap_image_block_req_pl_t;
+}
+msap_image_block_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint32_t target;
-} msap_image_remote_status_req_pl_t;
+}
+msap_image_remote_status_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint32_t target;
     uint8_t seq;
     uint16_t delay_s;
+}
+msap_image_remote_update_req_pl_t;
 
-} msap_image_remote_update_req_pl_t;
-
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint32_t add;
     uint8_t link_rel;
@@ -99,62 +110,71 @@ typedef struct __attribute__((__packed__))
     uint8_t tx_power;
     uint8_t rx_power;
     uint16_t last_update;
-} neighbor_info_t;
+}
+neighbor_info_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t number_of_neighbors;
     neighbor_info_t nbors[MAXIMUM_NUMBER_OF_NEIGHBOR];
-} msap_get_nbors_conf_pl_t;
+}
+msap_get_nbors_conf_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t indication_status;
     uint8_t scan_ready;
-} msap_scan_nbors_ind_pl_t;
+}
+msap_scan_nbors_ind_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t cost;
-} msap_sink_cost_write_req_pl_t;
+}
+msap_sink_cost_write_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t result;
     uint8_t cost;
-} msap_sink_cost_read_conf_pl_t;
+}
+msap_sink_cost_read_conf_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t indication_status;
     uint8_t status;
-} msap_stack_state_ind_pl_t;
+}
+msap_stack_state_ind_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t indication_status;
     uint8_t sequence_number;
     uint16_t diag_data_interval;
     uint8_t app_config_data[MAXIMUM_APP_CONFIG_SIZE];
-} msap_app_config_data_rx_ind_pl_t;
+}
+msap_app_config_data_rx_ind_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t result;
     uint8_t sequence_number;
     uint16_t diag_data_interval;
     uint8_t app_config_data[MAXIMUM_APP_CONFIG_SIZE];
-} msap_app_config_data_read_conf_pl_t;
+}
+msap_app_config_data_read_conf_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t result;
     uint16_t attribute_id;
     uint8_t attribute_length;
     uint8_t attribute_value[16];
-} msap_attribute_read_conf_pl_t;
+}
+msap_attribute_read_conf_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint32_t scrat_len;
     uint16_t scrat_crc;
@@ -169,15 +189,20 @@ typedef struct __attribute__((__packed__))
     uint8_t firmware_minor_ver;
     uint8_t firmware_maint_ver;
     uint8_t firmware_dev_ver;
-} msap_scratchpad_status_conf_pl_t;
+}
+msap_scratchpad_status_conf_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t indication_status;
     uint32_t source_address;
     msap_scratchpad_status_conf_pl_t status;
     uint16_t update_timeout;
-} msap_image_remote_status_ind_pl_t;
+}
+msap_image_remote_status_ind_pl_t;
+
+// End of packed struct definitions
+PACKED_STRUCT_END
 
 static inline void
 convert_internal_to_app_scratchpad_status(app_scratchpad_status_t * status_p,
