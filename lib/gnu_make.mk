@@ -5,21 +5,21 @@
 # Detect platform and set toolchain variables
 include platform.mk
 
-# Paths, including trailing path separator
-SOURCEPREFIX :=
-BUILDPREFIX  := build/
+# Path of source files and build outputs
+SOURCEPREFIX := .
+BUILDPREFIX  := build
 
 # Uncomment the following line only if running with an old stack
 #CFLAGS  += -DLEGACY_APP_CONFIG
 
 # Targets definition
-LIB_NAME := mesh_api_lib.a
-TARGET_LIB := $(BUILDPREFIX)$(LIB_NAME)
+LIB_NAME := mesh_api_lib
+TARGET_LIB := $(BUILDPREFIX)/$(LIB_NAME).a
 
 SOURCES :=
 
-# Add API header (including logger)
-CFLAGS += -Iapi/
+# Add API header (including logger) and internal headers
+CFLAGS += -Iapi -Iinclude
 
 # Include platform module sources
 include platform/gnu_make.mk
@@ -27,8 +27,8 @@ include platform/gnu_make.mk
 # Include WPC generic sources
 include wpc/gnu_make.mk
 
-OBJECTS := $(patsubst $(SOURCEPREFIX)%,                     \
-                      $(BUILDPREFIX)%,                      \
+OBJECTS := $(patsubst $(SOURCEPREFIX)/%,                     \
+                      $(BUILDPREFIX)/%,                      \
                       $(SOURCES:.c=.o))
 
 
@@ -71,7 +71,7 @@ lib: $(TARGET_LIB)
 clean:
 	$(call CLEAN)
 
-$(BUILDPREFIX)%.o: $(SOURCEPREFIX)%.c
+$(BUILDPREFIX)/%.o: $(SOURCEPREFIX)/%.c
 	$(call COMPILE,$@,$<)
 
 $(TARGET_LIB): $(OBJECTS)

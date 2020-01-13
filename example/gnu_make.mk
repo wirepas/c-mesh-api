@@ -1,30 +1,30 @@
 # Makefile for Wirepas C Mesh API example, GNU make version
 
 # This example needs the C Mesh API library
-MESH_LIB_FOLDER := ../lib/
-MESH_LIB := $(MESH_LIB_FOLDER)build/mesh_api_lib.a
+MESH_LIB_FOLDER := ../lib
+MESH_LIB := $(MESH_LIB_FOLDER)/build/mesh_api_lib.a
 
 # Detect platform and set toolchain variables
-include $(MESH_LIB_FOLDER)platform.mk
+include $(MESH_LIB_FOLDER)/platform.mk
 
-# Paths, including trailing path separator
-SOURCEPREFIX   := ./
-BUILDPREFIX    := build/
+# Path of source files and build outputs
+SOURCEPREFIX   := .
+BUILDPREFIX    := build
 
 # Targets definition
 MAIN_APP := meshAPIExample
 
-TARGET_APP := $(BUILDPREFIX)$(MAIN_APP)
+TARGET_APP := $(BUILDPREFIX)/$(MAIN_APP)
 
 # Add API header
-CFLAGS  += -I$(MESH_LIB_FOLDER)api
+CFLAGS  += -I$(MESH_LIB_FOLDER)/api
 
 # Source files
-SOURCES:= $(SOURCEPREFIX)main.c
+SOURCES:= $(SOURCEPREFIX)/main.c
 
 # Object files
-OBJECTS := $(patsubst $(SOURCEPREFIX)%,         \
-                      $(BUILDPREFIX)%,          \
+OBJECTS := $(patsubst $(SOURCEPREFIX)/%,         \
+                      $(BUILDPREFIX)/%,          \
                       $(SOURCES:.c=.o))
 
 
@@ -69,8 +69,8 @@ clean:
 $(MESH_LIB):
 	make -C $(MESH_LIB_FOLDER)
 
-$(BUILDPREFIX)%.o: $(SOURCEPREFIX)%.c
+$(BUILDPREFIX)/%.o: $(SOURCEPREFIX)/%.c
 	$(call COMPILE,$@,$<)
 
-$(BUILDPREFIX)$(MAIN_APP): $(OBJECTS) $(MESH_LIB)
+$(BUILDPREFIX)/$(MAIN_APP): $(OBJECTS) $(MESH_LIB)
 	$(call LINK,$@,$^)
