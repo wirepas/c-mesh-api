@@ -1,1 +1,12 @@
-# TODO
+# Sources for WPC module
+WPC_MODULE = $(SOURCEPREFIX)\wpc
+
+SOURCES = $(SOURCES) $(WPC_MODULE)\wpc.c
+SOURCES = $(SOURCES) $(WPC_MODULE)\slip.c
+SOURCES = $(SOURCES) $(WPC_MODULE)\wpc_internal.c
+SOURCES = $(SOURCES) $(WPC_MODULE)\dsap.c
+SOURCES = $(SOURCES) $(WPC_MODULE)\msap.c
+SOURCES = $(SOURCES) $(WPC_MODULE)\csap.c
+SOURCES = $(SOURCES) $(WPC_MODULE)\attribute.c
+
+CFLAGS  = $(CFLAGS) /I$(WPC_MODULE)\include
