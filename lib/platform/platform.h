@@ -6,7 +6,7 @@
 #ifndef PLATFORM_H_
 #define PLATFORM_H_
 
-bool Platform_init();
+bool Platform_init(void);
 
 void Platform_usleep(unsigned int time_us);
 
@@ -17,7 +17,7 @@ void Platform_usleep(unsigned int time_us);
  *          to convert it later.
  * \return  Timestamp when the call to this function is made
  */
-unsigned long long Platform_get_timestamp_ms_epoch();
+unsigned long long Platform_get_timestamp_ms_epoch(void);
 
 /**
  * \brief  Call at the beginning of a locked section to send a request
@@ -28,13 +28,13 @@ unsigned long long Platform_get_timestamp_ms_epoch();
  *         from same thread as other API requests, it has to be implemented
  *         accordingly to the architecture chosen.
  */
-bool Platform_lock_request();
+bool Platform_lock_request(void);
 
 /**
  *
  * \brief  Called at the end of a locked section to send a request
  */
-void Platform_unlock_request();
+void Platform_unlock_request(void);
 
 /**
  * \brief   Set maximum duration the poll requests are accepted to fail
@@ -46,6 +46,6 @@ void Platform_unlock_request();
  */
 bool Platform_set_max_poll_fail_duration(unsigned long duration_s);
 
-void Platform_close();
+void Platform_close(void);
 
 #endif /* PLATFORM_H_ */

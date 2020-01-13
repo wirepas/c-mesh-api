@@ -80,6 +80,6 @@ static inline int csap_attribute_read_request(uint16_t attribute_id,
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int csap_factory_reset_request();
+int csap_factory_reset_request(void);
 
 #endif /* CSAP_H_ */

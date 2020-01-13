@@ -242,7 +242,7 @@ app_res_e WPC_is_cipher_key_set(bool * set_p)
     return APP_RES_OK;
 }
 
-app_res_e WPC_remove_cipher_key()
+app_res_e WPC_remove_cipher_key(void)
 {
     uint8_t disable_key[16];
     memset(disable_key, 0xFF, sizeof(disable_key));
@@ -271,7 +271,7 @@ app_res_e WPC_is_authentication_key_set(bool * set_p)
     return APP_RES_OK;
 }
 
-app_res_e WPC_remove_authentication_key()
+app_res_e WPC_remove_authentication_key(void)
 {
     uint8_t disable_key[16];
     memset(disable_key, 0xFF, sizeof(disable_key));
@@ -304,7 +304,7 @@ static const app_res_e FACT_RESET_ERROR_CODE_LUT[] = {
     APP_RES_ACCESS_DENIED       // 3
 };
 
-app_res_e WPC_do_factory_reset()
+app_res_e WPC_do_factory_reset(void)
 {
     int res = csap_factory_reset_request();
 
@@ -809,7 +809,7 @@ static const app_res_e SCRATCHPAD_CLEAR_LOCAL_ERROR_CODE_LUT[] = {
     APP_RES_ACCESS_DENIED       // 2
 };
 
-app_res_e WPC_clear_local_scratchpad()
+app_res_e WPC_clear_local_scratchpad(void)
 {
     int res = msap_scratchpad_clear_request();
 
@@ -824,7 +824,7 @@ static const app_res_e SCRATCHPAD_UPDATE_LOCAL_ERROR_CODE_LUT[] = {
     APP_RES_ACCESS_DENIED         // 3
 };
 
-app_res_e WPC_update_local_scratchpad()
+app_res_e WPC_update_local_scratchpad(void)
 {
     int res = msap_scratchpad_update_request();
 
@@ -876,7 +876,7 @@ static const app_res_e SCAN_NEIGHBORS_ERROR_CODE_LUT[] = {
     APP_RES_ACCESS_DENIED      // 2
 };
 
-app_res_e WPC_start_scan_neighbors()
+app_res_e WPC_start_scan_neighbors(void)
 {
     int res = msap_scan_nbors_request();
 
@@ -980,7 +980,7 @@ app_res_e WPC_register_for_remote_status(onRemoteStatus_cb_f onRemoteStatusRecei
     return msap_register_for_remote_status(onRemoteStatusReceived) ? APP_RES_OK : APP_RES_INVALID_VALUE;
 }
 
-app_res_e WPC_unregister_for_remote_status()
+app_res_e WPC_unregister_for_remote_status(void)
 {
     return msap_unregister_from_remote_status() ? APP_RES_OK : APP_RES_INVALID_VALUE;
 }
@@ -990,7 +990,7 @@ app_res_e WPC_register_for_app_config_data(onAppConfigDataReceived_cb_f onAppCon
     return msap_register_for_app_config(onAppConfigDataReceived) ? APP_RES_OK : APP_RES_ALREADY_REGISTERED;
 }
 
-app_res_e WPC_unregister_from_app_config_data()
+app_res_e WPC_unregister_from_app_config_data(void)
 {
     return msap_unregister_from_app_config() ? APP_RES_OK : APP_RES_NOT_REGISTERED;
 }
@@ -1000,7 +1000,7 @@ app_res_e WPC_register_for_scan_neighbors_done(onScanNeighborsDone_cb_f onScanNe
     return msap_register_for_scan_neighbors_done(onScanNeighborDone) ? APP_RES_OK : APP_RES_INVALID_VALUE;
 }
 
-app_res_e WPC_unregister_from_scan_neighbors_done()
+app_res_e WPC_unregister_from_scan_neighbors_done(void)
 {
     return msap_unregister_from_scan_neighbors_done() ? APP_RES_OK : APP_RES_INVALID_VALUE;
 }
@@ -1010,7 +1010,7 @@ app_res_e WPC_register_for_stack_status(onStackStatusReceived_cb_f onStackStatus
     return msap_register_for_stack_status(onStackStatusReceived) ? APP_RES_OK : APP_RES_INVALID_VALUE;
 }
 
-app_res_e WPC_unregister_from_stack_status()
+app_res_e WPC_unregister_from_stack_status(void)
 {
     return msap_unregister_from_stack_status() ? APP_RES_OK : APP_RES_INVALID_VALUE;
 }

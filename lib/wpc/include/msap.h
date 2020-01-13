@@ -248,7 +248,7 @@ int msap_stack_start_request(uint8_t start_option);
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_stack_stop_request();
+int msap_stack_stop_request(void);
 
 /**
  * \brief    Request to write data config
@@ -312,7 +312,7 @@ int msap_get_nbors_request(msap_get_nbors_conf_pl_t * neigbors_p);
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_scan_nbors_request();
+int msap_scan_nbors_request(void);
 
 /**
  * \brief    Request to start a scratchpad update
@@ -354,14 +354,14 @@ int msap_scratchpad_status_request(msap_scratchpad_status_conf_pl_t * status_p);
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_scratchpad_update_request();
+int msap_scratchpad_update_request(void);
 
 /**
  * \brief    Clear the stored scratchpad
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_scratchpad_clear_request();
+int msap_scratchpad_clear_request(void);
 
 /**
  * \brief   Get status of a remote node scratchpad status
@@ -442,7 +442,7 @@ bool msap_register_for_app_config(onAppConfigDataReceived_cb_f cb);
  * \brief   Unregister for app config data
  * \return  True if unregistered successfully, false otherwise
  */
-bool msap_unregister_from_app_config();
+bool msap_unregister_from_app_config(void);
 
 /**
  * \brief   Register for remote status
@@ -456,7 +456,7 @@ bool msap_register_for_remote_status(onRemoteStatus_cb_f cb);
  * \brief   Unregister from remote status
  * \return  True if unregistered successfully, false otherwise
  */
-bool msap_unregister_from_remote_status();
+bool msap_unregister_from_remote_status(void);
 
 /**
  * \brief   Register for scan neighbors status
@@ -470,7 +470,7 @@ bool msap_register_for_scan_neighbors_done(onScanNeighborsDone_cb_f cb);
  * \brief   Unregister from scan neighbors status
  * \return  True if unregistered successfully, false otherwise
  */
-bool msap_unregister_from_scan_neighbors_done();
+bool msap_unregister_from_scan_neighbors_done(void);
 
 /**
  * \brief   Register for stack status
@@ -484,6 +484,6 @@ bool msap_register_for_stack_status(onStackStatusReceived_cb_f cb);
  * \brief   Unregister from stack status
  * \return  True if unregistered successfully, false otherwise
  */
-bool msap_unregister_from_stack_status();
+bool msap_unregister_from_stack_status(void);
 
 #endif /* MSAP_H_ */

@@ -143,6 +143,6 @@ bool dsap_unregister_for_data(uint8_t dst_ep);
 /**
  * \brief   Initialize the dsap module
  */
-void dsap_init();
+void dsap_init(void);
 
 #endif /* DSAP_H_ */
