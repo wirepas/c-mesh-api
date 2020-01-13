@@ -29,7 +29,7 @@ ifeq ($(PLATFORM_IS_DARWIN),1)
     LD  := ld
 
     # Clang compiler flags
-    CFLAGS += -std=gnu99 -Wall -Werror -pthread
+    CFLAGS += -std=gnu99 -Wall -Werror -Os -pthread
     CFLAGS += -Wno-tautological-constant-out-of-range-compare
 
     # Linker flags
@@ -44,7 +44,7 @@ else ifeq ($(PLATFORM_IS_POSIX),1)
     LD  := ld
 
     # GCC compiler flags
-    CFLAGS += -std=gnu99 -Wall -Werror -pthread
+    CFLAGS += -std=gnu99 -Wall -Werror -Os -pthread
 
     # Linker flags
     LDFLAGS += -pthread
