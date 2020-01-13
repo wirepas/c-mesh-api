@@ -67,7 +67,7 @@ static const app_res_e ATT_READ_ERROR_CODE_LUT[] = {
     APP_RES_ACCESS_DENIED       // 6
 };
 
-/* Error code LUT for reading attribute */
+/* Error code LUT for writing attribute */
 static const app_res_e ATT_WRITE_ERROR_CODE_LUT[] = {
     APP_RES_OK,                 // 0
     APP_RES_INTERNAL_ERROR,     // 1

@@ -230,9 +230,10 @@ convert_internal_to_app_scratchpad_status(app_scratchpad_status_t * status_p,
 
 /**
  * \brief   Convert internal neighbors list returned by get_neighbors to API
- * representation \param   neighbors_p Pointer to public API neighbor list
- * structure \param   internal_neighbors_p Pointer to internal msap neighbor
- * list structure
+ *          representation
+ * \param   neighbors_p Pointer to public API neighbor list structure
+ * \param   internal_neighbors_p Pointer to internal msap neighbor list
+ *          structure
  */
 static inline void
 convert_internal_to_app_neighbors_status(app_nbors_t * neighbors_p,

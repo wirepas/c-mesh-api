@@ -27,6 +27,7 @@ typedef enum
  */
 typedef void (*onIndicationReceivedLocked_cb_f)(wpc_frame_t * frame,
                                                 unsigned long long timestamp_ms);
+
 /**
  * \brief   Function to send a request and wait for confirm for default timeout
  * \param   frame
