@@ -31,8 +31,8 @@ CFLAGS  += -I$(SOURCEPREFIX)
 SOURCES += $(SOURCEPREFIX)/test.c
 
 # Object files
-OBJECTS := $(patsubst $(SOURCEPREFIX)/%,        \
-                      $(BUILDPREFIX)/%,  	\
+OBJECTS := $(patsubst $(SOURCEPREFIX)/%,         \
+                      $(BUILDPREFIX)/%,          \
                       $(SOURCES:.c=.o))
 
 
@@ -68,13 +68,13 @@ endif
 .PHONY: all
 all: app
 
-app: $(TARGET_APP)
+app: lib $(TARGET_APP)
 
 .PHONY: clean
 clean:
 	$(call CLEAN)
 
-$(MESH_LIB):
+lib:
 	make -C $(MESH_LIB_FOLDER)
 
 $(BUILDPREFIX)/%.o: $(SOURCEPREFIX)/%.c

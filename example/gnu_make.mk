@@ -60,13 +60,13 @@ endif
 .PHONY: all
 all: app
 
-app: $(TARGET_APP)
+app: lib $(TARGET_APP)
 
 .PHONY: clean
 clean:
 	$(call CLEAN)
 
-$(MESH_LIB):
+lib:
 	make -C $(MESH_LIB_FOLDER)
 
 $(BUILDPREFIX)/%.o: $(SOURCEPREFIX)/%.c
