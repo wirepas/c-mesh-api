@@ -51,9 +51,12 @@ int Serial_set_extra_params(int fd)
     // On FTDI USB adapters it reduces the latency timer to 1 ms from the
     // default of 16 ms. See Part III of the FTDI application note
     // "AN232B-04 Data Throughput, Latency and Handshaking" for details
-    ioctl(fd, TIOCGSERIAL, &serial_s);
-    serial_s.flags |= ASYNC_LOW_LATENCY;
-    ioctl(fd, TIOCSSERIAL, &serial_s);
+    if (ioctl(fd, TIOCGSERIAL, &serial_s) >= 0)
+    {
+        serial_s.flags |= ASYNC_LOW_LATENCY;
+        ioctl(fd, TIOCSSERIAL, &serial_s);
+    }
 
+    // Errors are not fatal
     return 0;
 }

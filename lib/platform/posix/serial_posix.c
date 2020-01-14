@@ -91,6 +91,12 @@ static int set_interface_attribs(int fd, unsigned long bitrate, int parity)
 /****************************************************************************/
 int Serial_open(const char * port_name, unsigned long bitrate)
 {
+    if (fd >= 0)
+    {
+        LOGE("Serial port already open\n");
+        return -1;
+    }
+
     fd = open(port_name, O_RDWR | O_NOCTTY | O_SYNC);
     if (fd < 0)
     {
