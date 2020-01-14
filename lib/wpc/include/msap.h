@@ -206,7 +206,7 @@ PACKED_STRUCT_END
 
 static inline void
 convert_internal_to_app_scratchpad_status(app_scratchpad_status_t * status_p,
-                                          msap_scratchpad_status_conf_pl_t * internal_status_p)
+                                          const msap_scratchpad_status_conf_pl_t * internal_status_p)
 {
     // Copy internal payload to app return code. Cannot use memcpy as structures
     // may have different alignment
@@ -237,7 +237,7 @@ convert_internal_to_app_scratchpad_status(app_scratchpad_status_t * status_p,
  */
 static inline void
 convert_internal_to_app_neighbors_status(app_nbors_t * neighbors_p,
-                                         msap_get_nbors_conf_pl_t * internal_neighbors_p)
+                                         const msap_get_nbors_conf_pl_t * internal_neighbors_p)
 {
     // Copy internal payload to app return code. Cannot use memcpy as structures
     // may have different alignment
@@ -289,7 +289,10 @@ int msap_stack_stop_request(void);
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_app_config_data_write_request(uint8_t seq, uint16_t interval, uint8_t * config_p, uint8_t size);
+int msap_app_config_data_write_request(uint8_t seq,
+                                       uint16_t interval,
+                                       const uint8_t * config_p,
+                                       uint8_t size);
 
 /**
  * \brief    Request to read data config
@@ -364,7 +367,9 @@ int msap_scratchpad_start_request(uint32_t length, uint8_t seq);
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_bytes, uint8_t * bytes);
+int msap_scratchpad_block_request(uint32_t start_address,
+                                  uint8_t number_of_bytes,
+                                  const uint8_t * bytes);
 
 /**
  * \brief    Get the status of currently stored and processed scratchpad
@@ -416,7 +421,7 @@ int msap_scratchpad_remote_update(app_addr_t destination_address, uint8_t sequen
 
 static inline int msap_attribute_write_request(uint16_t attribute_id,
                                                uint8_t attribute_length,
-                                               uint8_t * attribute_value_p)
+                                               const uint8_t * attribute_value_p)
 {
     return attribute_write_request(MSAP_ATTRIBUTE_WRITE_REQUEST, attribute_id, attribute_length, attribute_value_p);
 }
@@ -433,28 +438,28 @@ static inline int msap_attribute_read_request(uint16_t attribute_id,
  * \param   payload
  *          pointer to payload
  */
-void msap_stack_state_indication_handler(msap_stack_state_ind_pl_t * payload);
+void msap_stack_state_indication_handler(const msap_stack_state_ind_pl_t * payload);
 
 /**
  * \brief   Handler for app config data receive
  * \param   payload
  *          pointer to payload
  */
-void msap_app_config_data_rx_indication_handler(msap_app_config_data_rx_ind_pl_t * payload);
+void msap_app_config_data_rx_indication_handler(const msap_app_config_data_rx_ind_pl_t * payload);
 
 /**
  * \brief   Handler for image remote status indication
  * \param   payload
  *          pointer to payload
  */
-void msap_image_remote_status_indication_handler(msap_image_remote_status_ind_pl_t * payload);
+void msap_image_remote_status_indication_handler(const msap_image_remote_status_ind_pl_t * payload);
 
 /**
  * \brief   Handler for scan neighbors indication
  * \param   payload
  *          pointer to payload
  */
-void msap_scan_nbors_indication_handler(msap_scan_nbors_ind_pl_t * payload);
+void msap_scan_nbors_indication_handler(const msap_scan_nbors_ind_pl_t * payload);
 
 /**
  * \brief   Register for app config data

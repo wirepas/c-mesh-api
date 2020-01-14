@@ -86,7 +86,7 @@ int msap_stack_stop_request()
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
-int msap_app_config_data_write_request(uint8_t seq, uint16_t interval, uint8_t * config_p, uint8_t size)
+int msap_app_config_data_write_request(uint8_t seq, uint16_t interval, const uint8_t * config_p, uint8_t size)
 {
     wpc_frame_t request, confirm;
     int res;
@@ -248,7 +248,7 @@ int msap_scratchpad_start_request(uint32_t length, uint8_t seq)
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
-int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_bytes, uint8_t * bytes)
+int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_bytes, const uint8_t * bytes)
 {
     wpc_frame_t request, confirm;
     int res;
@@ -375,7 +375,7 @@ int msap_scratchpad_remote_update(app_addr_t destination_address, uint8_t sequen
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
-void msap_stack_state_indication_handler(msap_stack_state_ind_pl_t * payload)
+void msap_stack_state_indication_handler(const msap_stack_state_ind_pl_t * payload)
 {
     LOGI("Status is 0x%02x\n", payload->status);
     if (m_stack_status_cb != NULL)
@@ -384,7 +384,7 @@ void msap_stack_state_indication_handler(msap_stack_state_ind_pl_t * payload)
     }
 }
 
-void msap_app_config_data_rx_indication_handler(msap_app_config_data_rx_ind_pl_t * payload)
+void msap_app_config_data_rx_indication_handler(const msap_app_config_data_rx_ind_pl_t * payload)
 {
     LOGD("Received config data : [%s] (%d)\n", payload->app_config_data, payload->diag_data_interval);
     if (m_app_conf_cb != NULL)
@@ -395,7 +395,7 @@ void msap_app_config_data_rx_indication_handler(msap_app_config_data_rx_ind_pl_t
     }
 }
 
-void msap_image_remote_status_indication_handler(msap_image_remote_status_ind_pl_t * payload)
+void msap_image_remote_status_indication_handler(const msap_image_remote_status_ind_pl_t * payload)
 {
     app_scratchpad_status_t app_status;
     LOGI("Received remote status from %d\n", payload->source_address);
@@ -406,7 +406,7 @@ void msap_image_remote_status_indication_handler(msap_image_remote_status_ind_pl
     }
 }
 
-void msap_scan_nbors_indication_handler(msap_scan_nbors_ind_pl_t * payload)
+void msap_scan_nbors_indication_handler(const msap_scan_nbors_ind_pl_t * payload)
 {
     LOGI("Received scan neighbors ind res %d\n", payload->scan_ready);
     if (m_scan_neighbor_cb != NULL)

@@ -309,7 +309,7 @@ int WPC_Int_send_request(wpc_frame_t * frame, wpc_frame_t * confirm)
     return WPC_Int_send_request_timeout(frame, confirm, TIMEOUT_CONFIRM_MS);
 }
 
-int WPC_Int_initialize(char * port_name, unsigned long bitrate)
+int WPC_Int_initialize(const char * port_name, unsigned long bitrate)
 {
     // Open the serial connection
     if (Serial_open(port_name, bitrate) < 0)

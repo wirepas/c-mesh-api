@@ -122,7 +122,7 @@ int dsap_data_tx_request(const uint8_t * buffer,
  * \brief   Handler for tx indication. It is called when sent data leaves the
  * node \param   payload Pointer to payload
  */
-void dsap_data_tx_indication_handler(dsap_data_tx_ind_pl_t * payload);
+void dsap_data_tx_indication_handler(const dsap_data_tx_ind_pl_t * payload);
 
 /**
  * \brief   Handler for rx indication
@@ -131,7 +131,7 @@ void dsap_data_tx_indication_handler(dsap_data_tx_ind_pl_t * payload);
  * \param   timestamp
  *          Timestamp of reception of rx reception
  */
-void dsap_data_rx_indication_handler(dsap_data_rx_ind_pl_t * rx_indication,
+void dsap_data_rx_indication_handler(const dsap_data_rx_ind_pl_t * rx_indication,
                                      unsigned long long timestamp_ms_epoch);
 
 /**

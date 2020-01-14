@@ -9,10 +9,10 @@
 #include <time.h>
 
 /* Full log level string  */
-static char DEBUG[] = "DEBUG";
-static char INFO[] = "INFO";
-static char WARNING[] = "WARNING";
-static char ERROR[] = "ERROR";
+static const char * DEBUG = "DEBUG";
+static const char * INFO = "INFO";
+static const char * WARNING = "WARNING";
+static const char * ERROR = "ERROR";
 
 static inline void get_timestamp(char timestamp[37])
 {
@@ -39,10 +39,10 @@ static inline void get_timestamp(char timestamp[37])
             ms);
 }
 
-static inline void print_prefix(char level, char * module)
+static inline void print_prefix(char level, const char * module)
 {
     char timestamp[37];
-    char * full_level;
+    const char * full_level;
 
     switch (level)
     {
@@ -65,13 +65,13 @@ static inline void print_prefix(char level, char * module)
     printf("%s | [%s] %s:", timestamp, full_level, module);
 }
 
-void Platform_LOG(char level, char * module, char * format, va_list args)
+void Platform_LOG(char level, const char * module, const char * format, va_list args)
 {
     print_prefix(level, module);
     vprintf(format, args);
 }
 
-void Platform_print_buffer(uint8_t * buffer, int size)
+void Platform_print_buffer(const uint8_t * buffer, int size)
 {
     int i;
     for (i = 0; i < size; i++)

@@ -348,7 +348,7 @@ static bool testSendWithInitialTime()
     return true;
 }
 
-static void onAppConfigDataReceived(uint8_t seq, uint16_t interval, uint8_t * config_p)
+static void onAppConfigDataReceived(uint8_t seq, uint16_t interval, const uint8_t * config_p)
 {
     LOGI("AppConfig received %d, %d, %s\n", seq, interval, config_p);
 }
@@ -631,7 +631,7 @@ bool testLoadScratchpad()
 }
 
 static void onRemoteStatusCb(app_addr_t source_address,
-                             app_scratchpad_status_t * status,
+                             const app_scratchpad_status_t * status,
                              uint16_t request_timeout)
 {
     LOGI("Received status from %d with tiemout to %d\n", source_address, request_timeout);

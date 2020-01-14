@@ -183,7 +183,7 @@ int dsap_data_tx_request(const uint8_t * buffer,
     return confirm_res;
 }
 
-void dsap_data_tx_indication_handler(dsap_data_tx_ind_pl_t * payload)
+void dsap_data_tx_indication_handler(const dsap_data_tx_ind_pl_t * payload)
 {
     onDataSent_cb_f cb = get_indication_cb(payload->pdu_id);
 
@@ -200,7 +200,7 @@ void dsap_data_tx_indication_handler(dsap_data_tx_ind_pl_t * payload)
     }
 }
 
-void dsap_data_rx_indication_handler(dsap_data_rx_ind_pl_t * payload,
+void dsap_data_rx_indication_handler(const dsap_data_rx_ind_pl_t * payload,
                                      unsigned long long timestamp_ms_epoch)
 {
     uint32_t internal_travel_time = uint32_decode_le((uint8_t *) &(payload->travel_time));

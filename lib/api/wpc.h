@@ -221,7 +221,7 @@ typedef struct
  * \param   bitrate
  *          bitrate in bits per second, e.g. \ref DEFAULT_BITRATE
  */
-app_res_e WPC_initialize(char * port_name, unsigned long bitrate);
+app_res_e WPC_initialize(const char * port_name, unsigned long bitrate);
 
 /**
  * \brief   Stop the Wirepas Mesh serial communication
@@ -339,7 +339,7 @@ app_res_e WPC_get_mesh_API_version(uint16_t * value_p);
  *          The new key to set
  * \return  Return code of the operation
  */
-app_res_e WPC_set_cipher_key(uint8_t key[16]);
+app_res_e WPC_set_cipher_key(const uint8_t key[16]);
 
 /**
  * \brief   Check if cipher key is set
@@ -361,7 +361,7 @@ app_res_e WPC_remove_cipher_key(void);
  *          The new key to set
  * \return  Return code of the operation
  */
-app_res_e WPC_set_authentication_key(uint8_t key[16]);
+app_res_e WPC_set_authentication_key(const uint8_t key[16]);
 
 /**
  * \brief   Check if authentication key is set
@@ -469,7 +469,8 @@ app_res_e WPC_get_app_config_data_size(uint8_t * value_p);
  * \return  Return code of the operation
  * \note    This call can only be made from a sink node
  */
-app_res_e WPC_set_app_config_data(uint8_t seq, uint16_t interval, uint8_t * config_p, uint8_t size);
+app_res_e
+WPC_set_app_config_data(uint8_t seq, uint16_t interval, const uint8_t * config_p, uint8_t size);
 
 /**
  * \brief   Get app config data
@@ -516,7 +517,7 @@ app_res_e WPC_get_sink_cost(uint8_t * cost_p);
  *          Pointer to the received config data
  *          Size is equal to returned size by WPC_get_app_config_data_size
  */
-typedef void (*onAppConfigDataReceived_cb_f)(uint8_t seq, uint16_t interval, uint8_t * config_p);
+typedef void (*onAppConfigDataReceived_cb_f)(uint8_t seq, uint16_t interval, const uint8_t * config_p);
 
 /**
  * \brief   Register for receiving app config data
@@ -700,7 +701,7 @@ app_res_e WPC_start_local_scratchpad_update(uint32_t len, uint8_t seq);
  *          Offset of the block relatively to the beginning of scratchpad
  * \return  Return code of the operation
  */
-app_res_e WPC_upload_local_block_scratchpad(uint32_t len, uint8_t * bytes, uint32_t start);
+app_res_e WPC_upload_local_block_scratchpad(uint32_t len, const uint8_t * bytes, uint32_t start);
 
 /**
  * \brief   Upload a full scratchpad
@@ -712,7 +713,7 @@ app_res_e WPC_upload_local_block_scratchpad(uint32_t len, uint8_t * bytes, uint3
  *          Sequence of the scratchpad to upload
  * \return  Return code of the operation
  */
-app_res_e WPC_upload_local_scratchpad(uint32_t len, uint8_t * bytes, uint8_t seq);
+app_res_e WPC_upload_local_scratchpad(uint32_t len, const uint8_t * bytes, uint8_t seq);
 
 /**
  * \brief   Clear the local stored scratchpad
@@ -808,7 +809,7 @@ app_res_e WPC_send_data(const uint8_t * bytes,
  *          The message to send
  * \return  Return code of the operation
  */
-app_res_e WPC_send_data_with_options(app_message_t * message_p);
+app_res_e WPC_send_data_with_options(const app_message_t * message_p);
 
 /**
  * \brief   Callback definition to register for received data
@@ -876,7 +877,7 @@ app_res_e WPC_unregister_for_data(uint8_t dst_ep);
  *          0 means that no update request is ongoing
  */
 typedef void (*onRemoteStatus_cb_f)(app_addr_t source_address,
-                                    app_scratchpad_status_t * status,
+                                    const app_scratchpad_status_t * status,
                                     uint16_t request_timeout);
 
 /**

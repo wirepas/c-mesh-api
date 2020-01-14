@@ -82,7 +82,7 @@ int WPC_Int_get_indication(unsigned int max_ind, onIndicationReceivedLocked_cb_f
  */
 void WPC_Int_dispatch_indication(wpc_frame_t * frame, unsigned long long timestamp_ms);
 
-int WPC_Int_initialize(char * port_name, unsigned long bitrate);
+int WPC_Int_initialize(const char * port_name, unsigned long bitrate);
 
 void WPC_Int_close(void);
 
