@@ -15,7 +15,7 @@
 
 static const uint8_t reset_key_le[4] = {0x44, 0x6f, 0x49, 0x74};  // DoIt in ascii in LE
 
-int csap_factory_reset_request()
+int csap_factory_reset_request(void)
 {
     wpc_frame_t request, confirm;
     int res;

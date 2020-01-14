@@ -3,6 +3,7 @@
  * See file LICENSE for full license details.
  *
  */
+
 #include <stdio.h>
 #include <string.h>
 
@@ -39,7 +40,7 @@ static bool setInitialState(app_role_t role,
     return true;
 }
 
-static bool testFactoryReset()
+static bool testFactoryReset(void)
 {
     app_res_e res = WPC_stop_stack();
     app_addr_t add;
@@ -110,7 +111,7 @@ static bool setAppconfig(uint8_t * config, uint16_t interval, uint8_t size)
     return true;
 }
 
-static bool dumpCSAPAttributes()
+static bool dumpCSAPAttributes(void)
 {
     uint8_t role;
     net_channel_t channel;
@@ -175,7 +176,7 @@ static bool dumpCSAPAttributes()
     return true;
 }
 
-static bool testCipherKey()
+static bool testCipherKey(void)
 {
     bool key_set;
     if (WPC_is_cipher_key_set(&key_set) != APP_RES_OK)
@@ -234,7 +235,7 @@ static bool testCipherKey()
     return true;
 }
 
-static bool testAuthenticationKey()
+static bool testAuthenticationKey(void)
 {
     bool key_set;
     if (WPC_is_authentication_key_set(&key_set) != APP_RES_OK)
@@ -298,7 +299,7 @@ void onDataSent(uint16_t pduid, uint32_t buffering_delay, uint8_t result)
     LOGI("Indication received for %d, delay=%d, result=%d\n", pduid, buffering_delay, result);
 }
 
-static bool testSendWithCallbacks()
+static bool testSendWithCallbacks(void)
 {
     // Send 5 message to ourself
     uint8_t data[] = "This is a test message #00 with ind\0";
@@ -315,7 +316,7 @@ static bool testSendWithCallbacks()
     return true;
 }
 
-static bool testSendWithoutCallbacks()
+static bool testSendWithoutCallbacks(void)
 {
     // Send 5 message to ourself
     uint8_t data[] = "This is a test message #00\0";
@@ -331,7 +332,7 @@ static bool testSendWithoutCallbacks()
     return true;
 }
 
-static bool testSendWithInitialTime()
+static bool testSendWithInitialTime(void)
 {
     // Send 5 message to ourself
     uint8_t data[] = "This is a test message #00\0";
@@ -353,7 +354,7 @@ static void onAppConfigDataReceived(uint8_t seq, uint16_t interval, const uint8_
     LOGI("AppConfig received %d, %d, %s\n", seq, interval, config_p);
 }
 
-static bool testAppConfigData()
+static bool testAppConfigData(void)
 {
     uint8_t new_config[128];
     uint8_t max_size;
@@ -383,7 +384,7 @@ static bool testAppConfigData()
     return true;
 }
 
-static bool testMSAPAttributesStackOff()
+static bool testMSAPAttributesStackOff(void)
 {
     uint16_t min, max;
     // Access cycle
@@ -429,7 +430,7 @@ static bool testMSAPAttributesStackOff()
     return true;
 }
 
-static bool testMSAPAttributesStackOn()
+static bool testMSAPAttributesStackOn(void)
 {
     uint8_t res8;
     uint16_t res16;
@@ -516,7 +517,7 @@ static bool testMSAPAttributesStackOn()
     return true;
 }
 
-bool testClearScratchpad()
+bool testClearScratchpad(void)
 {
     app_scratchpad_status_t status;
     if (WPC_clear_local_scratchpad() != APP_RES_OK)
@@ -543,7 +544,7 @@ bool testClearScratchpad()
 #define BLOCK_SIZE 128
 #define SEQ_NUMBER 50
 #define OTAP_FILE_PATH "source/test/scratchpad_nrf52.otap"
-bool testLoadScratchpad()
+bool testLoadScratchpad(void)
 {
     FILE * fp;
     app_scratchpad_status_t status;
@@ -642,7 +643,7 @@ static void onRemoteStatusCb(app_addr_t source_address,
          status->processed_scrat_crc);
 }
 
-static bool testRemoteStatus()
+static bool testRemoteStatus(void)
 {
     if (WPC_register_for_remote_status(onRemoteStatusCb) != APP_RES_OK)
     {
@@ -672,7 +673,7 @@ static bool testRemoteStatus()
     return true;
 }
 
-static bool testRemoteUpdate()
+static bool testRemoteUpdate(void)
 {
     // Send a update with a 0 reboot delay to just test the command
     if (WPC_remote_scratchpad_update(APP_ADDR_BROADCAST, 50, 0) != APP_RES_OK)
@@ -692,7 +693,7 @@ static void onScanNeighborsDone(uint8_t status)
     scan_done = true;
 }
 
-static bool testScanNeighbors()
+static bool testScanNeighbors(void)
 {
     app_nbors_t neighbors_list;
 
@@ -757,7 +758,7 @@ static void onStackStatusReceived(uint8_t status)
     LOGI("Stack status received %d\n", status);
 }
 
-static bool testStackStatus()
+static bool testStackStatus(void)
 {
     if (WPC_register_for_stack_status(onStackStatusReceived) != APP_RES_OK)
     {
@@ -781,7 +782,7 @@ static bool testStackStatus()
         }                                             \
     } while (0)
 
-int Test_runAll()
+int Test_runAll(void)
 {
     uint8_t status;
 
@@ -833,7 +834,7 @@ int Test_runAll()
     return 0;
 }
 
-int Test_scratchpad()
+int Test_scratchpad(void)
 {
     // Configure node as a sink
     setInitialState(APP_ROLE_SINK, 1234, 0x654321, 5, false);

@@ -110,7 +110,7 @@ int Serial_open(const char * port_name, unsigned long bitrate)
     return 0;
 }
 
-int Serial_close()
+int Serial_close(void)
 {
     if (fd < 0)
     {

@@ -272,7 +272,7 @@ bool dsap_unregister_for_data(uint8_t dst_ep)
     return ret;
 }
 
-void dsap_init()
+void dsap_init(void)
 {
     // Initialize internal structures
     memset(data_cb_table, 0, sizeof(data_cb_table));

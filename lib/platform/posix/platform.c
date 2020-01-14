@@ -149,7 +149,7 @@ static void onIndicationReceivedLocked(wpc_frame_t * frame, unsigned long long t
 /**
  * \brief   Utility function to get current timesatmp in s.
  */
-static time_t get_timestamp_s()
+static time_t get_timestamp_s(void)
 {
     struct timespec spec;
 
@@ -253,7 +253,7 @@ void Platform_usleep(unsigned int time_us)
     usleep(time_us);
 }
 
-bool Platform_lock_request()
+bool Platform_lock_request(void)
 {
     int res = pthread_mutex_lock(&sending_mutex);
     if (res != 0)
@@ -266,12 +266,12 @@ bool Platform_lock_request()
     return true;
 }
 
-void Platform_unlock_request()
+void Platform_unlock_request(void)
 {
     pthread_mutex_unlock(&sending_mutex);
 }
 
-unsigned long long Platform_get_timestamp_ms_epoch()
+unsigned long long Platform_get_timestamp_ms_epoch(void)
 {
     struct timespec spec;
 
@@ -280,7 +280,7 @@ unsigned long long Platform_get_timestamp_ms_epoch()
     return ((unsigned long long) spec.tv_sec) * 1000 + (spec.tv_nsec) / 1000 / 1000;
 }
 
-bool Platform_init()
+bool Platform_init(void)
 {
     /* This linux implementation uses a dedicated thread
      * to poll for indication. The indication are then handled
@@ -346,7 +346,7 @@ bool Platform_set_max_poll_fail_duration(unsigned long duration_s)
     return true;
 }
 
-void Platform_close()
+void Platform_close(void)
 {
     pthread_mutex_destroy(&m_queue_mutex);
     pthread_mutex_destroy(&sending_mutex);

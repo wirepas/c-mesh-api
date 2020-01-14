@@ -69,7 +69,7 @@ int msap_stack_start_request(uint8_t start_option)
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
-int msap_stack_stop_request()
+int msap_stack_stop_request(void)
 {
     wpc_frame_t request, confirm;
     int res;
@@ -208,7 +208,7 @@ int msap_get_nbors_request(msap_get_nbors_conf_pl_t * neigbors_p)
     return APP_RES_OK;
 }
 
-int msap_scan_nbors_request()
+int msap_scan_nbors_request(void)
 {
     wpc_frame_t request, confirm;
     int res;
@@ -299,7 +299,7 @@ int msap_scratchpad_status_request(msap_scratchpad_status_conf_pl_t * status_p)
     return APP_RES_OK;
 }
 
-int msap_scratchpad_update_request()
+int msap_scratchpad_update_request(void)
 {
     wpc_frame_t request, confirm;
     int res;
@@ -317,7 +317,7 @@ int msap_scratchpad_update_request()
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
-int msap_scratchpad_clear_request()
+int msap_scratchpad_clear_request(void)
 {
     wpc_frame_t request, confirm;
     int res;
@@ -443,7 +443,7 @@ bool msap_register_for_app_config(onAppConfigDataReceived_cb_f cb)
     return register_cb((void *) cb, (void **) &m_app_conf_cb);
 }
 
-bool msap_unregister_from_app_config()
+bool msap_unregister_from_app_config(void)
 {
     return unregister_cb((void **) &m_app_conf_cb);
 }
@@ -453,7 +453,7 @@ bool msap_register_for_remote_status(onRemoteStatus_cb_f cb)
     return register_cb((void *) cb, (void **) &m_remote_status_cb);
 }
 
-bool msap_unregister_from_remote_status()
+bool msap_unregister_from_remote_status(void)
 {
     return unregister_cb((void **) &m_remote_status_cb);
 }
@@ -463,7 +463,7 @@ bool msap_register_for_scan_neighbors_done(onScanNeighborsDone_cb_f cb)
     return register_cb((void *) cb, (void **) &m_scan_neighbor_cb);
 }
 
-bool msap_unregister_from_scan_neighbors_done()
+bool msap_unregister_from_scan_neighbors_done(void)
 {
     return unregister_cb((void **) &m_scan_neighbor_cb);
 }
@@ -473,7 +473,7 @@ bool msap_register_for_stack_status(onStackStatusReceived_cb_f cb)
     return register_cb((void *) cb, (void **) &m_stack_status_cb);
 }
 
-bool msap_unregister_from_stack_status()
+bool msap_unregister_from_stack_status(void)
 {
     return unregister_cb((void **) &m_stack_status_cb);
 }
