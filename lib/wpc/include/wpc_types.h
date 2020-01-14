@@ -99,7 +99,7 @@ PACKED_STRUCT_END
 // Size of a given frame
 #define FRAME_SIZE(__frame_ptr__) ((__frame_ptr__)->payload_length + 3)
 
-// Max frame size (including crc)
+// Max frame size (including CRC)
 #define MAX_FRAME_SIZE (sizeof(wpc_frame_t) + 2)
 
 // Define the function type to handle a received frame from the stack (confirm

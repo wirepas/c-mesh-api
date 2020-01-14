@@ -7,7 +7,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define LOG_MODULE_NAME "SLIP"
+#define LOG_MODULE_NAME "slip"
 #define MAX_LOG_LEVEL INFO_LOG_LEVEL
 //#define PRINT_BUFFERS
 #include "logger.h"
@@ -295,7 +295,7 @@ int Slip_get_buffer(uint8_t * buffer, size_t len, unsigned int timeout_ms)
         else if (start_of_frame_detected)
         {
 #ifdef PRINT_RECEIVED_CHAR
-            LOG_PRINT_BUFFER(&read, 1);
+            LOG_PRINT_BUFFER(&read_byte, 1);
 #endif
             if (size >= sizeof(receiving_buffer))
             {
@@ -308,7 +308,7 @@ int Slip_get_buffer(uint8_t * buffer, size_t len, unsigned int timeout_ms)
         }
         else
         {
-            LOGD("Receiving bytes between messages 0x%02x\n", read);
+            LOGD("Receiving bytes between messages 0x%02x\n", read_byte);
         }
     }  // End of while(1)
 

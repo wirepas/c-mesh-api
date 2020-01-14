@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <time.h>
 
-#define LOG_MODULE_NAME "linux_plat"
+#define LOG_MODULE_NAME "plat_posix"
 #define MAX_LOG_LEVEL INFO_LOG_LEVEL
 #include "logger.h"
 #include "wpc_internal.h"

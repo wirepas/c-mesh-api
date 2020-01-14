@@ -14,7 +14,7 @@
 
 #include "serial_posix.h"
 
-#define LOG_MODULE_NAME "SERIAL"
+#define LOG_MODULE_NAME "serial_posix"
 #define MAX_LOG_LEVEL INFO_LOG_LEVEL
 #include "logger.h"
 
@@ -94,7 +94,7 @@ int Serial_open(const char * port_name, unsigned long bitrate)
     fd = open(port_name, O_RDWR | O_NOCTTY | O_SYNC);
     if (fd < 0)
     {
-        LOGE("Error %d opening serial link %s: %s\n", errno, port_name, strerror(errno));
+        LOGE("Error %d opening serial port %s: %s\n", errno, port_name, strerror(errno));
         return -1;
     }
 
@@ -106,7 +106,7 @@ int Serial_open(const char * port_name, unsigned long bitrate)
         return -1;
     }
 
-    LOGD("Serial opened\n");
+    LOGD("Serial port opened\n");
     return 0;
 }
 
@@ -114,18 +114,18 @@ int Serial_close(void)
 {
     if (fd < 0)
     {
-        LOGW("Link already closed\n");
+        LOGE("Serial port not open\n");
         return -1;
     }
 
     if (close(fd) < 0)
     {
-        LOGW("Error %d closing serial link: %s\n", errno, strerror(errno));
+        LOGW("Error %d closing serial port: %s\n", errno, strerror(errno));
         return -1;
     }
 
     fd = -1;
-    LOGD("Serial closed\n");
+    LOGD("Serial port closed\n");
     return 0;
 }
 
@@ -137,7 +137,7 @@ int Serial_read(unsigned char * c, unsigned int timeout_ms)
 
     if (fd < 0)
     {
-        LOGE("No serial link opened\n");
+        LOGE("Serial port not open\n");
         return -1;
     }
 
@@ -163,18 +163,18 @@ int Serial_read(unsigned char * c, unsigned int timeout_ms)
         }
         else
         {
-            LOGE("Problem in serial read, fd not set\n");
+            LOGE("Problem in serial port read, fd not set\n");
             return -1;
         }
     }
     else if (retval == 0)
     {
-        LOGD("Timeout to wait for char on serial line\n");
+        LOGD("Timeout to wait for char on serial port\n");
         return 0;
     }
     else
     {
-        LOGE("Error in Serial read %d\n", retval);
+        LOGE("Error in Serial port read %d\n", retval);
         return -1;
     }
 }
@@ -183,7 +183,7 @@ int Serial_write(const unsigned char * buffer, size_t buffer_size)
 {
     if (fd < 0)
     {
-        LOGE("No serial link opened\n");
+        LOGE("Serial port not open\n");
         return -1;
     }
 

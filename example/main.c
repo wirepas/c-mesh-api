@@ -11,7 +11,7 @@
 
 #include "wpc.h"
 
-#define LOG_MODULE_NAME "Main"
+#define LOG_MODULE_NAME "example_main"
 #define MAX_LOG_LEVEL INFO_LOG_LEVEL
 #include "logger.h"
 

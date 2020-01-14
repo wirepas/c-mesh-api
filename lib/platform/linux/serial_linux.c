@@ -12,7 +12,7 @@
 
 #include "posix/serial_posix.h"
 
-#define LOG_MODULE_NAME "SERIAL"
+#define LOG_MODULE_NAME "serial_linux"
 #define MAX_LOG_LEVEL DEBUG_LOG_LEVEL
 #include "logger.h"
 

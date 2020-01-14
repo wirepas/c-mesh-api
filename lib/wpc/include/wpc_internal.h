@@ -23,7 +23,7 @@ typedef enum
  * \param   frame
  *          The received indication
  * \param   timestamp_ms
- *          Timestamp of teh received indication
+ *          Timestamp of the received indication
  */
 typedef void (*onIndicationReceivedLocked_cb_f)(wpc_frame_t * frame,
                                                 unsigned long long timestamp_ms);

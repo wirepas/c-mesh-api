@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define LOG_MODULE_NAME "Test"
+#define LOG_MODULE_NAME "test"
 #define MAX_LOG_LEVEL INFO_LOG_LEVEL
 #include "logger.h"
 

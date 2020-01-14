@@ -14,7 +14,7 @@ static const char * INFO = "INFO";
 static const char * WARNING = "WARNING";
 static const char * ERROR = "ERROR";
 
-static inline void get_timestamp(char timestamp[37])
+static inline void get_timestamp(char * buffer, size_t size)
 {
     struct tm result;
     long ms;
@@ -28,20 +28,22 @@ static inline void get_timestamp(char timestamp[37])
 
     ms = spec.tv_nsec / 1.0e6;  // Convert nanoseconds to milliseconds
 
-    sprintf(timestamp,
-            "%d-%02d-%02d %02d:%02d:%02d,%03ld",
-            result.tm_year + 1900,  // tm_year is in year - 1900
-            result.tm_mon + 1,      // tm_mon is in [0-11]
-            result.tm_mday,
-            result.tm_hour,
-            result.tm_min,
-            result.tm_sec,
-            ms);
+    snprintf(buffer,
+             size,
+             "%04d-%02d-%02d %02d:%02d:%02d.%03ld",
+             result.tm_year + 1900,  // tm_year is in year - 1900
+             result.tm_mon + 1,      // tm_mon is in [0-11]
+             result.tm_mday,
+             result.tm_hour,
+             result.tm_min,
+             result.tm_sec,
+             ms);
 }
 
 static inline void print_prefix(char level, const char * module)
 {
-    char timestamp[37];
+    char timestamp[24];
+    char level_buf[2];
     const char * full_level;
 
     switch (level)
@@ -59,10 +61,13 @@ static inline void print_prefix(char level, const char * module)
             full_level = ERROR;
             break;
         default:
-            full_level = &level;
+            level_buf[0] = level;
+            level_buf[1] = '\0';
+            full_level = level_buf;
+            break;
     }
-    get_timestamp(timestamp);
-    printf("%s | [%s] %s:", timestamp, full_level, module);
+    get_timestamp(timestamp, sizeof(timestamp));
+    printf("%s | [%s] %s: ", timestamp, full_level, module);
 }
 
 void Platform_LOG(char level, const char * module, const char * format, va_list args)

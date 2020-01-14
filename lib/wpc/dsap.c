@@ -207,12 +207,15 @@ void dsap_data_rx_indication_handler(const dsap_data_rx_ind_pl_t * payload,
     app_qos_e qos;
     uint8_t hop_count;
 
-    LOGI("Data received: indication_status = %d, src_add = %d, lenght=%u, "
-         "travel time = %d, dst_ep = %d, ts=%llu\n",
+    LOGI("Data received: indication_status = %u, src_add = %lu, "
+         "dest_add = %lu, lenght= %u, travel time = %lu, "
+         "src_ep = %u, dst_ep = %u, ts = %llu\n",
          payload->indication_status,
-         payload->src_add,
+         (unsigned long) payload->src_add,
+         (unsigned long) payload->dest_add,
          payload->apdu_length,
-         internal_travel_time,
+         (unsigned long) internal_travel_time,
+         payload->src_endpoint,
          payload->dest_endpoint,
          timestamp_ms_epoch);
 
