@@ -7,7 +7,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+
+#ifdef PLATFORM_IS_WIN32
+#    include <windows.h>  // For Sleep()
+#    define sleep(sec) Sleep(sec * 1000)
+#    define pause() Sleep(500)
+#else
+#    include <unistd.h>  // For sleep(), pause()
+#endif
 
 #include "wpc.h"
 
@@ -16,7 +23,15 @@
 #include "logger.h"
 
 // Default serial port
-char * port_name = "/dev/ttyACM0";
+#ifdef PLATFORM_IS_WIN32
+static char * port_name = "COM1";
+#elif PLATFORM_IS_LINUX
+static char * port_name = "/dev/ttyACM0";
+#elif PLATFORM_IS_DARWIN
+static char * port_name = "/dev/cu.usbmodem0001234567890";
+#else
+static char * port_name = "/dev/ttyS0";
+#endif
 
 // Node configuration
 #define NODE_ADDRESS 0x1
@@ -35,13 +50,26 @@ static bool onDataReceived(const uint8_t * bytes,
                            uint8_t hop_count,
                            unsigned long long timestamp_ms_epoch)
 {
+    // Suppress warnings for unused parameters
+    (void) bytes;
+    (void) num_bytes;
+    (void) src_addr;
+    (void) dst_addr;
+    (void) qos;
+    (void) src_ep;
+    (void) dst_ep;
+    (void) travel_time;
+    (void) hop_count;
+    (void) timestamp_ms_epoch;
+
     // Handle Data received here
-    LOGI("Data received on EP %d of len %d with id %d from 0x%x to 0x%x\n",
+    LOGI("Data received on EP %u of len %u with id %u from %lu to %lu\n",
          dst_ep,
          num_bytes,
          bytes[0],
-         src_addr,
-         dst_addr);
+         (unsigned long) src_addr,
+         (unsigned long) dst_addr);
+
     return true;
 }
 
@@ -56,7 +84,25 @@ static bool onDiagReceived(const uint8_t * bytes,
                            uint8_t hop_count,
                            unsigned long long timestamp_ms_epoch)
 {
+    // Suppress warnings for unused parameters
+    (void) bytes;
+    (void) num_bytes;
+    (void) src_addr;
+    (void) dst_addr;
+    (void) qos;
+    (void) src_ep;
+    (void) dst_ep;
+    (void) travel_time;
+    (void) hop_count;
+    (void) timestamp_ms_epoch;
+
     // Handle diag packet here
+    // Handle Data received here
+    LOGI("Diag received from EP %u of len %u from %lu to %lu\n",
+         src_ep,
+         num_bytes,
+         (unsigned long) src_addr,
+         (unsigned long) dst_addr);
 
     return true;
 }

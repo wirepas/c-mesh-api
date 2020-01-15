@@ -14,6 +14,17 @@
 #include "wpc.h"
 #include "platform.h"
 
+#if PLATFORM_IS_WIN32
+#    undef fopen
+static inline FILE * win32_fopen(const char * name, const char * mode)
+{
+    FILE * f = NULL;
+    fopen_s(&f, name, mode);  // MSVC gives a warning with plain fopen()
+    return f;
+}
+#    define fopen(name, mode) win32_fopen(name, mode)
+#endif
+
 static bool setInitialState(app_role_t role,
                             app_addr_t id,
                             net_addr_t network_add,
@@ -305,9 +316,9 @@ static bool testSendWithCallbacks(void)
     uint8_t data[] = "This is a test message #00 with ind\0";
     for (int i = 0; i < 2; i++)
     {
-        data[24] = i / 10 + 0x30;
-        data[25] = i % 10 + 0x30;
-        if (WPC_send_data(data, sizeof(data), i, APP_ADDR_ANYSINK, APP_QOS_HIGH, 50, 50, onDataSent, 0) !=
+        data[24] = (uint8_t)(i / 10 + 0x30);
+        data[25] = (uint8_t)(i % 10 + 0x30);
+        if (WPC_send_data(data, sizeof(data), (uint16_t) i, APP_ADDR_ANYSINK, APP_QOS_HIGH, 50, 50, onDataSent, 0) !=
             APP_RES_OK)
         {
             return false;
@@ -322,9 +333,10 @@ static bool testSendWithoutCallbacks(void)
     uint8_t data[] = "This is a test message #00\0";
     for (int i = 2; i < 4; i++)
     {
-        data[24] = i / 10 + 0x30;
-        data[25] = i % 10 + 0x30;
-        if (WPC_send_data(data, sizeof(data), i, APP_ADDR_ANYSINK, APP_QOS_HIGH, 50, 50, NULL, 0) != APP_RES_OK)
+        data[24] = (uint8_t)(i / 10 + 0x30);
+        data[25] = (uint8_t)(i % 10 + 0x30);
+        if (WPC_send_data(data, sizeof(data), (uint16_t) i, APP_ADDR_ANYSINK, APP_QOS_HIGH, 50, 50, NULL, 0) !=
+            APP_RES_OK)
         {
             return false;
         }
@@ -338,9 +350,9 @@ static bool testSendWithInitialTime(void)
     uint8_t data[] = "This is a test message #00\0";
     for (int i = 4; i < 6; i++)
     {
-        data[24] = i / 10 + 0x30;
-        data[25] = i % 10 + 0x30;
-        if (WPC_send_data(data, sizeof(data), i, APP_ADDR_ANYSINK, APP_QOS_HIGH, 50, 50, NULL, 300) !=
+        data[24] = (uint8_t)(i / 10 + 0x30);
+        data[25] = (uint8_t)(i % 10 + 0x30);
+        if (WPC_send_data(data, sizeof(data), (uint16_t) i, APP_ADDR_ANYSINK, APP_QOS_HIGH, 50, 50, NULL, 300) !=
             APP_RES_OK)
         {
             return false;
@@ -570,13 +582,13 @@ bool testLoadScratchpad(void)
         LOGE("Cannot determine file size\n");
         return false;
     }
-    LOGI("Loading otap file of %d bytes\n", file_size);
+    LOGI("Loading otap file of %ld bytes\n", file_size);
 
     /* Set cursor to beginning of file */
     fseek(fp, 0L, SEEK_SET);
 
     /* Start scratchpad update*/
-    if (WPC_start_local_scratchpad_update(file_size, SEQ_NUMBER) != APP_RES_OK)
+    if (WPC_start_local_scratchpad_update((uint32_t) file_size, SEQ_NUMBER) != APP_RES_OK)
     {
         LOGE("Cannot start scratchpad update\n");
         return false;
@@ -587,7 +599,7 @@ bool testLoadScratchpad(void)
     long remaining = file_size;
     while (remaining > 0)
     {
-        uint8_t block_size = (remaining > BLOCK_SIZE) ? BLOCK_SIZE : remaining;
+        uint8_t block_size = (uint8_t)((remaining > BLOCK_SIZE) ? BLOCK_SIZE : remaining);
         size_t read;
 
         read = fread(block, 1, block_size, fp);
@@ -614,9 +626,9 @@ bool testLoadScratchpad(void)
         return false;
     }
 
-    if (status.scrat_len != file_size)
+    if (status.scrat_len != (uint32_t) file_size)
     {
-        LOGE("Scratchpad is not loaded correctly (wrong size) %d vs %d\n",
+        LOGE("Scratchpad is not loaded correctly (wrong size) %d vs %ld\n",
              status.scrat_len,
              file_size);
         return false;
@@ -655,7 +667,7 @@ static bool testRemoteStatus(void)
     // TODO replace by getneighbors
     Platform_usleep(60 * 1000 * 1000);
 
-    if (WPC_get_remote_status(APP_ADDR_BROADCAST) != APP_RES_OK)
+    if (WPC_get_remote_status((app_addr_t) APP_ADDR_BROADCAST) != APP_RES_OK)
     {
         LOGE("Cannot send remote status\n");
         return false;
@@ -676,7 +688,7 @@ static bool testRemoteStatus(void)
 static bool testRemoteUpdate(void)
 {
     // Send a update with a 0 reboot delay to just test the command
-    if (WPC_remote_scratchpad_update(APP_ADDR_BROADCAST, 50, 0) != APP_RES_OK)
+    if (WPC_remote_scratchpad_update((app_addr_t) APP_ADDR_BROADCAST, 50, 0) != APP_RES_OK)
     {
         LOGE("Cannot send remote update\n");
         return false;
