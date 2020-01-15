@@ -18,16 +18,18 @@ LDFLAGS = $(LDFLAGS)
 PLATFORM_IS_WIN32 = 1
 CFLAGS = $(CFLAGS) /DPLATFORM_IS_WIN32=1
 
-# Path of source files
+# Path of source files and build outputs
 SOURCEPREFIX = .
+BUILDPREFIX = build
 
 # Uncomment the following line only if running with an old stack
 #CFLAGS  += /DLEGACY_APP_CONFIG=1
 
 # Targets definition
 LIB_NAME = mesh_api_lib
-TARGET_LIB = build\$(LIB_NAME).lib
+TARGET_LIB = $(BUILDPREFIX)\$(LIB_NAME).lib
 
+# Source files
 SOURCES =
 
 # Add API header (including logger) and internal headers
@@ -59,7 +61,7 @@ lib: $(TARGET_LIB)
 
 clean:
 	echo   Cleaning up
-	-del $(OBJECTS) >NUL 2>NUL
+	-del /F $(OBJECTS) $(TARGET_LIB) >NUL 2>NUL
 	-rmdir /S /Q $(BUILDPREFIX) >NUL 2>NUL
 
 .c.obj:

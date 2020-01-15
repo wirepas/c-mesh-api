@@ -32,7 +32,7 @@
 static inline app_res_e convert_error_code(const app_res_e * lut, size_t lut_size, int error)
 {
     app_res_e ret = APP_RES_INTERNAL_ERROR;
-    if (error >= 0 && error < lut_size)
+    if (error >= 0 && (size_t) error < lut_size)
     {
         ret = lut[error];
     }

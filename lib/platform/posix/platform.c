@@ -244,7 +244,7 @@ static void * poll_for_indication(void * unused)
     LOGE("Exiting polling thread\n");
 
     // Full process must be exited if uart doesnt' work
-    exit(EXIT_FAILURE);
+    exit(EXIT_FAILURE);  // TODO: Don't do this
     return NULL;
 }
 
