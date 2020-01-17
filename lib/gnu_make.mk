@@ -3,7 +3,7 @@
 # Variables
 
 # Detect platform and set toolchain variables
-include platform.mk
+include tools.mk
 
 # Path of source files and build outputs
 SOURCEPREFIX := .
@@ -43,12 +43,12 @@ define COMPILE
 endef
 
 define LINK_LIB
-	echo "  Linking $(1)"
+	echo "  AR $(1)"
 	$(ARCHIVE) $(1) $(2)
 endef
 
 define CLEAN
-	echo "  Cleaning up"
+	echo "  CLEAN"
 	$(RM) -r $(BUILDPREFIX)
 endef
 

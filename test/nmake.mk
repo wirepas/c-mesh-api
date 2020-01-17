@@ -1,24 +1,13 @@
 # Makefile for Wirepas C Mesh API test suite, Microsoft NMAKE version
 
+# Variables
+
 # This example needs the C Mesh API library
 MESH_LIB_FOLDER = ..\lib
 MESH_LIB = $(MESH_LIB_FOLDER)\build\mesh_api_lib.lib
 
-# Microsoft Visual studio command line toolchain on Windows
-# Use Visual Studio defaults
-#CC  = cl
-#AS  = ml
-
-# Visual Studio C compiler flags
-CFLAGS = $(CFLAGS) /nologo /W4 /WX /O2 /MD /TC
-
-# Linker flags
-LDFLAGS = $(LDFLAGS) /nologo
-
-# Platform flags
-!MESSAGE Platform: WIN32
-PLATFORM_IS_WIN32 = 1
-CFLAGS = $(CFLAGS) /DPLATFORM_IS_WIN32=1
+# Detect platform and set toolchain variables
+!INCLUDE $(MESH_LIB_FOLDER)\tools_msvc.mk
 
 # Path of source files and build outputs
 SOURCEPREFIX = .
@@ -61,7 +50,7 @@ all: app
 app: lib $(TARGET_APP)
 
 clean:
-	echo   Cleaning up
+	echo CLEAN
 	-del /F $(OBJECTS) $(TARGET_APP) >NUL 2>NUL
 	-rmdir /S /Q $(BUILDPREFIX) >NUL 2>NUL
 
@@ -69,10 +58,11 @@ lib:
 	cd $(MESH_LIB_FOLDER) && $(MAKE) /nologo /f nmake.mk
 
 .c.obj:
+	echo CC $*.c
 	-mkdir $(@D) >NUL 2>NUL
 	$(CC) $(CFLAGS) /c /Fo$@ $*.c
 
 $(TARGET_APP): $(OBJECTS) $(MESH_LIB)
-	echo   Linking $@
+	echo LINK $@
 	-mkdir $(@D) >NUL 2>NUL
 	$(CC) $(LDFLAGS) /Fe$@ $**

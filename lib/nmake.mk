@@ -2,21 +2,8 @@
 
 # Variables
 
-# Microsoft Visual studio command line toolchain on Windows
-# Use Visual Studio defaults
-#CC  = cl
-#AS  = ml
-
-# Visual Studio C compiler flags
-CFLAGS = $(CFLAGS) /nologo /W4 /WX /O2 /MD /TC
-
-# Linker flags
-LDFLAGS = $(LDFLAGS)
-
-# Platform flags
-!MESSAGE Platform: WIN32
-PLATFORM_IS_WIN32 = 1
-CFLAGS = $(CFLAGS) /DPLATFORM_IS_WIN32=1
+# Detect platform and set toolchain variables
+!INCLUDE tools_msvc.mk
 
 # Path of source files and build outputs
 SOURCEPREFIX = .
@@ -60,15 +47,16 @@ all: lib
 lib: $(TARGET_LIB)
 
 clean:
-	echo   Cleaning up
+	echo CLEAN
 	-del /F $(OBJECTS) $(TARGET_LIB) >NUL 2>NUL
 	-rmdir /S /Q $(BUILDPREFIX) >NUL 2>NUL
 
 .c.obj:
+	echo CC $*.c
 	-mkdir $(@D) >NUL 2>NUL
 	$(CC) $(CFLAGS) /c /Fo$@ $*.c
 
 $(TARGET_LIB): $(OBJECTS)
-	echo   Linking $@
+	echo LIB $@
 	-mkdir $(@D) >NUL 2>NUL
 	lib /NOLOGO /OUT:$@ $**

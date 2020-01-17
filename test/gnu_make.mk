@@ -1,11 +1,13 @@
 # Makefile for Wirepas C Mesh API test suite, GNU make version
 
+# Variables
+
 # This example needs the C Mesh API library
 MESH_LIB_FOLDER := ../lib
 MESH_LIB := $(MESH_LIB_FOLDER)/build/mesh_api_lib.a
 
 # Detect platform and set toolchain variables
-include $(MESH_LIB_FOLDER)/platform.mk
+include $(MESH_LIB_FOLDER)/tools.mk
 
 # Path of source files and build outputs
 SOURCEPREFIX   := .
@@ -46,12 +48,12 @@ define COMPILE
 endef
 
 define LINK
-	echo "  Linking $(1)"
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $(1) $(2) $(MESH_LIB)
+	echo "  LD $(1)"
+	$(CC) $(LDFLAGS) -o $(1) $(2) $(MESH_LIB)
 endef
 
 define CLEAN
-	echo "  Cleaning up"
+	echo "  CLEAN"
 	$(RM) -r $(BUILDPREFIX)
 endef
 
