@@ -44,7 +44,7 @@
  * \param   args
  *          Argument for the string format
  */
-extern void Platform_LOG(char level, char * module, char * format, va_list args);
+extern void Platform_LOG(char level, const char * module, const char * format, va_list args);
 
 /**
  * \brief   Implemented in platform specific part to print a buffer
@@ -53,7 +53,7 @@ extern void Platform_LOG(char level, char * module, char * format, va_list args)
  * \param   size
  *          the size of the buffer to print
  */
-extern void Platform_print_buffer(uint8_t * buffer, int size);
+extern void Platform_print_buffer(const uint8_t * buffer, int size);
 
 /**
  * Macros to define several level of Log: Debug(3), Info(2), Warning(1),
@@ -84,7 +84,7 @@ extern void Platform_print_buffer(uint8_t * buffer, int size);
  * Helpers macros to print logs
  */
 #if MAX_LOG_LEVEL >= DEBUG_LOG_LEVEL
-static inline void LOGD(char * format, ...)
+static inline void LOGD(const char * format, ...)
 {
     va_list arg;
     va_start(arg, format);
@@ -96,7 +96,7 @@ static inline void LOGD(char * format, ...)
 #endif
 
 #if MAX_LOG_LEVEL >= INFO_LOG_LEVEL
-static inline void LOGI(char * format, ...)
+static inline void LOGI(const char * format, ...)
 {
     va_list arg;
     va_start(arg, format);
@@ -108,7 +108,7 @@ static inline void LOGI(char * format, ...)
 #endif
 
 #if MAX_LOG_LEVEL >= WARNING_LOG_LEVEL
-static inline void LOGW(char * format, ...)
+static inline void LOGW(const char * format, ...)
 {
     va_list arg;
     va_start(arg, format);
@@ -120,7 +120,7 @@ static inline void LOGW(char * format, ...)
 #endif
 
 #if MAX_LOG_LEVEL >= ERROR_LOG_LEVEL
-static inline void LOGE(char * format, ...)
+static inline void LOGE(const char * format, ...)
 {
     va_list arg;
     va_start(arg, format);
@@ -132,7 +132,7 @@ static inline void LOGE(char * format, ...)
 #endif
 
 #ifdef PRINT_BUFFERS
-static inline void LOG_PRINT_BUFFER(uint8_t * buffer, int size)
+static inline void LOG_PRINT_BUFFER(const uint8_t * buffer, int size)
 {
     Platform_print_buffer(buffer, size);
 }

@@ -3,15 +3,27 @@
  * See file LICENSE for full license details.
  *
  */
+
 #include <stdio.h>
 #include <string.h>
 
-#define LOG_MODULE_NAME "Test"
+#define LOG_MODULE_NAME "test"
 #define MAX_LOG_LEVEL INFO_LOG_LEVEL
 #include "logger.h"
 
 #include "wpc.h"
 #include "platform.h"
+
+#if PLATFORM_IS_WIN32
+#    undef fopen
+static inline FILE * win32_fopen(const char * name, const char * mode)
+{
+    FILE * f = NULL;
+    fopen_s(&f, name, mode);  // MSVC gives a warning with plain fopen()
+    return f;
+}
+#    define fopen(name, mode) win32_fopen(name, mode)
+#endif
 
 static bool setInitialState(app_role_t role,
                             app_addr_t id,
@@ -39,7 +51,7 @@ static bool setInitialState(app_role_t role,
     return true;
 }
 
-static bool testFactoryReset()
+static bool testFactoryReset(void)
 {
     app_res_e res = WPC_stop_stack();
     app_addr_t add;
@@ -110,7 +122,7 @@ static bool setAppconfig(uint8_t * config, uint16_t interval, uint8_t size)
     return true;
 }
 
-static bool dumpCSAPAttributes()
+static bool dumpCSAPAttributes(void)
 {
     uint8_t role;
     net_channel_t channel;
@@ -175,7 +187,7 @@ static bool dumpCSAPAttributes()
     return true;
 }
 
-static bool testCipherKey()
+static bool testCipherKey(void)
 {
     bool key_set;
     if (WPC_is_cipher_key_set(&key_set) != APP_RES_OK)
@@ -234,7 +246,7 @@ static bool testCipherKey()
     return true;
 }
 
-static bool testAuthenticationKey()
+static bool testAuthenticationKey(void)
 {
     bool key_set;
     if (WPC_is_authentication_key_set(&key_set) != APP_RES_OK)
@@ -298,15 +310,15 @@ void onDataSent(uint16_t pduid, uint32_t buffering_delay, uint8_t result)
     LOGI("Indication received for %d, delay=%d, result=%d\n", pduid, buffering_delay, result);
 }
 
-static bool testSendWithCallbacks()
+static bool testSendWithCallbacks(void)
 {
     // Send 5 message to ourself
     uint8_t data[] = "This is a test message #00 with ind\0";
     for (int i = 0; i < 2; i++)
     {
-        data[24] = i / 10 + 0x30;
-        data[25] = i % 10 + 0x30;
-        if (WPC_send_data(data, sizeof(data), i, APP_ADDR_ANYSINK, APP_QOS_HIGH, 50, 50, onDataSent, 0) !=
+        data[24] = (uint8_t)(i / 10 + 0x30);
+        data[25] = (uint8_t)(i % 10 + 0x30);
+        if (WPC_send_data(data, sizeof(data), (uint16_t) i, APP_ADDR_ANYSINK, APP_QOS_HIGH, 50, 50, onDataSent, 0) !=
             APP_RES_OK)
         {
             return false;
@@ -315,31 +327,15 @@ static bool testSendWithCallbacks()
     return true;
 }
 
-static bool testSendWithoutCallbacks()
+static bool testSendWithoutCallbacks(void)
 {
     // Send 5 message to ourself
     uint8_t data[] = "This is a test message #00\0";
     for (int i = 2; i < 4; i++)
     {
-        data[24] = i / 10 + 0x30;
-        data[25] = i % 10 + 0x30;
-        if (WPC_send_data(data, sizeof(data), i, APP_ADDR_ANYSINK, APP_QOS_HIGH, 50, 50, NULL, 0) != APP_RES_OK)
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-static bool testSendWithInitialTime()
-{
-    // Send 5 message to ourself
-    uint8_t data[] = "This is a test message #00\0";
-    for (int i = 4; i < 6; i++)
-    {
-        data[24] = i / 10 + 0x30;
-        data[25] = i % 10 + 0x30;
-        if (WPC_send_data(data, sizeof(data), i, APP_ADDR_ANYSINK, APP_QOS_HIGH, 50, 50, NULL, 300) !=
+        data[24] = (uint8_t)(i / 10 + 0x30);
+        data[25] = (uint8_t)(i % 10 + 0x30);
+        if (WPC_send_data(data, sizeof(data), (uint16_t) i, APP_ADDR_ANYSINK, APP_QOS_HIGH, 50, 50, NULL, 0) !=
             APP_RES_OK)
         {
             return false;
@@ -348,12 +344,29 @@ static bool testSendWithInitialTime()
     return true;
 }
 
-static void onAppConfigDataReceived(uint8_t seq, uint16_t interval, uint8_t * config_p)
+static bool testSendWithInitialTime(void)
+{
+    // Send 5 message to ourself
+    uint8_t data[] = "This is a test message #00\0";
+    for (int i = 4; i < 6; i++)
+    {
+        data[24] = (uint8_t)(i / 10 + 0x30);
+        data[25] = (uint8_t)(i % 10 + 0x30);
+        if (WPC_send_data(data, sizeof(data), (uint16_t) i, APP_ADDR_ANYSINK, APP_QOS_HIGH, 50, 50, NULL, 300) !=
+            APP_RES_OK)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+static void onAppConfigDataReceived(uint8_t seq, uint16_t interval, const uint8_t * config_p)
 {
     LOGI("AppConfig received %d, %d, %s\n", seq, interval, config_p);
 }
 
-static bool testAppConfigData()
+static bool testAppConfigData(void)
 {
     uint8_t new_config[128];
     uint8_t max_size;
@@ -383,7 +396,7 @@ static bool testAppConfigData()
     return true;
 }
 
-static bool testMSAPAttributesStackOff()
+static bool testMSAPAttributesStackOff(void)
 {
     uint16_t min, max;
     // Access cycle
@@ -429,7 +442,7 @@ static bool testMSAPAttributesStackOff()
     return true;
 }
 
-static bool testMSAPAttributesStackOn()
+static bool testMSAPAttributesStackOn(void)
 {
     uint8_t res8;
     uint16_t res16;
@@ -516,7 +529,7 @@ static bool testMSAPAttributesStackOn()
     return true;
 }
 
-bool testClearScratchpad()
+bool testClearScratchpad(void)
 {
     app_scratchpad_status_t status;
     if (WPC_clear_local_scratchpad() != APP_RES_OK)
@@ -543,7 +556,7 @@ bool testClearScratchpad()
 #define BLOCK_SIZE 128
 #define SEQ_NUMBER 50
 #define OTAP_FILE_PATH "source/test/scratchpad_nrf52.otap"
-bool testLoadScratchpad()
+bool testLoadScratchpad(void)
 {
     FILE * fp;
     app_scratchpad_status_t status;
@@ -569,13 +582,13 @@ bool testLoadScratchpad()
         LOGE("Cannot determine file size\n");
         return false;
     }
-    LOGI("Loading otap file of %d bytes\n", file_size);
+    LOGI("Loading otap file of %ld bytes\n", file_size);
 
     /* Set cursor to beginning of file */
     fseek(fp, 0L, SEEK_SET);
 
     /* Start scratchpad update*/
-    if (WPC_start_local_scratchpad_update(file_size, SEQ_NUMBER) != APP_RES_OK)
+    if (WPC_start_local_scratchpad_update((uint32_t) file_size, SEQ_NUMBER) != APP_RES_OK)
     {
         LOGE("Cannot start scratchpad update\n");
         return false;
@@ -586,7 +599,7 @@ bool testLoadScratchpad()
     long remaining = file_size;
     while (remaining > 0)
     {
-        uint8_t block_size = (remaining > BLOCK_SIZE) ? BLOCK_SIZE : remaining;
+        uint8_t block_size = (uint8_t)((remaining > BLOCK_SIZE) ? BLOCK_SIZE : remaining);
         size_t read;
 
         read = fread(block, 1, block_size, fp);
@@ -613,9 +626,9 @@ bool testLoadScratchpad()
         return false;
     }
 
-    if (status.scrat_len != file_size)
+    if (status.scrat_len != (uint32_t) file_size)
     {
-        LOGE("Scratchpad is not loaded correctly (wrong size) %d vs %d\n",
+        LOGE("Scratchpad is not loaded correctly (wrong size) %d vs %ld\n",
              status.scrat_len,
              file_size);
         return false;
@@ -631,7 +644,7 @@ bool testLoadScratchpad()
 }
 
 static void onRemoteStatusCb(app_addr_t source_address,
-                             app_scratchpad_status_t * status,
+                             const app_scratchpad_status_t * status,
                              uint16_t request_timeout)
 {
     LOGI("Received status from %d with tiemout to %d\n", source_address, request_timeout);
@@ -642,7 +655,7 @@ static void onRemoteStatusCb(app_addr_t source_address,
          status->processed_scrat_crc);
 }
 
-static bool testRemoteStatus()
+static bool testRemoteStatus(void)
 {
     if (WPC_register_for_remote_status(onRemoteStatusCb) != APP_RES_OK)
     {
@@ -654,7 +667,7 @@ static bool testRemoteStatus()
     // TODO replace by getneighbors
     Platform_usleep(60 * 1000 * 1000);
 
-    if (WPC_get_remote_status(APP_ADDR_BROADCAST) != APP_RES_OK)
+    if (WPC_get_remote_status((app_addr_t) APP_ADDR_BROADCAST) != APP_RES_OK)
     {
         LOGE("Cannot send remote status\n");
         return false;
@@ -672,10 +685,10 @@ static bool testRemoteStatus()
     return true;
 }
 
-static bool testRemoteUpdate()
+static bool testRemoteUpdate(void)
 {
     // Send a update with a 0 reboot delay to just test the command
-    if (WPC_remote_scratchpad_update(APP_ADDR_BROADCAST, 50, 0) != APP_RES_OK)
+    if (WPC_remote_scratchpad_update((app_addr_t) APP_ADDR_BROADCAST, 50, 0) != APP_RES_OK)
     {
         LOGE("Cannot send remote update\n");
         return false;
@@ -692,7 +705,7 @@ static void onScanNeighborsDone(uint8_t status)
     scan_done = true;
 }
 
-static bool testScanNeighbors()
+static bool testScanNeighbors(void)
 {
     app_nbors_t neighbors_list;
 
@@ -757,7 +770,7 @@ static void onStackStatusReceived(uint8_t status)
     LOGI("Stack status received %d\n", status);
 }
 
-static bool testStackStatus()
+static bool testStackStatus(void)
 {
     if (WPC_register_for_stack_status(onStackStatusReceived) != APP_RES_OK)
     {
@@ -781,7 +794,7 @@ static bool testStackStatus()
         }                                             \
     } while (0)
 
-int Test_runAll()
+int Test_runAll(void)
 {
     uint8_t status;
 
@@ -833,7 +846,7 @@ int Test_runAll()
     return 0;
 }
 
-int Test_scratchpad()
+int Test_scratchpad(void)
 {
     // Configure node as a sink
     setInitialState(APP_ROLE_SINK, 1234, 0x654321, 5, false);

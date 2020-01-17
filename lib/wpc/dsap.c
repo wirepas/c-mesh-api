@@ -79,7 +79,7 @@ static void fill_tx_request(wpc_frame_t * request,
     payload->dest_endpoint = dest_ep;
     payload->qos = qos;
     payload->tx_options = tx_options;
-    payload->apdu_length = len;
+    payload->apdu_length = (uint8_t) len;
 
     // copy the APDU
     memcpy(&payload->apdu, buffer, len);
@@ -104,7 +104,7 @@ static void fill_tx_tt_request(wpc_frame_t * request,
     payload->dest_endpoint = dest_ep;
     payload->qos = qos;
     payload->tx_options = tx_options;
-    payload->apdu_length = len;
+    payload->apdu_length = (uint8_t) len;
     payload->buffering_delay = buffering_delay;
 
     // copy the APDU
@@ -152,14 +152,14 @@ int dsap_data_tx_request(const uint8_t * buffer,
         request.primitive_id = DSAP_DATA_TX_REQUEST;
         fill_tx_request(&request, buffer, len, pdu_id, dest_add, qos, src_ep, dest_ep, tx_options);
         request.payload_length =
-            sizeof(dsap_data_tx_req_pl_t) - (MAX_DATA_PDU_SIZE - len);
+            (uint8_t)(sizeof(dsap_data_tx_req_pl_t) - (MAX_DATA_PDU_SIZE - len));
     }
     else
     {
         request.primitive_id = DSAP_DATA_TX_TT_REQUEST;
         fill_tx_tt_request(&request, buffer, len, pdu_id, dest_add, qos, src_ep, dest_ep, tx_options, buffering_delay);
         request.payload_length =
-            sizeof(dsap_data_tx_tt_req_pl_t) - (MAX_DATA_PDU_SIZE - len);
+            (uint8_t)(sizeof(dsap_data_tx_tt_req_pl_t) - (MAX_DATA_PDU_SIZE - len));
     }
 
     // Do the sending
@@ -183,7 +183,7 @@ int dsap_data_tx_request(const uint8_t * buffer,
     return confirm_res;
 }
 
-void dsap_data_tx_indication_handler(dsap_data_tx_ind_pl_t * payload)
+void dsap_data_tx_indication_handler(const dsap_data_tx_ind_pl_t * payload)
 {
     onDataSent_cb_f cb = get_indication_cb(payload->pdu_id);
 
@@ -195,24 +195,27 @@ void dsap_data_tx_indication_handler(dsap_data_tx_ind_pl_t * payload)
     {
         LOGD("App cb set, call it...\n");
         cb(payload->pdu_id,
-           payload->buffering_delay,
-           internal_time_to_ms(payload->indication_status));
+           internal_time_to_ms(payload->buffering_delay),
+           payload->indication_status);
     }
 }
 
-void dsap_data_rx_indication_handler(dsap_data_rx_ind_pl_t * payload,
+void dsap_data_rx_indication_handler(const dsap_data_rx_ind_pl_t * payload,
                                      unsigned long long timestamp_ms_epoch)
 {
     uint32_t internal_travel_time = uint32_decode_le((uint8_t *) &(payload->travel_time));
     app_qos_e qos;
     uint8_t hop_count;
 
-    LOGI("Data received: indication_status = %d, src_add = %d, lenght=%u, "
-         "travel time = %d, dst_ep = %d, ts=%llu\n",
+    LOGI("Data received: indication_status = %u, src_add = %lu, "
+         "dest_add = %lu, lenght= %u, travel time = %lu, "
+         "src_ep = %u, dst_ep = %u, ts = %llu\n",
          payload->indication_status,
-         payload->src_add,
+         (unsigned long) payload->src_add,
+         (unsigned long) payload->dest_add,
          payload->apdu_length,
-         internal_travel_time,
+         (unsigned long) internal_travel_time,
+         payload->src_endpoint,
          payload->dest_endpoint,
          timestamp_ms_epoch);
 
@@ -272,7 +275,7 @@ bool dsap_unregister_for_data(uint8_t dst_ep)
     return ret;
 }
 
-void dsap_init()
+void dsap_init(void)
 {
     // Initialize internal structures
     memset(data_cb_table, 0, sizeof(data_cb_table));

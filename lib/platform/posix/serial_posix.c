@@ -11,11 +11,10 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/select.h>
-#include <linux/serial.h>
 
-#include "serial_termios2.h"
+#include "serial_posix.h"
 
-#define LOG_MODULE_NAME "SERIAL"
+#define LOG_MODULE_NAME "serial_posix"
 #define MAX_LOG_LEVEL INFO_LOG_LEVEL
 #include "logger.h"
 
@@ -24,18 +23,18 @@ static int fd = -1;
 static int set_interface_attribs(int fd, unsigned long bitrate, int parity)
 {
     struct termios tty;
-    struct serial_struct serial_s;
 
     memset(&tty, 0, sizeof tty);
     if (tcgetattr(fd, &tty) != 0)
     {
-        LOGE("Error %d from tcgetattr", errno);
+        LOGE("Error %d from tcgetattr\n", errno);
         return -1;
     }
 
-    // default to 9600 bps, but use TCSETS2 to set the actual bitrate
-    // use a bitrate that is not 115200 or 125000 bps here, to make sure
-    // TCSETS2 actually sets the bitrate
+    // default to 9600 bps, but use Serial_set_custom_bitrate() to set the
+    // actual bitrate in a non-POSIX way. Use a bitrate that is not 115200 or
+    // 125000 bps here, to make sure Serial_set_custom_bitrate() actually sets
+    // the bitrate
     cfsetospeed(&tty, B9600);
     cfsetispeed(&tty, B9600);
 
@@ -67,39 +66,24 @@ static int set_interface_attribs(int fd, unsigned long bitrate, int parity)
 
     if (tcsetattr(fd, TCSANOW, &tty) != 0)
     {
-        LOGE("Error %d from tcsetattr", errno);
+        LOGE("Error %d from tcsetattr\n", errno);
         return -1;
     }
 
-    if (Serial_set_termios2_bitrate(fd, bitrate) != 0)
+    // Use a non-POSIX way to set a non-standard bitrate. Do this last
+    // because tcgetattr() / tcsetattr() fails on some platforms (Darwin)
+    // after a non-standard bitrate is configured
+    if (Serial_set_custom_bitrate(fd, bitrate) != 0)
     {
         return -1;
     }
 
-    // Set low latency flag to serial
-    ioctl(fd, TIOCGSERIAL, &serial_s);
-    serial_s.flags |= ASYNC_LOW_LATENCY;
-    ioctl(fd, TIOCSSERIAL, &serial_s);
+    if (Serial_set_extra_params(fd) != 0)
+    {
+        return -1;
+    }
 
     return 0;
-}
-
-static void set_blocking(int fd, int should_block)
-{
-    struct termios tty;
-    memset(&tty, 0, sizeof tty);
-    if (tcgetattr(fd, &tty) != 0)
-    {
-        LOGE("Error %d from tggetattr", errno);
-        return;
-    }
-
-    tty.c_cc[VMIN] = should_block ? 1 : 0;
-    // No timeout
-    tty.c_cc[VTIME] = 0;
-
-    if (tcsetattr(fd, TCSANOW, &tty) != 0)
-        LOGE("Error %d setting term attributes", errno);
 }
 
 /****************************************************************************/
@@ -107,10 +91,16 @@ static void set_blocking(int fd, int should_block)
 /****************************************************************************/
 int Serial_open(const char * port_name, unsigned long bitrate)
 {
+    if (fd >= 0)
+    {
+        LOGE("Serial port already open\n");
+        return -1;
+    }
+
     fd = open(port_name, O_RDWR | O_NOCTTY | O_SYNC);
     if (fd < 0)
     {
-        LOGE("Error %d opening serial link %s: %s\n", errno, port_name, strerror(errno));
+        LOGE("Error %d opening serial port %s: %s\n", errno, port_name, strerror(errno));
         return -1;
     }
 
@@ -122,29 +112,26 @@ int Serial_open(const char * port_name, unsigned long bitrate)
         return -1;
     }
 
-    // set no blocking
-    set_blocking(fd, 0);
-
-    LOGD("Serial opened\n");
+    LOGD("Serial port opened\n");
     return 0;
 }
 
-int Serial_close()
+int Serial_close(void)
 {
     if (fd < 0)
     {
-        LOGW("Link already closed\n");
+        LOGE("Serial port not open\n");
         return -1;
     }
 
     if (close(fd) < 0)
     {
-        LOGW("Error %d closing serial link: %s\n", errno, strerror(errno));
+        LOGW("Error %d closing serial port: %s\n", errno, strerror(errno));
         return -1;
     }
 
     fd = -1;
-    LOGD("Serial closed\n");
+    LOGD("Serial port closed\n");
     return 0;
 }
 
@@ -156,7 +143,7 @@ int Serial_read(unsigned char * c, unsigned int timeout_ms)
 
     if (fd < 0)
     {
-        LOGE("No serial link opened\n");
+        LOGE("Serial port not open\n");
         return -1;
     }
 
@@ -182,27 +169,27 @@ int Serial_read(unsigned char * c, unsigned int timeout_ms)
         }
         else
         {
-            LOGE("Problem in serial read, fd not set\n");
+            LOGE("Problem in serial port read, fd not set\n");
             return -1;
         }
     }
     else if (retval == 0)
     {
-        LOGD("Timeout to wait for char on serial line\n");
+        LOGD("Timeout to wait for char on serial port\n");
         return 0;
     }
     else
     {
-        LOGE("Error in Serial read %d\n", retval);
+        LOGE("Error in Serial port read %d\n", retval);
         return -1;
     }
 }
 
-int Serial_write(const unsigned char * buffer, unsigned int buffer_size)
+int Serial_write(const unsigned char * buffer, size_t buffer_size)
 {
     if (fd < 0)
     {
-        LOGE("No serial link opened\n");
+        LOGE("Serial port not open\n");
         return -1;
     }
 

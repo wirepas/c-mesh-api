@@ -13,32 +13,39 @@
 #include "msap.h"
 #include "attribute.h"
 #include "wpc_constants.h"
+#include "compiler_ext.h"
 
-typedef struct __attribute__((__packed__))
+// Start of packed struct definitions
+PACKED_STRUCT_START
+
+typedef PACKED_STRUCT
 {
     uint8_t indication_status;
-} generic_ind_pl_t;
+}
+generic_ind_pl_t;
 
 /**
  * Payload definition for confirm primitives
  */
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t result;
-} sap_generic_conf_pl_t;
+}
+sap_generic_conf_pl_t;
 
 /**
  * Payload definition for response primitives
  */
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t result;
-} sap_resp_pl_t;
+}
+sap_resp_pl_t;
 
 /*
  * Frame type definition
  */
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     // Id of the primitive
     uint8_t primitive_id;
@@ -83,17 +90,17 @@ typedef struct __attribute__((__packed__))
         // Response
         sap_resp_pl_t sap_response_payload;
     } payload;
-} wpc_frame_t;
+}
+wpc_frame_t;
+
+// End of packed struct definitions
+PACKED_STRUCT_END
 
 // Size of a given frame
 #define FRAME_SIZE(__frame_ptr__) ((__frame_ptr__)->payload_length + 3)
 
-// Max frame size (including crc)
+// Max frame size (including CRC)
 #define MAX_FRAME_SIZE (sizeof(wpc_frame_t) + 2)
-
-// Max slip frame size (can be 2 times bigger than a frame if every bytes are
-// escaped)
-#define MAX_SLIP_FRAME_SIZE (2 * MAX_FRAME_SIZE)
 
 // Define the function type to handle a received frame from the stack (confirm
 // or indication)

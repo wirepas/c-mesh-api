@@ -7,21 +7,25 @@
 #define SLIP_H__
 
 #include <stdint.h>
+#include <stdlib.h>
 
-// Helper macro to correctly size the encoded buffer
-#define RECOMMENDED_BUFFER_SIZE(__buffer_in_len__) ((__buffer_in_len__) *2 + 2)
+/**
+ * \brief Maximum number of bytes for \ref Slip_send_buffer()
+ *        and \ref Slip_get_buffer()
+ */
+#define MAX_SLIP_FRAME_SIZE 256
 
 /**
  * \brief   Decode a slip encoded buffer
- * \parambuffer
- *          buffer address of the encoded buffer.
+ * \param   buffer
+ *          buffer address of the encoded buffer
  *          The same buffer is used to store the decoded buffer
- * \paramlen_in
+ * \param   len_in
  *          length of the encoded buffer
- * \returnthe length of the decoded buffer or -1 if buffer cannot be decoded
+ * \return  the length of the decoded buffer or < 0 if buffer cannot be decoded
  * \note    This function is public mainly for testing
  */
-int Slip_decode(uint8_t * buffer, uint32_t len_in);
+int Slip_decode(uint8_t * buffer, size_t len_in);
 
 /**
  * \brief   Encode a buffer in slip format
@@ -32,24 +36,24 @@ int Slip_decode(uint8_t * buffer, uint32_t len_in);
  * \parambuffer_out
  *          the address to store the encoded buffer
  * \param   len_out
- *          the length of the provided buffer.
- * \returnthe length of the encoded buffer or -1 if the provided
+ *          the length of the provided buffer
+ * \return  the length of the encoded buffer or < 0 if the provided
  *          buffer is too small
- * \noteTo be sure that the buffer is big enough, len_out should
+ * \note    To be sure that the buffer is big enough, len_out should
  *          be equal to 2*len_in + 2
  * \note    This function is public mainly for testing
  */
-int Slip_encode(uint8_t * buffer_in, uint32_t len_in, uint8_t * buffer_out, uint32_t len_out);
+int Slip_encode(const uint8_t * buffer_in, size_t len_in, uint8_t * buffer_out, size_t len_out);
 
 /**
  * \brief   Send a buffer in slip encoding
  * \param   buffer
  *          the buffer to send
  * \param   len
- *          the length of the buffer
- * \return  0 for success, -1 otherwise
+ *          length of the buffer to send
+ * \return  0 for success, < 0 otherwise
  */
-int Slip_send_buffer(uint8_t * buffer, uint32_t len);
+int Slip_send_buffer(const uint8_t * buffer, size_t len);
 
 /**
  * \brief   Get a buffer in slip encoding
@@ -59,30 +63,30 @@ int Slip_send_buffer(uint8_t * buffer, uint32_t len);
  *          length of the provided buffer
  * \param   timeout_ms
  *          the timeout in millisecond to wait for data
- * \return  0 for success, -1 otherwise
+ * \return  0 for success, < 0 otherwise
  */
-int Slip_get_buffer(uint8_t * buffer, uint32_t len, uint16_t timeout_ms);
+int Slip_get_buffer(uint8_t * buffer, size_t len, unsigned int timeout_ms);
 
 /**
  * \brief    Function prototype to write data to serial
  * \param    buffer
  *           the buffer to write
  * \param    buffer_size
- *           the buffer size to write
- * \return   the number of bytes written or -1 in case of error
+ *           length of the buffer to write
+ * \return   the number of bytes written or < 0 in case of error
  */
-typedef int (*write_f)(const unsigned char * buffer, unsigned int buffer_size);
+typedef int (*write_f)(const unsigned char * buffer, size_t len);
 
 /**
- * \brief    Function prototype to read single char from serial
- * \param    c
- *           the buffer to store read char
+ * \brief    Function prototype to read single byte from serial
+ * \param    byte_p
+ *           the buffer to store read byte
  * \param    timeout_ms
- *           timeout in ms to receive char
- * \return   the number of bytes read, 0 in case of timeout or -1 in case of
- * error
+ *           timeout in ms to receive byte
+ * \return   the number of bytes read, 0 in case of timeout or < 0 in case of
+ *           error
  */
-typedef int (*read_f)(unsigned char * c, unsigned int timeout_ms);
+typedef int (*read_f)(unsigned char * byte_p, unsigned int timeout_ms);
 
 /**
  * \brief    Init function for the slip module
@@ -90,7 +94,7 @@ typedef int (*read_f)(unsigned char * c, unsigned int timeout_ms);
  *           A function to write on the serial line
  * \param    read
  *           A function to read on the serial line
- * \return   0 in case of success, -1 otherwise
+ * \return   0 in case of success, < 0 otherwise
  */
 int Slip_init(write_f write, read_f read);
 
