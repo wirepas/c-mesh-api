@@ -8,7 +8,7 @@
 #AS  = ml
 
 # Visual Studio C compiler flags
-CFLAGS = $(CFLAGS) /nologo /W4 /WX /O2 /TC
+CFLAGS = $(CFLAGS) /nologo /W4 /WX /O2 /MD /TC
 
 # Linker flags
 LDFLAGS = $(LDFLAGS)
