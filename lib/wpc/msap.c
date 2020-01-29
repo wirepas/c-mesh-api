@@ -69,7 +69,7 @@ int msap_stack_start_request(uint8_t start_option)
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
-int msap_stack_stop_request()
+int msap_stack_stop_request(void)
 {
     wpc_frame_t request, confirm;
     int res;
@@ -86,7 +86,7 @@ int msap_stack_stop_request()
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
-int msap_app_config_data_write_request(uint8_t seq, uint16_t interval, uint8_t * config_p, uint8_t size)
+int msap_app_config_data_write_request(uint8_t seq, uint16_t interval, const uint8_t * config_p, uint8_t size)
 {
     wpc_frame_t request, confirm;
     int res;
@@ -208,7 +208,7 @@ int msap_get_nbors_request(msap_get_nbors_conf_pl_t * neigbors_p)
     return APP_RES_OK;
 }
 
-int msap_scan_nbors_request()
+int msap_scan_nbors_request(void)
 {
     wpc_frame_t request, confirm;
     int res;
@@ -248,7 +248,7 @@ int msap_scratchpad_start_request(uint32_t length, uint8_t seq)
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
-int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_bytes, uint8_t * bytes)
+int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_bytes, const uint8_t * bytes)
 {
     wpc_frame_t request, confirm;
     int res;
@@ -299,7 +299,7 @@ int msap_scratchpad_status_request(msap_scratchpad_status_conf_pl_t * status_p)
     return APP_RES_OK;
 }
 
-int msap_scratchpad_update_request()
+int msap_scratchpad_update_request(void)
 {
     wpc_frame_t request, confirm;
     int res;
@@ -317,7 +317,7 @@ int msap_scratchpad_update_request()
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
-int msap_scratchpad_clear_request()
+int msap_scratchpad_clear_request(void)
 {
     wpc_frame_t request, confirm;
     int res;
@@ -375,7 +375,7 @@ int msap_scratchpad_remote_update(app_addr_t destination_address, uint8_t sequen
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
-void msap_stack_state_indication_handler(msap_stack_state_ind_pl_t * payload)
+void msap_stack_state_indication_handler(const msap_stack_state_ind_pl_t * payload)
 {
     LOGI("Status is 0x%02x\n", payload->status);
     if (m_stack_status_cb != NULL)
@@ -384,7 +384,7 @@ void msap_stack_state_indication_handler(msap_stack_state_ind_pl_t * payload)
     }
 }
 
-void msap_app_config_data_rx_indication_handler(msap_app_config_data_rx_ind_pl_t * payload)
+void msap_app_config_data_rx_indication_handler(const msap_app_config_data_rx_ind_pl_t * payload)
 {
     LOGD("Received config data : [%s] (%d)\n", payload->app_config_data, payload->diag_data_interval);
     if (m_app_conf_cb != NULL)
@@ -395,7 +395,7 @@ void msap_app_config_data_rx_indication_handler(msap_app_config_data_rx_ind_pl_t
     }
 }
 
-void msap_image_remote_status_indication_handler(msap_image_remote_status_ind_pl_t * payload)
+void msap_image_remote_status_indication_handler(const msap_image_remote_status_ind_pl_t * payload)
 {
     app_scratchpad_status_t app_status;
     LOGI("Received remote status from %d\n", payload->source_address);
@@ -406,7 +406,7 @@ void msap_image_remote_status_indication_handler(msap_image_remote_status_ind_pl
     }
 }
 
-void msap_scan_nbors_indication_handler(msap_scan_nbors_ind_pl_t * payload)
+void msap_scan_nbors_indication_handler(const msap_scan_nbors_ind_pl_t * payload)
 {
     LOGI("Received scan neighbors ind res %d\n", payload->scan_ready);
     if (m_scan_neighbor_cb != NULL)
@@ -415,71 +415,65 @@ void msap_scan_nbors_indication_handler(msap_scan_nbors_ind_pl_t * payload)
     }
 }
 
-// Macro to avoid code duplication
-#define REGISTER_CB(cb, internal_cb)   \
-    ({                                 \
-        bool res = true;               \
-        do                             \
-        {                              \
-            Platform_lock_request();   \
-            if (internal_cb != NULL)   \
-                res = false;           \
-            else                       \
-                internal_cb = cb;      \
-            Platform_unlock_request(); \
-        } while (0);                   \
-        res;                           \
-    })
+// Inline functions to avoid code duplication
+bool register_cb(void * cb, void ** internal_cb)
+{
+    bool res = true;
+    Platform_lock_request();
+    if (*internal_cb != NULL)
+        res = false;
+    else
+        *internal_cb = cb;
+    Platform_unlock_request();
+    return res;
+}
 
-#define UNREGISTER_CB(internal_cb)       \
-    ({                                   \
-        bool res = true;                 \
-        do                               \
-        {                                \
-            Platform_lock_request();     \
-            res = (internal_cb != NULL); \
-            internal_cb = NULL;          \
-            Platform_unlock_request();   \
-        } while (0);                     \
-        res;                             \
-    })
+bool unregister_cb(void ** internal_cb)
+{
+    bool res = true;
+    Platform_lock_request();
+    res = (internal_cb != NULL);
+    *internal_cb = NULL;
+    Platform_unlock_request();
+    return res;
+}
 
 bool msap_register_for_app_config(onAppConfigDataReceived_cb_f cb)
 {
-    return REGISTER_CB(cb, m_app_conf_cb);
+    return register_cb((void *) cb, (void **) &m_app_conf_cb);
 }
 
-bool msap_unregister_from_app_config()
+bool msap_unregister_from_app_config(void)
 {
-    return UNREGISTER_CB(m_app_conf_cb);
+    return unregister_cb((void **) &m_app_conf_cb);
 }
 
 bool msap_register_for_remote_status(onRemoteStatus_cb_f cb)
 {
-    return REGISTER_CB(cb, m_remote_status_cb);
+    return register_cb((void *) cb, (void **) &m_remote_status_cb);
 }
 
-bool msap_unregister_from_remote_status()
+bool msap_unregister_from_remote_status(void)
 {
-    return UNREGISTER_CB(m_remote_status_cb);
+    return unregister_cb((void **) &m_remote_status_cb);
 }
 
 bool msap_register_for_scan_neighbors_done(onScanNeighborsDone_cb_f cb)
 {
-    return REGISTER_CB(cb, m_scan_neighbor_cb);
+    return register_cb((void *) cb, (void **) &m_scan_neighbor_cb);
 }
 
-bool msap_unregister_from_scan_neighbors_done()
+bool msap_unregister_from_scan_neighbors_done(void)
 {
-    return UNREGISTER_CB(m_scan_neighbor_cb);
+    return unregister_cb((void **) &m_scan_neighbor_cb);
 }
 
 bool msap_register_for_stack_status(onStackStatusReceived_cb_f cb)
 {
-    return REGISTER_CB(cb, m_stack_status_cb);
+    return register_cb((void *) cb, (void **) &m_stack_status_cb);
 }
 
-bool msap_unregister_from_stack_status()
+bool msap_unregister_from_stack_status(void)
 {
-    return UNREGISTER_CB(m_stack_status_cb);
+    return unregister_cb((void **) &m_stack_status_cb);
 }

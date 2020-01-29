@@ -10,8 +10,12 @@
 #include <stdbool.h>
 #include "wpc.h"
 #include "wpc_constants.h"
+#include "compiler_ext.h"
 
-typedef struct __attribute__((__packed__))
+// Start of packed struct definitions
+PACKED_STRUCT_START
+
+typedef PACKED_STRUCT
 {
     uint16_t pdu_id;
     uint8_t src_endpoint;
@@ -21,9 +25,10 @@ typedef struct __attribute__((__packed__))
     uint8_t tx_options;
     uint8_t apdu_length;
     uint8_t apdu[MAX_DATA_PDU_SIZE];
-} dsap_data_tx_req_pl_t;
+}
+dsap_data_tx_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint16_t pdu_id;
     uint8_t src_endpoint;
@@ -34,9 +39,10 @@ typedef struct __attribute__((__packed__))
     uint32_t buffering_delay;
     uint8_t apdu_length;
     uint8_t apdu[MAX_DATA_PDU_SIZE];
-} dsap_data_tx_tt_req_pl_t;
+}
+dsap_data_tx_tt_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t indication_status;
     uint16_t pdu_id;
@@ -45,9 +51,10 @@ typedef struct __attribute__((__packed__))
     uint8_t dest_endpoint;
     uint32_t buffering_delay;
     uint8_t result;
-} dsap_data_tx_ind_pl_t;
+}
+dsap_data_tx_ind_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t indication_status;
     uint32_t src_add;
@@ -58,14 +65,19 @@ typedef struct __attribute__((__packed__))
     uint32_t travel_time;
     uint8_t apdu_length;
     uint8_t apdu[MAX_DATA_PDU_SIZE];
-} dsap_data_rx_ind_pl_t;
+}
+dsap_data_rx_ind_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint16_t pdu_id;
     uint8_t result;
     uint8_t capacity;
-} dsap_data_tx_conf_pl_t;
+}
+dsap_data_tx_conf_pl_t;
+
+// End of packed struct definitions
+PACKED_STRUCT_END
 
 /**
  * \brief   Function for sending data to the network
@@ -110,7 +122,7 @@ int dsap_data_tx_request(const uint8_t * buffer,
  * \brief   Handler for tx indication. It is called when sent data leaves the
  * node \param   payload Pointer to payload
  */
-void dsap_data_tx_indication_handler(dsap_data_tx_ind_pl_t * payload);
+void dsap_data_tx_indication_handler(const dsap_data_tx_ind_pl_t * payload);
 
 /**
  * \brief   Handler for rx indication
@@ -119,7 +131,7 @@ void dsap_data_tx_indication_handler(dsap_data_tx_ind_pl_t * payload);
  * \param   timestamp
  *          Timestamp of reception of rx reception
  */
-void dsap_data_rx_indication_handler(dsap_data_rx_ind_pl_t * rx_indication,
+void dsap_data_rx_indication_handler(const dsap_data_rx_ind_pl_t * rx_indication,
                                      unsigned long long timestamp_ms_epoch);
 
 /**
@@ -143,6 +155,6 @@ bool dsap_unregister_for_data(uint8_t dst_ep);
 /**
  * \brief   Initialize the dsap module
  */
-void dsap_init();
+void dsap_init(void);
 
 #endif /* DSAP_H_ */

@@ -15,26 +15,36 @@
 #define ATTRIBUTE_UTIL_H_
 
 #include <stdint.h>
+#include "compiler_ext.h"
 
-typedef struct __attribute__((__packed__))
+// Start of packed struct definitions
+PACKED_STRUCT_START
+
+typedef PACKED_STRUCT
 {
     uint16_t attribute_id;
     uint8_t attribute_length;
     uint8_t attribute_value[16];
-} attribute_write_req_pl_t;
+}
+attribute_write_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint16_t attribute_id;
-} attribute_read_req_pl_t;
+}
+attribute_read_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t result;
     uint16_t attribute_id;
     uint8_t attribute_length;
     uint8_t attribute_value[16];
-} attribute_read_conf_pl_t;
+}
+attribute_read_conf_pl_t;
+
+// End of packed struct definitions
+PACKED_STRUCT_END
 
 /**
  * \brief    Request to write an attribute to the stack
@@ -52,7 +62,7 @@ typedef struct __attribute__((__packed__))
 int attribute_write_request(uint8_t primitive_id,
                             uint16_t attribute_id,
                             uint8_t attribute_length,
-                            uint8_t * attribute_value_p);
+                            const uint8_t * attribute_value_p);
 /**
  * \brief    Request to read an attribute from the stack
  * \param    primitive_id

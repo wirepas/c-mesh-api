@@ -23,10 +23,11 @@ typedef enum
  * \param   frame
  *          The received indication
  * \param   timestamp_ms
- *          Timestamp of teh received indication
+ *          Timestamp of the received indication
  */
 typedef void (*onIndicationReceivedLocked_cb_f)(wpc_frame_t * frame,
                                                 unsigned long long timestamp_ms);
+
 /**
  * \brief   Function to send a request and wait for confirm for default timeout
  * \param   frame
@@ -81,7 +82,7 @@ int WPC_Int_get_indication(unsigned int max_ind, onIndicationReceivedLocked_cb_f
  */
 void WPC_Int_dispatch_indication(wpc_frame_t * frame, unsigned long long timestamp_ms);
 
-int WPC_Int_initialize(char * port_name, unsigned long bitrate);
+int WPC_Int_initialize(const char * port_name, unsigned long bitrate);
 
 void WPC_Int_close(void);
 

@@ -12,6 +12,7 @@
 #include "wpc_constants.h"
 #include "attribute.h"
 #include "util.h"
+#include "compiler_ext.h"
 
 /* Attributes ID */
 #define MSAP_STACK_STATUS 1
@@ -38,57 +39,67 @@
 #    define MAXIMUM_APP_CONFIG_SIZE 80
 #endif  // LEGACY_APP_CONFIG
 
-typedef struct __attribute__((__packed__))
+// Start of packed struct definitions
+PACKED_STRUCT_START
+
+typedef PACKED_STRUCT
 {
     uint8_t start_option;
-} msap_stack_start_req_pl_t;
+}
+msap_stack_start_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t sequence_number;
     uint16_t diag_data_interval;
     uint8_t app_config_data[MAXIMUM_APP_CONFIG_SIZE];
-} msap_app_config_data_write_req_pl_t;
+}
+msap_app_config_data_write_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint16_t attribute_id;
     uint8_t attribute_length;
     uint8_t attribute_value[16];
-} msap_attribute_write_req_pl_t;
+}
+msap_attribute_write_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint16_t attribute_id;
-} msap_attribute_read_req_pl_t;
+}
+msap_attribute_read_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint32_t scratchpad_length;
     uint8_t scratchpad_sequence_number;
-} msap_image_start_req_pl_t;
+}
+msap_image_start_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint32_t start_add;
     uint8_t number_of_bytes;
     uint8_t bytes[MAXIMUM_SCRATCHPAD_BLOCK_SIZE];
-} msap_image_block_req_pl_t;
+}
+msap_image_block_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint32_t target;
-} msap_image_remote_status_req_pl_t;
+}
+msap_image_remote_status_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint32_t target;
     uint8_t seq;
     uint16_t delay_s;
+}
+msap_image_remote_update_req_pl_t;
 
-} msap_image_remote_update_req_pl_t;
-
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint32_t add;
     uint8_t link_rel;
@@ -99,62 +110,71 @@ typedef struct __attribute__((__packed__))
     uint8_t tx_power;
     uint8_t rx_power;
     uint16_t last_update;
-} neighbor_info_t;
+}
+neighbor_info_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t number_of_neighbors;
     neighbor_info_t nbors[MAXIMUM_NUMBER_OF_NEIGHBOR];
-} msap_get_nbors_conf_pl_t;
+}
+msap_get_nbors_conf_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t indication_status;
     uint8_t scan_ready;
-} msap_scan_nbors_ind_pl_t;
+}
+msap_scan_nbors_ind_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t cost;
-} msap_sink_cost_write_req_pl_t;
+}
+msap_sink_cost_write_req_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t result;
     uint8_t cost;
-} msap_sink_cost_read_conf_pl_t;
+}
+msap_sink_cost_read_conf_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t indication_status;
     uint8_t status;
-} msap_stack_state_ind_pl_t;
+}
+msap_stack_state_ind_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t indication_status;
     uint8_t sequence_number;
     uint16_t diag_data_interval;
     uint8_t app_config_data[MAXIMUM_APP_CONFIG_SIZE];
-} msap_app_config_data_rx_ind_pl_t;
+}
+msap_app_config_data_rx_ind_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t result;
     uint8_t sequence_number;
     uint16_t diag_data_interval;
     uint8_t app_config_data[MAXIMUM_APP_CONFIG_SIZE];
-} msap_app_config_data_read_conf_pl_t;
+}
+msap_app_config_data_read_conf_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t result;
     uint16_t attribute_id;
     uint8_t attribute_length;
     uint8_t attribute_value[16];
-} msap_attribute_read_conf_pl_t;
+}
+msap_attribute_read_conf_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint32_t scrat_len;
     uint16_t scrat_crc;
@@ -169,19 +189,24 @@ typedef struct __attribute__((__packed__))
     uint8_t firmware_minor_ver;
     uint8_t firmware_maint_ver;
     uint8_t firmware_dev_ver;
-} msap_scratchpad_status_conf_pl_t;
+}
+msap_scratchpad_status_conf_pl_t;
 
-typedef struct __attribute__((__packed__))
+typedef PACKED_STRUCT
 {
     uint8_t indication_status;
     uint32_t source_address;
     msap_scratchpad_status_conf_pl_t status;
     uint16_t update_timeout;
-} msap_image_remote_status_ind_pl_t;
+}
+msap_image_remote_status_ind_pl_t;
+
+// End of packed struct definitions
+PACKED_STRUCT_END
 
 static inline void
 convert_internal_to_app_scratchpad_status(app_scratchpad_status_t * status_p,
-                                          msap_scratchpad_status_conf_pl_t * internal_status_p)
+                                          const msap_scratchpad_status_conf_pl_t * internal_status_p)
 {
     // Copy internal payload to app return code. Cannot use memcpy as structures
     // may have different alignment
@@ -205,13 +230,14 @@ convert_internal_to_app_scratchpad_status(app_scratchpad_status_t * status_p,
 
 /**
  * \brief   Convert internal neighbors list returned by get_neighbors to API
- * representation \param   neighbors_p Pointer to public API neighbor list
- * structure \param   internal_neighbors_p Pointer to internal msap neighbor
- * list structure
+ *          representation
+ * \param   neighbors_p Pointer to public API neighbor list structure
+ * \param   internal_neighbors_p Pointer to internal msap neighbor list
+ *          structure
  */
 static inline void
 convert_internal_to_app_neighbors_status(app_nbors_t * neighbors_p,
-                                         msap_get_nbors_conf_pl_t * internal_neighbors_p)
+                                         const msap_get_nbors_conf_pl_t * internal_neighbors_p)
 {
     // Copy internal payload to app return code. Cannot use memcpy as structures
     // may have different alignment
@@ -248,7 +274,7 @@ int msap_stack_start_request(uint8_t start_option);
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_stack_stop_request();
+int msap_stack_stop_request(void);
 
 /**
  * \brief    Request to write data config
@@ -263,7 +289,10 @@ int msap_stack_stop_request();
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_app_config_data_write_request(uint8_t seq, uint16_t interval, uint8_t * config_p, uint8_t size);
+int msap_app_config_data_write_request(uint8_t seq,
+                                       uint16_t interval,
+                                       const uint8_t * config_p,
+                                       uint8_t size);
 
 /**
  * \brief    Request to read data config
@@ -312,7 +341,7 @@ int msap_get_nbors_request(msap_get_nbors_conf_pl_t * neigbors_p);
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_scan_nbors_request();
+int msap_scan_nbors_request(void);
 
 /**
  * \brief    Request to start a scratchpad update
@@ -338,7 +367,9 @@ int msap_scratchpad_start_request(uint32_t length, uint8_t seq);
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_bytes, uint8_t * bytes);
+int msap_scratchpad_block_request(uint32_t start_address,
+                                  uint8_t number_of_bytes,
+                                  const uint8_t * bytes);
 
 /**
  * \brief    Get the status of currently stored and processed scratchpad
@@ -354,14 +385,14 @@ int msap_scratchpad_status_request(msap_scratchpad_status_conf_pl_t * status_p);
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_scratchpad_update_request();
+int msap_scratchpad_update_request(void);
 
 /**
  * \brief    Clear the stored scratchpad
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_scratchpad_clear_request();
+int msap_scratchpad_clear_request(void);
 
 /**
  * \brief   Get status of a remote node scratchpad status
@@ -390,7 +421,7 @@ int msap_scratchpad_remote_update(app_addr_t destination_address, uint8_t sequen
 
 static inline int msap_attribute_write_request(uint16_t attribute_id,
                                                uint8_t attribute_length,
-                                               uint8_t * attribute_value_p)
+                                               const uint8_t * attribute_value_p)
 {
     return attribute_write_request(MSAP_ATTRIBUTE_WRITE_REQUEST, attribute_id, attribute_length, attribute_value_p);
 }
@@ -407,28 +438,28 @@ static inline int msap_attribute_read_request(uint16_t attribute_id,
  * \param   payload
  *          pointer to payload
  */
-void msap_stack_state_indication_handler(msap_stack_state_ind_pl_t * payload);
+void msap_stack_state_indication_handler(const msap_stack_state_ind_pl_t * payload);
 
 /**
  * \brief   Handler for app config data receive
  * \param   payload
  *          pointer to payload
  */
-void msap_app_config_data_rx_indication_handler(msap_app_config_data_rx_ind_pl_t * payload);
+void msap_app_config_data_rx_indication_handler(const msap_app_config_data_rx_ind_pl_t * payload);
 
 /**
  * \brief   Handler for image remote status indication
  * \param   payload
  *          pointer to payload
  */
-void msap_image_remote_status_indication_handler(msap_image_remote_status_ind_pl_t * payload);
+void msap_image_remote_status_indication_handler(const msap_image_remote_status_ind_pl_t * payload);
 
 /**
  * \brief   Handler for scan neighbors indication
  * \param   payload
  *          pointer to payload
  */
-void msap_scan_nbors_indication_handler(msap_scan_nbors_ind_pl_t * payload);
+void msap_scan_nbors_indication_handler(const msap_scan_nbors_ind_pl_t * payload);
 
 /**
  * \brief   Register for app config data
@@ -442,7 +473,7 @@ bool msap_register_for_app_config(onAppConfigDataReceived_cb_f cb);
  * \brief   Unregister for app config data
  * \return  True if unregistered successfully, false otherwise
  */
-bool msap_unregister_from_app_config();
+bool msap_unregister_from_app_config(void);
 
 /**
  * \brief   Register for remote status
@@ -456,7 +487,7 @@ bool msap_register_for_remote_status(onRemoteStatus_cb_f cb);
  * \brief   Unregister from remote status
  * \return  True if unregistered successfully, false otherwise
  */
-bool msap_unregister_from_remote_status();
+bool msap_unregister_from_remote_status(void);
 
 /**
  * \brief   Register for scan neighbors status
@@ -470,7 +501,7 @@ bool msap_register_for_scan_neighbors_done(onScanNeighborsDone_cb_f cb);
  * \brief   Unregister from scan neighbors status
  * \return  True if unregistered successfully, false otherwise
  */
-bool msap_unregister_from_scan_neighbors_done();
+bool msap_unregister_from_scan_neighbors_done(void);
 
 /**
  * \brief   Register for stack status
@@ -484,6 +515,6 @@ bool msap_register_for_stack_status(onStackStatusReceived_cb_f cb);
  * \brief   Unregister from stack status
  * \return  True if unregistered successfully, false otherwise
  */
-bool msap_unregister_from_stack_status();
+bool msap_unregister_from_stack_status(void);
 
 #endif /* MSAP_H_ */

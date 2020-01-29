@@ -7,12 +7,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "test.h"
 #include "wpc.h"
 
-#define LOG_MODULE_NAME "TestApp"
+#define LOG_MODULE_NAME "test_app"
 #define MAX_LOG_LEVEL INFO_LOG_LEVEL
 #include "logger.h"
 

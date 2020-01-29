@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include "wpc_constants.h"
 #include "attribute.h"
+#include "compiler_ext.h"
 
 /* Attributes ID */
 #define C_NODE_ADDRESS_ID 1
@@ -34,10 +35,17 @@
 #define C_FEATURE_LOCK_BITS 22
 #define C_FEATURE_LOCK_KEY 23
 
-typedef struct __attribute__((__packed__))
+// Start of packed struct definitions
+PACKED_STRUCT_START
+
+typedef PACKED_STRUCT
 {
     uint32_t reset_key;
-} csap_factory_reset_req_pl_t;
+}
+csap_factory_reset_req_pl_t;
+
+// End of packed struct definitions
+PACKED_STRUCT_END
 
 /**
  * \brief    Request to write a configuration attribute to the stack
@@ -52,7 +60,7 @@ typedef struct __attribute__((__packed__))
  */
 static inline int csap_attribute_write_request(uint16_t attribute_id,
                                                uint8_t attribute_length,
-                                               uint8_t * attribute_value_p)
+                                               const uint8_t * attribute_value_p)
 {
     return attribute_write_request(CSAP_ATTRIBUTE_WRITE_REQUEST, attribute_id, attribute_length, attribute_value_p);
 }
@@ -80,6 +88,6 @@ static inline int csap_attribute_read_request(uint16_t attribute_id,
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int csap_factory_reset_request();
+int csap_factory_reset_request(void);
 
 #endif /* CSAP_H_ */

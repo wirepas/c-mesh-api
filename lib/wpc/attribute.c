@@ -15,7 +15,7 @@
 int attribute_write_request(uint8_t primitive_id,
                             uint16_t attribute_id,
                             uint8_t attribute_length,
-                            uint8_t * attribute_value_p)
+                            const uint8_t * attribute_value_p)
 {
     int res;
     wpc_frame_t request, confirm;
