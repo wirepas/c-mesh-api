@@ -24,6 +24,7 @@ TARGET_APP := $(BUILDPREFIX)$(MAIN_APP)
 
 # Add Api header
 CFLAGS  += -I$(MESH_LIB_FOLDER)api
+CFLAGS  += -I$(MESH_LIB_FOLDER)wpc/include
 # Add pthtread lib as needed by Mesh Lib
 LDFLAGS += -pthread
 # Add Reentrant flag as using pthread
@@ -33,11 +34,27 @@ CFLAGS  += -D_REENTRANT
 CFLAGS  += -I$(MESH_LIB_FOLDER)platform
 
 # Main app
-SOURCES := $(SOURCEPREFIX)test_app.c
+ifeq ($(test_mode),1)
+	SOURCES := $(SOURCEPREFIX)test_mode_app.c
+ifeq ($(rxnode),1)
+	CFLAGS  += -DRXNODE
+endif
+ifeq ($(txnode),1)
+	CFLAGS  += -DTXNODE
+endif
+else
+ 	SOURCES := $(SOURCEPREFIX)test_app.c
+endif
+
 
 # Test cases
 CFLAGS  += -I$(SOURCEPREFIX)
-SOURCES += $(SOURCEPREFIX)test.c
+ifeq ($(test_mode),1)
+	SOURCES += $(SOURCEPREFIX)test_mode_tests.c
+else
+	SOURCES += $(SOURCEPREFIX)test.c
+endif
+
 
 OBJECTS := $(patsubst $(SOURCEPREFIX)%,                     \
                   $(BUILDPREFIX)%,                          \
