@@ -130,17 +130,17 @@ typedef enum
     APP_RES_INVALID_NUMBER_OF_BYTES,  //!< Invalid number of bytes
     APP_RES_INVALID_SCRATCHPAD,       //!< Scratchpad is not valid
     APP_RES_INVALID_REBOOT_DELAY,     //!< Invalid reboot delay
-    APP_RES_INTERNAL_ERROR,            //!< WPC internal error
+    APP_RES_INTERNAL_ERROR,           //!< WPC internal error
     // Test mode error codes
-    APP_RES_TEST_MODE_SUCCESS,            //!< Test mode command executed successfully
-    APP_RES_TEST_MODE_INVALID_NWK_ADDRESS,//!< Given network address is not valid
-    APP_RES_TEST_MODE_NOT_ALLOWED,        //!< Test mode not allowed, stack is running, stop it first.
-    APP_RES_TEST_MODE_NOT_ACTIVATED,      //!< Device is not in test mode, set test mode first
-    APP_RES_TEST_MODE_INVALID_CHANNEL,    //!< Given radio channel number is not valid
-    APP_RES_TEST_MODE_INVALID_POWER,      //!< Given radio power level is not valid
-    APP_RES_TEST_MODE_SEND_CCA_ERROR,     //!< Sending prohibited due to busy channel (CCA fail)
-    APP_RES_TEST_MODE_SEND_FAILED,        //!< Transmission failed, check parameters
-    APP_RES_TEST_MODE_READ_NO_DATA,       //!< No test data received
+    APP_RES_TEST_MODE_SUCCESS,  //!< Test mode command executed successfully
+    APP_RES_TEST_MODE_INVALID_NWK_ADDRESS,  //!< Given network address is not valid
+    APP_RES_TEST_MODE_NOT_ALLOWED,  //!< Test mode not allowed, stack is running, stop it first.
+    APP_RES_TEST_MODE_NOT_ACTIVATED,  //!< Device is not in test mode, set test mode first
+    APP_RES_TEST_MODE_INVALID_CHANNEL,  //!< Given radio channel number is not valid
+    APP_RES_TEST_MODE_INVALID_POWER,  //!< Given radio power level is not valid
+    APP_RES_TEST_MODE_SEND_CCA_ERROR,  //!< Sending prohibited due to busy channel (CCA fail)
+    APP_RES_TEST_MODE_SEND_FAILED,   //!< Transmission failed, check parameters
+    APP_RES_TEST_MODE_READ_NO_DATA,  //!< No test data received
     // Test mode error codes ends here
 } app_res_e;
 /**
@@ -954,7 +954,6 @@ app_res_e WPC_register_for_stack_status(onStackStatusReceived_cb_f onStackStatus
  */
 app_res_e WPC_unregister_from_stack_status();
 
-
 /* Test-mode specific definitions start here */
 
 /**
@@ -970,7 +969,7 @@ app_res_e WPC_unregister_from_stack_status();
  *
  *  True size of the radio payload can be read with test_lib->getMaxDataSize().
  */
-#define APP_TEST_MODE_MAX_DATA_SIZE   (180-1-4)
+#define APP_TEST_MODE_MAX_DATA_SIZE (180 - 1 - 4)
 
 /**
  * \brief Header of test data send over the air
@@ -978,10 +977,10 @@ app_res_e WPC_unregister_from_stack_status();
 typedef struct
 {
     /** Sequence number of the message  */
-    uint32_t    seq;
+    uint32_t seq;
     /** Length of the test data  */
-    uint8_t     len;
-}app_test_mode_data_header_t;
+    uint8_t len;
+} app_test_mode_data_header_t;
 
 /**
  * \brief   Structures for test data reception
@@ -989,24 +988,24 @@ typedef struct
 typedef struct
 {
     /** Number of received messages since test mode started */
-    uint32_t    cntr;
+    uint32_t cntr;
     /** Number of duplicate messages since test mode started
      *  Incremented if received message has the same sequence number as
      *  in previous test data package */
-    uint32_t    dup;
-}app_test_mode_data_counters_t;
+    uint32_t dup;
+} app_test_mode_data_counters_t;
 
 typedef struct
 {
     /** Received signal strength in dBm with resolution of 1dBm. */
     int8_t rssi;
     /** Received data counters. */
-   app_test_mode_data_counters_t rxCntrs;
+    app_test_mode_data_counters_t rxCntrs;
     /** Header of received test data */
-   app_test_mode_data_header_t hdr;
+    app_test_mode_data_header_t hdr;
     /** Received test data */
     uint8_t data[APP_TEST_MODE_MAX_DATA_SIZE];
-}app_test_mode_data_received_t;
+} app_test_mode_data_received_t;
 
 /**
  * \brief   Structures for test data transmission
@@ -1016,30 +1015,30 @@ typedef struct
     /** Number of messages to be sent per request.
         Bigger the bursts value is the longer the transmission takes and delays
         response to the caller.  Practical values are from 1 to 1000. */
-    uint32_t    bursts;
+    uint32_t bursts;
     /** Time for Clear Channel Assessment in us. If 0, no CCA done.
         Practical values are from 0 to tens of milliseconds */
-    uint32_t    ccaDuration;
+    uint32_t ccaDuration;
     /** When CCA is not used (ccaDuration=0) transmit interval defines the delay between
      *  TX bursts in us. If 0, sending done as soon as possible. */
-    uint32_t    txInterval;
-}app_test_mode_data_transmitter_control_t;
+    uint32_t txInterval;
+} app_test_mode_data_transmitter_control_t;
 
 typedef struct
 {
     /** Header for fixed data fields */
-   app_test_mode_data_header_t hdr;
+    app_test_mode_data_header_t hdr;
     /** Free form test data */
     const uint8_t * data;
-}app_test_mode_data_tx_payload_t;
+} app_test_mode_data_tx_payload_t;
 
 typedef struct
 {
     /** Parameters for test data transmission */
-   app_test_mode_data_transmitter_control_t txCtrl;
+    app_test_mode_data_transmitter_control_t txCtrl;
     /** Data to be transmitted over the air */
-   app_test_mode_data_tx_payload_t txPayload;
-}app_test_mode_data_transmit_t;
+    app_test_mode_data_tx_payload_t txPayload;
+} app_test_mode_data_transmit_t;
 
 typedef struct
 {
@@ -1047,9 +1046,8 @@ typedef struct
     app_test_mode_data_transmitter_control_t txCtrl;
     /** Test signal type to be trasmitted */
     //app_test_mode_signal_type_e  signalType;
-    uint8_t  signalType;
- } app_test_mode_signal_transmit_t;
-
+    uint8_t signalType;
+} app_test_mode_signal_transmit_t;
 
 /**
  * \brief   Activates the test mode
@@ -1089,8 +1087,7 @@ app_res_e WPC_setRadioPower(const int8_t dbm);
  *          Pointer to location where to store number of sent bursts
  * \return  Return code of the operation
  */
-app_res_e WPC_sendRadioData(const app_test_mode_data_transmit_t * data,
-                            uint32_t *sentBursts);
+app_res_e WPC_sendRadioData(const app_test_mode_data_transmit_t * data, uint32_t * sentBursts);
 
 /**
  * @brief   Sends test signal
@@ -1100,7 +1097,7 @@ app_res_e WPC_sendRadioData(const app_test_mode_data_transmit_t * data,
  *          Pointer to location where to store number of sent bursts
  * @return  Result code
  */
-app_res_e WPC_sendRadioTestSignal(const app_test_mode_signal_transmit_t *data);
+app_res_e WPC_sendRadioTestSignal(const app_test_mode_signal_transmit_t * data);
 
 /**
  * \brief   Get the maximum data size radio can handle
@@ -1123,8 +1120,7 @@ app_res_e WPC_getRadioMaxDataSize(uint8_t * size);
  *          WPC_readRadioData().
  * \return  Return code of the operation
  */
-app_res_e WPC_allowRadioReception(const bool rxEnable,
-                                  const bool dataIndiEnable);
+app_res_e WPC_allowRadioReception(const bool rxEnable, const bool dataIndiEnable);
 
 /**
  * \brief   Reads the last received test data package from buffer

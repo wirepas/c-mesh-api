@@ -52,7 +52,7 @@ int main(int argc, char * argv[])
     if (Set_Radio_Channel() != true)
         return 0;
 
-   if (Set_Radio_Power() != true)
+    if (Set_Radio_Power() != true)
         return 0;
 
     // Sending full radio packets forever
