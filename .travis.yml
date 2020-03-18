@@ -9,3 +9,5 @@ script:
   - "./.ci/check-style.sh"
   - "./.ci/build-test.sh"
   - "./.ci/build-lib.sh"
+  - "./.ci/build-test-moderx.sh"
+  - "./.ci/build-test-modetx.sh"
