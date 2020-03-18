@@ -23,7 +23,7 @@ int Set_Radio_Power(void);
 /**
  * \brief   Test for reading maximum payload size
  */
-int Get_Radio_Max_Data_Size(void);
+int Get_Radio_Max_Data_Size(uint8_t * maxLen);
 /**
  * \brief   Test for sendig data over the air
  */

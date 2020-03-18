@@ -8,9 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "test_mode.h"
 #include "wpc.h"
 #include "platform.h"
+#include "test_mode.h"
 
 #define LOG_MODULE_NAME "test_mode_app"
 #define MAX_LOG_LEVEL INFO_LOG_LEVEL

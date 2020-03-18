@@ -15,8 +15,8 @@
 #include "test_mode.h"
 #include "platform.h"
 
-#define DATA_READ_TIMEOUT   30 // data read timeout in seconds for RX test
-#define PER_PRINT_INTERVAL  10 // printing interval in seconds for RX test
+#define DATA_READ_TIMEOUT 30   // data read timeout in seconds for RX test
+#define PER_PRINT_INTERVAL 10  // printing interval in seconds for RX test
 
 /*
  * Define common radio settings for TX and RX modes.
@@ -29,12 +29,11 @@ typedef struct
     uint32_t nwkAddress;
 } commonSettings_t;
 
-static const commonSettings_t m_radio =
-{
+static const commonSettings_t m_radio = {
     /* First channel, check channel numbers from radio profile document */
-   .channel = 1,
+    .channel = 1,
     /* Some random address*/
-   .nwkAddress = 0x1A2B3C,
+    .nwkAddress = 0x1A2B3C,
 };
 
 /* Define TX specific settings */
@@ -46,8 +45,7 @@ typedef struct
     int8_t dbm;
 } txSettings_t;
 
-static const txSettings_t m_tx =
-{
+static const txSettings_t m_tx = {
     /* When bursts (ctrl.bursts) value > 1 and CCA is not used
      * (ctrl.ccaDuration=0) the txInterval defines the delay between TX bursts
      * in us. Typical value is between 0 to hundreds of milliseconds.
@@ -57,9 +55,9 @@ static const txSettings_t m_tx =
     .ctrl.txInterval = 500,
     /* No clear channel assessment used */
     .ctrl.ccaDuration = 0,
-     /* Send 10 packages per request */
+    /* Send 10 packages per request */
     .ctrl.bursts = 10,
-     /* Power level to be used in the test */
+    /* Power level to be used in the test */
     .dbm = 8,
 };
 
@@ -83,27 +81,28 @@ typedef struct
     uint8_t perDec;
     /* Absolute signal strength in dBm  in resolution of 1dBm */
     int8_t rssi;
-}per_data_t;
+} per_data_t;
 
-
-static per_data_t m_rx =
-{
+static per_data_t m_rx = {
     .startSeq = 0,
     .startRXCntr = 0,
     .per = 0,
     .rssi = -127,
 };
 
-
 // Macro to launch a test and check result
-#define RUN_TEST(_test_func_, _expected_result_)       \
-    do {                                               \
-        LOGI("### Starting test %s\n", #_test_func_);  \
-        if (_test_func_() != _expected_result_) {      \
-            LOGE("### Test is FAIL\n\n");              \
-        } else {                                       \
-            LOGI("### Test is PASS\n\n");              \
-        }                                              \
+#define RUN_TEST(_test_func_, _expected_result_)      \
+    do                                                \
+    {                                                 \
+        LOGI("### Starting test %s\n", #_test_func_); \
+        if (_test_func_() != _expected_result_)       \
+        {                                             \
+            LOGE("### Test is FAIL\n\n");             \
+        }                                             \
+        else                                          \
+        {                                             \
+            LOGI("### Test is PASS\n\n");             \
+        }                                             \
     } while (0)
 
 /**
@@ -125,7 +124,7 @@ static per_data_t m_rx =
  * \return  per
  *          Calculated Packet Error Rate percentage
  */
-static float calculate_per(app_test_mode_data_received_t *rxdata)
+static float calculate_per(app_test_mode_data_received_t * rxdata)
 {
     uint32_t seq = rxdata->hdr.seq;
     uint32_t dup = rxdata->rxCntrs.dup;
@@ -133,10 +132,9 @@ static float calculate_per(app_test_mode_data_received_t *rxdata)
 
     if (m_rx.startRXCntr == 0 || m_rx.startSeq >= seq)
     {
-        LOGI("Re-started RX counters: rxCntr = %u, seq = %u\n",
-                          rxCntr, seq);
+        LOGI("Re-started RX counters: rxCntr = %u, seq = %u\n", rxCntr, seq);
         m_rx.startRXCntr = rxCntr;
-        m_rx.startSeq  = seq;
+        m_rx.startSeq = seq;
     }
     m_rx.lastRXCntr = rxCntr;
     m_rx.lastSeq = seq;
@@ -144,11 +142,11 @@ static float calculate_per(app_test_mode_data_received_t *rxdata)
     seq = seq - m_rx.startSeq;
     if (seq > 0)
     {
-        m_rx.per = ((float)(seq - (rxCntr - dup)) / (float)(seq) ) * 100;
+        m_rx.per = ((float) (seq - (rxCntr - dup)) / (float) (seq)) * 100;
     }
 
     // store RSSI value of last received package
-     m_rx.rssi = rxdata->rssi;
+    m_rx.rssi = rxdata->rssi;
 
     return m_rx.per;
 }
@@ -162,8 +160,7 @@ static float calculate_per(app_test_mode_data_received_t *rxdata)
  */
 static void print_per(void)
 {
-
-    LOGI("PER = %.2f, RSSI = %d [dBm]\n",m_rx.per, m_rx.rssi);
+    LOGI("PER = %.2f, RSSI = %d [dBm]\n", m_rx.per, m_rx.rssi);
 }
 
 int Set_Test_Mode()
@@ -179,7 +176,7 @@ int Exit_Test_Mode()
     // Exit from testmode
     if (WPC_exitTestMode() != APP_RES_OK)
     {
-       return false;
+        return false;
     }
     // Wait that node boots
     Platform_usleep(500000);
@@ -190,21 +187,21 @@ int Set_Radio_Channel()
 {
     if (WPC_setRadioChannel(m_radio.channel) != APP_RES_OK)
     {
-       return false;
+        return false;
     }
     return true;
 }
 
 int Set_Radio_Power()
 {
-  if (WPC_setRadioPower(m_tx.dbm) != APP_RES_OK)
+    if (WPC_setRadioPower(m_tx.dbm) != APP_RES_OK)
     {
-       return false;
+        return false;
     }
     return true;
 }
 
-int Get_Radio_Max_Data_Size(uint8_t *maxLen)
+int Get_Radio_Max_Data_Size(uint8_t * maxLen)
 {
     if (WPC_getRadioMaxDataSize(maxLen) != APP_RES_OK)
     {
@@ -228,15 +225,15 @@ int Send_Radio_Data()
     Get_Radio_Max_Data_Size(&dataMaxLen);
     // Prepare free form test data to be sent over the air.
     uint8_t data[255];
-    for (uint8_t i=0; i<dataMaxLen; i++)
+    for (uint8_t i = 0; i < dataMaxLen; i++)
     {
         data[i] = i;
     }
-    TXData.txPayload.data  = &data[0];
+    TXData.txPayload.data = &data[0];
     // Header is sent over the air, so subtract its size from space
     // reserved for test data in txPayload.
     TXData.txPayload.hdr.len = dataMaxLen - sizeof(TXData.txPayload.hdr.len) -
-                                  sizeof(TXData.txPayload.hdr.seq);
+                               sizeof(TXData.txPayload.hdr.seq);
 
     // send package over the air every 1 s
     while (true)
@@ -285,7 +282,7 @@ int Read_Radio_Data()
         {
             if (m_rx.lastRXCntr == lastRXCntr)
             {
-                LOGI("No messages in %d seconds\n",printInterval);
+                LOGI("No messages in %d seconds\n", printInterval);
             }
             else
             {
@@ -311,7 +308,7 @@ int Send_Radio_Signal()
     signal.txCtrl.bursts = m_tx.ctrl.bursts;
     signal.txCtrl.ccaDuration = m_tx.ctrl.ccaDuration;
     signal.txCtrl.txInterval = m_tx.ctrl.txInterval;
-    if (WPC_sendRadioTestSignal(&signal) !=  APP_RES_OK)
+    if (WPC_sendRadioTestSignal(&signal) != APP_RES_OK)
     {
         return false;
     }

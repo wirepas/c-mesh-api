@@ -73,49 +73,21 @@ static const app_res_e ATT_WRITE_ERROR_CODE_LUT[] = {
 };
 
 /* Error code LUT for test mode services */
-static const app_res_e TEST_MODE_SET_ERROR_CODE_LUT[] =
-{
-    APP_RES_OK,
-    APP_RES_TEST_MODE_INVALID_NWK_ADDRESS,
-    APP_RES_TEST_MODE_NOT_ALLOWED
-};
-static const app_res_e TEST_MODE_EXIT_ERROR_CODE_LUT[] =
-{
-    APP_RES_OK,
-    APP_RES_TEST_MODE_NOT_ACTIVATED
-};
-static const app_res_e TEST_MODE_GET_MAX_DATA_SIZE[] =
-{
-    APP_RES_OK
-};
-static const app_res_e TEST_MODE_SET_RADIO_CHANNEL[] =
-{
-    APP_RES_OK,
-    APP_RES_TEST_MODE_INVALID_CHANNEL
-};
-static const app_res_e TEST_MODE_SET_RADIO_POWER[] =
-{
-    APP_RES_OK,
-    APP_RES_TEST_MODE_INVALID_POWER
-};
-static const app_res_e TEST_MODE_SEND_DATA[] =
-{
-    APP_RES_OK,
-    APP_RES_TEST_MODE_SEND_CCA_ERROR,
-    APP_RES_TEST_MODE_SEND_FAILED,
-    APP_RES_TEST_MODE_NOT_ACTIVATED
-};
-static const app_res_e TEST_MODE_RECEPTION_CONTROL[] =
-{
-    APP_RES_OK,
-    APP_RES_TEST_MODE_NOT_ACTIVATED
-};
-static const app_res_e TEST_MODE_DATA_READ[] =
-{
-    APP_RES_OK,
-    APP_RES_TEST_MODE_READ_NO_DATA,
-    APP_RES_TEST_MODE_NOT_ACTIVATED
-};
+static const app_res_e TEST_MODE_SET_ERROR_CODE_LUT[] = {APP_RES_OK,
+                                                         APP_RES_TEST_MODE_INVALID_NWK_ADDRESS,
+                                                         APP_RES_TEST_MODE_NOT_ALLOWED};
+static const app_res_e TEST_MODE_EXIT_ERROR_CODE_LUT[] = {APP_RES_OK, APP_RES_TEST_MODE_NOT_ACTIVATED};
+static const app_res_e TEST_MODE_GET_MAX_DATA_SIZE[] = {APP_RES_OK};
+static const app_res_e TEST_MODE_SET_RADIO_CHANNEL[] = {APP_RES_OK, APP_RES_TEST_MODE_INVALID_CHANNEL};
+static const app_res_e TEST_MODE_SET_RADIO_POWER[] = {APP_RES_OK, APP_RES_TEST_MODE_INVALID_POWER};
+static const app_res_e TEST_MODE_SEND_DATA[] = {APP_RES_OK,
+                                                APP_RES_TEST_MODE_SEND_CCA_ERROR,
+                                                APP_RES_TEST_MODE_SEND_FAILED,
+                                                APP_RES_TEST_MODE_NOT_ACTIVATED};
+static const app_res_e TEST_MODE_RECEPTION_CONTROL[] = {APP_RES_OK, APP_RES_TEST_MODE_NOT_ACTIVATED};
+static const app_res_e TEST_MODE_DATA_READ[] = {APP_RES_OK,
+                                                APP_RES_TEST_MODE_READ_NO_DATA,
+                                                APP_RES_TEST_MODE_NOT_ACTIVATED};
 
 app_res_e WPC_set_max_poll_fail_duration(unsigned long duration_s)
 {
@@ -1061,7 +1033,6 @@ app_res_e WPC_unregister_from_stack_status()
     return msap_unregister_from_stack_status() ? APP_RES_OK : APP_RES_INVALID_VALUE;
 }
 
-
 // Test-mode specific WPC API
 app_res_e WPC_setTestMode(const uint32_t nwkAddress)
 {
@@ -1077,51 +1048,49 @@ app_res_e WPC_exitTestMode(void)
 
 app_res_e WPC_setRadioChannel(const uint8_t channel)
 {
-    int res  = tsap_setRadioChannel_request(channel);
+    int res = tsap_setRadioChannel_request(channel);
     return convert_error_code(TEST_MODE_SET_RADIO_CHANNEL, res);
 }
 
 app_res_e WPC_setRadioPower(const int8_t dbm)
 {
-    int res  = tsap_setRadioPower_request(dbm);
+    int res = tsap_setRadioPower_request(dbm);
     return convert_error_code(TEST_MODE_SET_RADIO_POWER, res);
 }
 
-app_res_e WPC_sendRadioData(const app_test_mode_data_transmit_t * data,
-                            uint32_t *sentBursts)
+app_res_e WPC_sendRadioData(const app_test_mode_data_transmit_t * data, uint32_t * sentBursts)
 {
-   tsap_radio_tx_data_req_pl_t tsapData;
-   tsapData.hdr.len = data->txPayload.hdr.len;
-   tsapData.hdr.seq = data->txPayload.hdr.seq;
-   tsapData.txCtrl.bursts = data->txCtrl.bursts;
-   tsapData.txCtrl.ccaDuration = data->txCtrl.ccaDuration;
-   tsapData.txCtrl.txInterval = data->txCtrl.txInterval;
-   memcpy(&tsapData.data, data->txPayload.data, data->txPayload.hdr.len);
-   int res = tsap_sendRadioData(&tsapData, sentBursts);
-   return convert_error_code(TEST_MODE_SEND_DATA, res);
+    tsap_radio_tx_data_req_pl_t tsapData;
+    tsapData.hdr.len = data->txPayload.hdr.len;
+    tsapData.hdr.seq = data->txPayload.hdr.seq;
+    tsapData.txCtrl.bursts = data->txCtrl.bursts;
+    tsapData.txCtrl.ccaDuration = data->txCtrl.ccaDuration;
+    tsapData.txCtrl.txInterval = data->txCtrl.txInterval;
+    memcpy(&tsapData.data, data->txPayload.data, data->txPayload.hdr.len);
+    int res = tsap_sendRadioData(&tsapData, sentBursts);
+    return convert_error_code(TEST_MODE_SEND_DATA, res);
 }
 
 app_res_e WPC_sendRadioTestSignal(const app_test_mode_signal_transmit_t * data)
 {
-   tsap_radio_tx_test_signal_req_pl_t  tsapData;
-   tsapData.signalType = data->signalType;
-   tsapData.txCtrl.bursts = data->txCtrl.bursts;
-   tsapData.txCtrl.ccaDuration = data->txCtrl.ccaDuration;
-   tsapData.txCtrl.txInterval = data->txCtrl.txInterval;
-   int res = tsap_sendRadioTestSignal(&tsapData);
-   return convert_error_code(TEST_MODE_SEND_DATA, res);
+    tsap_radio_tx_test_signal_req_pl_t tsapData;
+    tsapData.signalType = data->signalType;
+    tsapData.txCtrl.bursts = data->txCtrl.bursts;
+    tsapData.txCtrl.ccaDuration = data->txCtrl.ccaDuration;
+    tsapData.txCtrl.txInterval = data->txCtrl.txInterval;
+    int res = tsap_sendRadioTestSignal(&tsapData);
+    return convert_error_code(TEST_MODE_SEND_DATA, res);
 }
 
 app_res_e WPC_getRadioMaxDataSize(uint8_t * maxSize)
 {
-   int res = tsap_getRadioMaxDataSize(maxSize);
-   return convert_error_code(TEST_MODE_GET_MAX_DATA_SIZE, res);
+    int res = tsap_getRadioMaxDataSize(maxSize);
+    return convert_error_code(TEST_MODE_GET_MAX_DATA_SIZE, res);
 }
 
-app_res_e WPC_allowRadioReception(const bool rxEnable,
-                                  const bool dataIndiEnable)
+app_res_e WPC_allowRadioReception(const bool rxEnable, const bool dataIndiEnable)
 {
-    int res = tsap_allowRadioReception (rxEnable,  dataIndiEnable);
+    int res = tsap_allowRadioReception(rxEnable, dataIndiEnable);
     return convert_error_code(TEST_MODE_RECEPTION_CONTROL, res);
 }
 
