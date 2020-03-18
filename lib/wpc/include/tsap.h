@@ -20,7 +20,7 @@
  *  big enough buffer to cover all supported radio hardwares and
  *  some extra bytes for future needs.
  *
- *  True size of the radio payload can be read with ????test_lib->getMaxDataSize().
+ *  True size of the radio payload can be read with tsap_getRadioMaxDataSize().
  */
 #define APDU_TSAP_MAX_SIZE (180 - 1 - 4)
 
@@ -190,10 +190,13 @@ int tsap_sendRadioData(const tsap_radio_tx_data_req_pl_t * data, uint32_t * sent
  * @brief   Sends test signal
  * @param   data
  *          Defines type of the test signal and parameters for transmission
+ * \param   sentBursts
+ *          Pointer to location where to store number of sent bursts
  * @return  negative value if the request fails
  *
  */
-int tsap_sendRadioTestSignal(const tsap_radio_tx_test_signal_req_pl_t * data);
+int tsap_sendRadioTestSignal(const tsap_radio_tx_test_signal_req_pl_t * data,
+                             uint32_t * sentBursts);
 
 /**
  * \brief   Get the maximum data size radio can handle

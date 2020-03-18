@@ -1071,14 +1071,15 @@ app_res_e WPC_sendRadioData(const app_test_mode_data_transmit_t * data, uint32_t
     return convert_error_code(TEST_MODE_SEND_DATA, res);
 }
 
-app_res_e WPC_sendRadioTestSignal(const app_test_mode_signal_transmit_t * data)
+app_res_e WPC_sendRadioTestSignal(const app_test_mode_signal_transmit_t * data,
+                                  uint32_t * sentBursts)
 {
     tsap_radio_tx_test_signal_req_pl_t tsapData;
     tsapData.signalType = data->signalType;
     tsapData.txCtrl.bursts = data->txCtrl.bursts;
     tsapData.txCtrl.ccaDuration = data->txCtrl.ccaDuration;
     tsapData.txCtrl.txInterval = data->txCtrl.txInterval;
-    int res = tsap_sendRadioTestSignal(&tsapData);
+    int res = tsap_sendRadioTestSignal(&tsapData, sentBursts);
     return convert_error_code(TEST_MODE_SEND_DATA, res);
 }
 

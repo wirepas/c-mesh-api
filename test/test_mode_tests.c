@@ -55,7 +55,8 @@ static const txSettings_t m_tx = {
     .ctrl.txInterval = 500,
     /* No clear channel assessment used */
     .ctrl.ccaDuration = 0,
-    /* Send 10 packages per request */
+    /* Send 10 packages per request. If set 0 FW enters into continuous TX loop
+       and requires reset/power boot to stop TX.  */
     .ctrl.bursts = 10,
     /* Power level to be used in the test */
     .dbm = 8,
@@ -234,13 +235,12 @@ int Send_Radio_Data()
     // reserved for test data in txPayload.
     TXData.txPayload.hdr.len = dataMaxLen - sizeof(TXData.txPayload.hdr.len) -
                                sizeof(TXData.txPayload.hdr.seq);
-
+    LOGI("Sending test data\n");
     // send package over the air every 1 s
     while (true)
     {
         if (WPC_sendRadioData(&TXData, &sentBursts) != APP_RES_OK)
         {
-            LOGE("Sending failed\n");
             return false;
         }
         TXData.txPayload.hdr.seq += sentBursts;
@@ -300,17 +300,23 @@ int Read_Radio_Data()
 
 int Send_Radio_Signal()
 {
-    // Ask FW to create and send random data over the air
-    // Note FW enters continuous TX loop and does not respond to request
-    // Device needs to be reset or power boot to exit TX mode
+    uint32_t sentBursts = 0;
+    // Ask FW to create and send random test signal over the air.
     app_test_mode_signal_transmit_t signal;
     signal.signalType = TSAP_RADIO_TEST_SIGNAL_RANDOM;
     signal.txCtrl.bursts = m_tx.ctrl.bursts;
     signal.txCtrl.ccaDuration = m_tx.ctrl.ccaDuration;
     signal.txCtrl.txInterval = m_tx.ctrl.txInterval;
-    if (WPC_sendRadioTestSignal(&signal) != APP_RES_OK)
+    // send test signal  over the air every 1 s
+    LOGI("Sending test signal\n");
+    while (true)
     {
-        return false;
+        if (WPC_sendRadioTestSignal(&signal, &sentBursts) != APP_RES_OK)
+        {
+            return false;
+        }
+        Platform_usleep(1000000);
+        LOGI("sent %d bursts\n", sentBursts);
     }
 
     return true;

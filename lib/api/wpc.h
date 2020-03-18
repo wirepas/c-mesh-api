@@ -143,6 +143,19 @@ typedef enum
     APP_RES_TEST_MODE_READ_NO_DATA,  //!< No test data received
     // Test mode error codes ends here
 } app_res_e;
+
+/* Test-mode specific enums starts here  */
+typedef enum
+{
+    /** Transmits random symbols */
+    APP_RADIO_TEST_SIGNAL_RANDOM = 0,
+    /** Transmits all symbols (0 -255) in the signaling alphabet 0-255,
+     *  ref. FCC 558074 D01 15.247 Meas Guidance v05.*/
+    APP_RADIO_TEST_SIGNAL_ALL_SYMBOLS = 1,
+} app_radio_test_signal_type_e;
+
+/* Test-mode specific enums stops here  */
+
 /**
  * \brief   Scratchpad status
  */
@@ -1045,8 +1058,7 @@ typedef struct
     /** Parameters for test data transmission */
     app_test_mode_data_transmitter_control_t txCtrl;
     /** Test signal type to be trasmitted */
-    //app_test_mode_signal_type_e  signalType;
-    uint8_t signalType;
+    app_radio_test_signal_type_e signalType;
 } app_test_mode_signal_transmit_t;
 
 /**
@@ -1097,7 +1109,8 @@ app_res_e WPC_sendRadioData(const app_test_mode_data_transmit_t * data, uint32_t
  *          Pointer to location where to store number of sent bursts
  * @return  Result code
  */
-app_res_e WPC_sendRadioTestSignal(const app_test_mode_signal_transmit_t * data);
+app_res_e WPC_sendRadioTestSignal(const app_test_mode_signal_transmit_t * data,
+                                  uint32_t * sentBursts);
 
 /**
  * \brief   Get the maximum data size radio can handle

@@ -122,7 +122,7 @@ int tsap_getRadioMaxDataSize(uint8_t * size)
     return confirm.payload.tsap_radioMaxDataSize_confirm_payload.result;
 }
 
-int tsap_sendRadioTestSignal(const tsap_radio_tx_test_signal_req_pl_t * data)
+int tsap_sendRadioTestSignal(const tsap_radio_tx_test_signal_req_pl_t * data, uint32_t * sentBursts)
 {
     LOGI("tsap_sendRadioTestSignal:\n");
     wpc_frame_t request, confirm;
@@ -131,8 +131,8 @@ int tsap_sendRadioTestSignal(const tsap_radio_tx_test_signal_req_pl_t * data)
     request.payload_length =
         sizeof(data->signalType) + sizeof(data->txCtrl.bursts) +
         sizeof(data->txCtrl.ccaDuration) + sizeof(data->txCtrl.txInterval);
-    // If parameters are right FW enters into continuus TX loop and does not
-    // send confirmation
+    // If parameter bursts is set to 0 FW enters into continuus TX loop and does
+    // not send confirmation
     request.payload.tsap_radioSendTestSignal_request_payload.txCtrl.txInterval =
         data->txCtrl.txInterval;
     request.payload.tsap_radioSendTestSignal_request_payload.txCtrl.bursts =
@@ -144,6 +144,7 @@ int tsap_sendRadioTestSignal(const tsap_radio_tx_test_signal_req_pl_t * data)
     LOGI("res = %d \n", res);
     if (res < 0)
         return res;
+    *sentBursts = confirm.payload.tsap_radioSendData_confirm_payload.sentBursts;
     LOGI("result = %d \n", confirm.payload.tsap_radioSendData_confirm_payload.result);
     return confirm.payload.tsap_radioSendData_confirm_payload.result;
 }
