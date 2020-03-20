@@ -164,7 +164,7 @@ static void print_per(void)
     LOGI("PER = %.2f, RSSI = %d [dBm]\n", m_rx.per, m_rx.rssi);
 }
 
-int Set_Test_Mode()
+bool Set_Test_Mode()
 {
     if (WPC_setTestMode(m_radio.nwkAddress) != APP_RES_OK)
     {
@@ -172,7 +172,7 @@ int Set_Test_Mode()
     }
     return true;
 }
-int Exit_Test_Mode()
+bool Exit_Test_Mode()
 {
     // Exit from testmode
     if (WPC_exitTestMode() != APP_RES_OK)
@@ -184,7 +184,7 @@ int Exit_Test_Mode()
     return true;
 }
 
-int Set_Radio_Channel()
+bool Set_Radio_Channel()
 {
     if (WPC_setRadioChannel(m_radio.channel) != APP_RES_OK)
     {
@@ -193,7 +193,7 @@ int Set_Radio_Channel()
     return true;
 }
 
-int Set_Radio_Power()
+bool Set_Radio_Power()
 {
     if (WPC_setRadioPower(m_tx.dbm) != APP_RES_OK)
     {
@@ -202,7 +202,7 @@ int Set_Radio_Power()
     return true;
 }
 
-int Get_Radio_Max_Data_Size(uint8_t * maxLen)
+bool Get_Radio_Max_Data_Size(uint8_t * maxLen)
 {
     if (WPC_getRadioMaxDataSize(maxLen) != APP_RES_OK)
     {
@@ -212,7 +212,7 @@ int Get_Radio_Max_Data_Size(uint8_t * maxLen)
     return true;
 }
 
-int Send_Radio_Data()
+bool Send_Radio_Data()
 {
     uint8_t dataMaxLen;
 
@@ -250,7 +250,7 @@ int Send_Radio_Data()
     return true;
 }
 
-int Enable_Radio_Reception()
+bool Enable_Radio_Reception()
 {
     // Enable receiver
     if (WPC_allowRadioReception(true, false) != APP_RES_OK)
@@ -260,7 +260,7 @@ int Enable_Radio_Reception()
     return true;
 }
 
-int Read_Radio_Data()
+bool Read_Radio_Data()
 {
     app_test_mode_data_received_t rxData;
     app_res_e resp;
@@ -298,7 +298,7 @@ int Read_Radio_Data()
     return true;
 }
 
-int Send_Radio_Signal()
+bool Send_Radio_Signal()
 {
     uint32_t sentBursts = 0;
     // Ask FW to create and send random test signal over the air.

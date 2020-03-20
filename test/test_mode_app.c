@@ -38,24 +38,24 @@ int main(int argc, char * argv[])
 
 #if TXNODE
     LOGI("Transmitting...\n");
-    if (Set_Test_Mode() != true)
+    if (!Set_Test_Mode())
         return 0;
 
-    if (Set_Radio_Channel() != true)
+    if (!Set_Radio_Channel())
         return 0;
 
-    if (Set_Radio_Power() != true)
+    if (!Set_Radio_Power())
         return 0;
 
 #    if TXSIGNAL
     // Send predefined test signal by FW
-    if (Send_Radio_Signal() != true)
+    if (!Send_Radio_Signal())
     {
         return 0;
     }
 #    else
     // Create TX packages here and send them over the air
-    if (Send_Radio_Data() != true)
+    if (!Send_Radio_Data())
     {
         return 0;
     }
@@ -65,19 +65,19 @@ int main(int argc, char * argv[])
 
 #if RXNODE
     LOGI("Receiving...\n");
-    if (Set_Test_Mode() != true)
+    if (!Set_Test_Mode())
         return 0;
 
-    if (Set_Radio_Channel() != true)
+    if (!Set_Radio_Channel())
         return 0;
 
-    if (Enable_Radio_Reception() != true)
+    if (!Enable_Radio_Reception())
         return 0;
 
     // TX node must use Send_Radio_Data() to get PER% calculations right in
     // Read_Radio_Data(). Send_Radio_Signal() des not send header containing
     // esential information for PER calculations.
-    if (Read_Radio_Data() != true)
+    if (!Read_Radio_Data())
         return 0;
 #endif
 
