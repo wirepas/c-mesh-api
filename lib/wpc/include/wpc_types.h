@@ -11,6 +11,7 @@
 #include "csap.h"
 #include "dsap.h"
 #include "msap.h"
+#include "tsap.h"
 #include "attribute.h"
 #include "wpc_constants.h"
 
@@ -63,6 +64,12 @@ typedef struct __attribute__((__packed__))
         attribute_write_req_pl_t attribute_write_request_payload;
         attribute_read_req_pl_t attribute_read_request_payload;
         csap_factory_reset_req_pl_t csap_factory_reset_request_payload;
+        tsap_set_test_mode_req_pl_t tsap_testModeSet_request_payload;
+        tsap_radio_channel_req_pl_t tsap_radioChannel_request_payload;
+        tsap_radio_tx_power_req_pl_t tsap_radioTXpower_request_payload;
+        tsap_radio_tx_data_req_pl_t tsap_radioSendData_request_payload;
+        tsap_radio_receive_req_pl_t tsap_radioReceive_request_payload;
+        tsap_radio_tx_test_signal_req_pl_t tsap_radioSendTestSignal_request_payload;
         // Indication
         dsap_data_tx_ind_pl_t dsap_data_tx_indication_payload;
         dsap_data_rx_ind_pl_t dsap_data_rx_indication_payload;
@@ -70,6 +77,7 @@ typedef struct __attribute__((__packed__))
         msap_app_config_data_rx_ind_pl_t msap_app_config_data_rx_indication_payload;
         msap_image_remote_status_ind_pl_t msap_image_remote_status_indication_payload;
         msap_scan_nbors_ind_pl_t msap_scan_nbors_indication_payload;
+        tsap_radio_data_rx_ind_pl_t tsap_radioRXdata_indication_payload;
         generic_ind_pl_t generic_indication_payload;
         // Confirm
         sap_generic_conf_pl_t sap_generic_confirm_payload;
@@ -80,6 +88,10 @@ typedef struct __attribute__((__packed__))
         msap_get_nbors_conf_pl_t msap_get_nbors_confirm_payload;
         msap_scratchpad_status_conf_pl_t msap_scratchpad_status_confirm_payload;
         attribute_read_conf_pl_t attribute_read_confirm_payload;
+        tsap_radio_send_data_conf_pl_t tsap_radioSendData_confirm_payload;
+        tsap_radio_data_read_conf_pl_t tsap_radioDataRead_confirm_payload;
+        tsap_radio_max_data_size_conf_pl_t tsap_radioMaxDataSize_confirm_payload;
+
         // Response
         sap_resp_pl_t sap_response_payload;
     } payload;

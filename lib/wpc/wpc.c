@@ -10,6 +10,7 @@
 #include "csap.h"
 #include "dsap.h"
 #include "msap.h"
+#include "tsap.h"
 #include "util.h"
 
 #include "wpc.h"  // For DEFAULT_BITRATE
@@ -70,6 +71,23 @@ static const app_res_e ATT_WRITE_ERROR_CODE_LUT[] = {
     APP_RES_INTERNAL_ERROR,     // 5
     APP_RES_ACCESS_DENIED       // 6
 };
+
+/* Error code LUT for test mode services */
+static const app_res_e TEST_MODE_SET_ERROR_CODE_LUT[] = {APP_RES_OK,
+                                                         APP_RES_TEST_MODE_INVALID_NWK_ADDRESS,
+                                                         APP_RES_TEST_MODE_NOT_ALLOWED};
+static const app_res_e TEST_MODE_EXIT_ERROR_CODE_LUT[] = {APP_RES_OK, APP_RES_TEST_MODE_NOT_ACTIVATED};
+static const app_res_e TEST_MODE_GET_MAX_DATA_SIZE[] = {APP_RES_OK};
+static const app_res_e TEST_MODE_SET_RADIO_CHANNEL[] = {APP_RES_OK, APP_RES_TEST_MODE_INVALID_CHANNEL};
+static const app_res_e TEST_MODE_SET_RADIO_POWER[] = {APP_RES_OK, APP_RES_TEST_MODE_INVALID_POWER};
+static const app_res_e TEST_MODE_SEND_DATA[] = {APP_RES_OK,
+                                                APP_RES_TEST_MODE_SEND_CCA_ERROR,
+                                                APP_RES_TEST_MODE_SEND_FAILED,
+                                                APP_RES_TEST_MODE_NOT_ACTIVATED};
+static const app_res_e TEST_MODE_RECEPTION_CONTROL[] = {APP_RES_OK, APP_RES_TEST_MODE_NOT_ACTIVATED};
+static const app_res_e TEST_MODE_DATA_READ[] = {APP_RES_OK,
+                                                APP_RES_TEST_MODE_READ_NO_DATA,
+                                                APP_RES_TEST_MODE_NOT_ACTIVATED};
 
 app_res_e WPC_set_max_poll_fail_duration(unsigned long duration_s)
 {
@@ -1014,3 +1032,81 @@ app_res_e WPC_unregister_from_stack_status()
 {
     return msap_unregister_from_stack_status() ? APP_RES_OK : APP_RES_INVALID_VALUE;
 }
+
+// Test-mode specific WPC API
+app_res_e WPC_setTestMode(const uint32_t nwkAddress)
+{
+    int res = tsap_setTestMode_request(nwkAddress);
+    return convert_error_code(TEST_MODE_SET_ERROR_CODE_LUT, res);
+}
+
+app_res_e WPC_exitTestMode(void)
+{
+    int res = tsap_exitTestMode_request();
+    return convert_error_code(TEST_MODE_EXIT_ERROR_CODE_LUT, res);
+}
+
+app_res_e WPC_setRadioChannel(const uint8_t channel)
+{
+    int res = tsap_setRadioChannel_request(channel);
+    return convert_error_code(TEST_MODE_SET_RADIO_CHANNEL, res);
+}
+
+app_res_e WPC_setRadioPower(const int8_t dbm)
+{
+    int res = tsap_setRadioPower_request(dbm);
+    return convert_error_code(TEST_MODE_SET_RADIO_POWER, res);
+}
+
+app_res_e WPC_sendRadioData(const app_test_mode_data_transmit_t * data, uint32_t * sentBursts)
+{
+    tsap_radio_tx_data_req_pl_t tsapData;
+    tsapData.hdr.len = data->txPayload.hdr.len;
+    tsapData.hdr.seq = data->txPayload.hdr.seq;
+    tsapData.txCtrl.bursts = data->txCtrl.bursts;
+    tsapData.txCtrl.ccaDuration = data->txCtrl.ccaDuration;
+    tsapData.txCtrl.txInterval = data->txCtrl.txInterval;
+    memcpy(&tsapData.data, data->txPayload.data, data->txPayload.hdr.len);
+    int res = tsap_sendRadioData(&tsapData, sentBursts);
+    return convert_error_code(TEST_MODE_SEND_DATA, res);
+}
+
+app_res_e WPC_sendRadioTestSignal(const app_test_mode_signal_transmit_t * data,
+                                  uint32_t * sentBursts)
+{
+    tsap_radio_tx_test_signal_req_pl_t tsapData;
+    tsapData.signalType = data->signalType;
+    tsapData.txCtrl.bursts = data->txCtrl.bursts;
+    tsapData.txCtrl.ccaDuration = data->txCtrl.ccaDuration;
+    tsapData.txCtrl.txInterval = data->txCtrl.txInterval;
+    int res = tsap_sendRadioTestSignal(&tsapData, sentBursts);
+    return convert_error_code(TEST_MODE_SEND_DATA, res);
+}
+
+app_res_e WPC_getRadioMaxDataSize(uint8_t * maxSize)
+{
+    int res = tsap_getRadioMaxDataSize(maxSize);
+    return convert_error_code(TEST_MODE_GET_MAX_DATA_SIZE, res);
+}
+
+app_res_e WPC_allowRadioReception(const bool rxEnable, const bool dataIndiEnable)
+{
+    int res = tsap_allowRadioReception(rxEnable, dataIndiEnable);
+    return convert_error_code(TEST_MODE_RECEPTION_CONTROL, res);
+}
+
+app_res_e WPC_readRadioData(app_test_mode_data_received_t * data)
+{
+    tsap_radio_rx_data_t tsapData;
+    int res = tsap_readRadioData(&tsapData);
+    data->rssi = tsapData.rssi;
+    data->rxCntrs.cntr = tsapData.rxCntrs.cntr;
+    data->rxCntrs.dup = tsapData.rxCntrs.dup;
+    data->hdr.len = tsapData.hdr.len;
+    data->hdr.seq = tsapData.hdr.seq;
+    memcpy(data->data, &tsapData.data, data->hdr.len);
+
+    return convert_error_code(TEST_MODE_DATA_READ, res);
+}
+
+// Test-mode specific WPC API ends here
