@@ -39,7 +39,7 @@ static onStackStatusReceived_cb_f m_stack_status_cb = NULL;
  *          It can be long because the start triggers an erase of
  *          scratchpad area that can be long if external memory used
  */
-#define SCRATCHPAD_START_TIMEOUT_MS 15000
+#define SCRATCHPAD_START_TIMEOUT_MS 45000
 
 /**
  * \brief   Time to wait for scratchpad block request confirm
@@ -241,9 +241,12 @@ int msap_scratchpad_start_request(uint32_t length, uint8_t seq)
     res = WPC_Int_send_request_timeout(&request, &confirm, SCRATCHPAD_START_TIMEOUT_MS);
 
     if (res < 0)
+    {
+        LOGE("Start scratchpad request result = %d timeout is %d\n", res, SCRATCHPAD_START_TIMEOUT_MS);
         return res;
+    }
 
-    LOGI("Start request result = 0x%02x\n",
+    LOGI("Start scratchpad request result = 0x%02x\n",
          confirm.payload.sap_generic_confirm_payload.result);
     return confirm.payload.sap_generic_confirm_payload.result;
 }
@@ -273,7 +276,10 @@ int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_byte
     res = WPC_Int_send_request_timeout(&request, &confirm, SCRATCHPAD_BLOK_TIMEOUT_MS);
 
     if (res < 0)
+    {
+        LOGE("Block request res=%d start_address=%d, number_of_bytes= %d\n", res, start_address, number_of_bytes);
         return res;
+    }
 
     LOGD("Block request result = 0x%02x\n",
          confirm.payload.sap_generic_confirm_payload.result);
