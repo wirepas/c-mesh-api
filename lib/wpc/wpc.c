@@ -553,32 +553,43 @@ app_res_e WPC_start_stack(void)
 
 app_res_e WPC_stop_stack(void)
 {
-    int res = msap_stack_stop_request();
+    int res;
+    app_res_e f_res = APP_RES_OK;
+    // Stop the poll request to avoid timeout error during reboot
+    Platform_disable_poll_request(true);
+
+    res = msap_stack_stop_request();
 
     if (res < 0)
     {
-        // Error in communication
-        return APP_RES_INTERNAL_ERROR;
+        f_res = APP_RES_INTERNAL_ERROR;
+    }
+    else if (res == 1)
+    {
+        f_res = APP_RES_STACK_ALREADY_STOPPED;
+    }
+    else if (res == 128)
+    {
+        f_res = APP_RES_ACCESS_DENIED;
+    }
+    else
+    {
+        // Wait 500ms to avoid a systematic timeout
+        // at each reboot. If status is asked immediately,
+        // stack cannot answer
+        Platform_usleep(500 * 1000);
+
+        // A stop of the stack will reboot the device
+        // Wait for the stack to be up again
+        // It can be quite long in case a scratchpad is processed
+        if (!get_statck_status(TIMEOUT_AFTER_STOP_STACK_S))
+        {
+            f_res = APP_RES_INTERNAL_ERROR;
+        }
     }
 
-    if (res == 1)
-    {
-        return APP_RES_STACK_ALREADY_STOPPED;
-    }
-    else if (res < 0)
-    {
-        return APP_RES_INTERNAL_ERROR;
-    }
-
-    // A stop of the stack will reboot the device
-    // Wait for the stack to be up again
-    // It can be quite long in case a scratchpad is processed
-    if (!get_statck_status(TIMEOUT_AFTER_STOP_STACK_S))
-    {
-        return APP_RES_INTERNAL_ERROR;
-    }
-
-    return APP_RES_OK;
+    Platform_disable_poll_request(false);
+    return f_res;
 }
 
 static app_res_e read_single_byte_msap(uint8_t att, uint8_t * pointer)
