@@ -14,12 +14,22 @@
 #include <linux/serial.h>
 
 #include "serial_termios2.h"
+#include "platform.h"
 
 #define LOG_MODULE_NAME "SERIAL"
 #define MAX_LOG_LEVEL INFO_LOG_LEVEL
 #include "logger.h"
 
 static int fd = -1;
+
+/** \brief Forward declaration of internal open */
+static int int_open();
+
+/** \brief  Port name to open */
+static char m_port_name[256];
+
+/** \brief Bitrate to use */
+static unsigned long m_bitrate;
 
 static int set_interface_attribs(int fd, unsigned long bitrate, int parity)
 {
@@ -102,20 +112,17 @@ static void set_blocking(int fd, int should_block)
         LOGE("Error %d setting term attributes", errno);
 }
 
-/****************************************************************************/
-/*                Public method implementation                              */
-/****************************************************************************/
-int Serial_open(const char * port_name, unsigned long bitrate)
+static int int_open()
 {
-    fd = open(port_name, O_RDWR | O_NOCTTY | O_SYNC);
+    fd = open(m_port_name, O_RDWR | O_NOCTTY | O_SYNC);
     if (fd < 0)
     {
-        LOGE("Error %d opening serial link %s: %s\n", errno, port_name, strerror(errno));
+        LOGE("Error %d opening serial link %s: %s\n", errno, m_port_name, strerror(errno));
         return -1;
     }
 
     // set the requested bitrate, 8n1, no parity
-    if (set_interface_attribs(fd, bitrate, 0) < 0)
+    if (set_interface_attribs(fd, m_bitrate, 0) < 0)
     {
         close(fd);
         fd = -1;
@@ -127,6 +134,17 @@ int Serial_open(const char * port_name, unsigned long bitrate)
 
     LOGD("Serial opened\n");
     return 0;
+}
+/****************************************************************************/
+/*                Public method implementation                              */
+/****************************************************************************/
+int Serial_open(const char * port_name, unsigned long bitrate)
+{
+    // Copy the settings locally
+    strcpy(m_port_name, port_name);
+    m_bitrate = bitrate;
+
+    return int_open();
 }
 
 int Serial_close()
@@ -203,8 +221,26 @@ int Serial_write(const unsigned char * buffer, unsigned int buffer_size)
     if (fd < 0)
     {
         LOGE("No serial link opened\n");
-        return -1;
+        // Try to reopen
+        if (int_open() < 0)
+        {
+            // Wait a bit before next try
+            Platform_usleep(1000 * 1000);
+            return 0;
+        }
+        LOGI("Serial reopened\n");
     }
 
-    return write(fd, buffer, buffer_size);
+    ssize_t ret = write(fd, buffer, buffer_size);
+    if (ret < 0)
+    {
+        LOGE("Error in write: %d\n", errno);
+        LOGE("Close connection\n");
+        Serial_close();
+
+        // Connection will be checked reopen at next try
+
+        return 0;
+    }
+    return ret;
 }
