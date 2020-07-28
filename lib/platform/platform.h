@@ -6,6 +6,8 @@
 #ifndef PLATFORM_H_
 #define PLATFORM_H_
 
+#include <stdbool.h>
+
 bool Platform_init();
 
 void Platform_usleep(unsigned int time_us);
