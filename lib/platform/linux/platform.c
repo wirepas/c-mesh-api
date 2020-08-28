@@ -179,6 +179,11 @@ static void * poll_for_indication(void * unused)
         // Get the lock to be able to poll
         pthread_mutex_lock(&m_poll_mutex);
 
+        // Get the number of free buffers in the indication queue
+        // Note: No need to lock the queue as only m_ind_queue_read can be updated
+        // and could still be modified when we release the lock after computing
+        // the max free space
+
         /* Ask for maximum room in buffer queue and less than MAX */
         if (!m_queue_empty && (m_ind_queue_write == m_ind_queue_read))
         {
