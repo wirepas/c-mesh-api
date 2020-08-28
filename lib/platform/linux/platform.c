@@ -306,35 +306,35 @@ bool Platform_init()
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
 
     // Initialize mutex to access critical section
-    if (pthread_mutex_init(&sending_mutex, &attr) < 0)
+    if (pthread_mutex_init(&sending_mutex, &attr) != 0)
     {
         LOGE("Sending Mutex init failed\n");
         goto error1;
     }
 
     // Initialize mutex to access queue
-    if (pthread_mutex_init(&m_queue_mutex, &attr) < 0)
+    if (pthread_mutex_init(&m_queue_mutex, &attr) != 0)
     {
         LOGE("Queue Mutex init failed\n");
         goto error2;
     }
 
     // Initialize mutex to prevent polling
-    if (pthread_mutex_init(&m_poll_mutex, &attr) < 0)
+    if (pthread_mutex_init(&m_poll_mutex, &attr) != 0)
     {
         LOGE("Polling Mutex init failed\n");
         goto error2_2;
     }
 
     // Start a thread to poll for indication
-    if (pthread_create(&thread_polling, NULL, poll_for_indication, NULL) < 0)
+    if (pthread_create(&thread_polling, NULL, poll_for_indication, NULL) != 0)
     {
         LOGE("Cannot create polling thread\n");
         goto error3;
     }
 
     // Start a thread to dispatch indication
-    if (pthread_create(&thread_dispatch, NULL, dispatch_indication, NULL) < 0)
+    if (pthread_create(&thread_dispatch, NULL, dispatch_indication, NULL) != 0)
     {
         LOGE("Cannot create dispatch thread\n");
         goto error4;
