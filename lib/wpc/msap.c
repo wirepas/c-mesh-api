@@ -331,7 +331,8 @@ int msap_scratchpad_clear_request()
     request.primitive_id = MSAP_SCRATCH_CLEAR_REQUEST;
     request.payload_length = 0;
 
-    res = WPC_Int_send_request(&request, &confirm);
+    // Use same timeout as scratchpad_start request that covers a scratchpad erase
+    res = WPC_Int_send_request_timeout(&request, &confirm, SCRATCHPAD_START_TIMEOUT_MS);
 
     if (res < 0)
         return res;
