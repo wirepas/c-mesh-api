@@ -204,7 +204,7 @@ int msap_get_nbors_request(msap_get_nbors_conf_pl_t * neigbors_p)
          confirm.payload.msap_get_nbors_confirm_payload.number_of_neighbors);
     memcpy((uint8_t *) neigbors_p,
            (uint8_t *) &confirm.payload.msap_get_nbors_confirm_payload,
-           sizeof(msap_scratchpad_status_conf_pl_t));
+           sizeof(msap_get_nbors_conf_pl_t));
     return APP_RES_OK;
 }
 
