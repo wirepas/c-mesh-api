@@ -201,6 +201,7 @@ typedef struct
  * \param   buffering_delay
  *          Time spent in stack buffers in ms
  * \param   result
+ *          Result of the operation: 0 for success, 1 for failure
  */
 typedef void (*onDataSent_cb_f)(uint16_t pduid, uint32_t buffering_delay, uint8_t result);
 
