@@ -21,6 +21,17 @@
 
 static int fd = -1;
 
+// This define modifies the write function to avoid issues with
+// Nordic Evaluation Kit connected through USB with a faulty
+// segger chip (for the USB to serial conversion). In fact the
+// declared USB buffer size seems wrong (512 instead of 64 bytes)
+// resulting in truncated packets if the lib send bigger packets than
+// 64 bytes. Splitting them before sending seems to workaround the issue
+// If not in this situation, the following line can be commented
+// Having it all the time even if accessing a real serial device shouldn't
+// impact performances
+#define PATCH_SEGGER_CHIP
+
 static int set_interface_attribs(int fd, unsigned long bitrate, int parity)
 {
     struct termios tty;
@@ -198,6 +209,7 @@ int Serial_read(unsigned char * c, unsigned int timeout_ms)
     }
 }
 
+#define WRITE_CHUNK_SIZE 64
 int Serial_write(const unsigned char * buffer, unsigned int buffer_size)
 {
     if (fd < 0)
@@ -206,5 +218,23 @@ int Serial_write(const unsigned char * buffer, unsigned int buffer_size)
         return -1;
     }
 
+#ifdef PATCH_SEGGER_CHIP
+    unsigned int written = 0;
+    // Send buffer in 64 bytes chunks
+    while (buffer_size > 0)
+    {
+        unsigned int size = buffer_size > WRITE_CHUNK_SIZE ? WRITE_CHUNK_SIZE : buffer_size;
+        int partial_written = write(fd, buffer + written, size);
+        if (partial_written < 0)
+        {
+            return partial_written;
+        }
+
+        written += partial_written;
+        buffer_size -= partial_written;
+    }
+    return written;
+#else
     return write(fd, buffer, buffer_size);
+#endif  //PATCH_SEGGER_CHIP
 }
