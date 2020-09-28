@@ -8,6 +8,5 @@ SOURCES += $(WPC_MODULE)dsap.c
 SOURCES += $(WPC_MODULE)msap.c
 SOURCES += $(WPC_MODULE)csap.c
 SOURCES += $(WPC_MODULE)attribute.c
-SOURCES += $(WPC_MODULE)tsap.c
 
 CFLAGS  += -I$(WPC_MODULE)include/
