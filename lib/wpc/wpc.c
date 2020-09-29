@@ -396,8 +396,8 @@ app_res_e WPC_get_app_config_data(uint8_t * seq_p, uint16_t * interval_p, uint8_
         return max_size_res;
     }
 
-    // Check with provided size
-    if (size > max_size)
+    // Check that provided buffer is big enough to store the full app_config
+    if (size < max_size)
     {
         return APP_RES_INVALID_VALUE;
     }
