@@ -32,8 +32,14 @@ static pthread_mutex_t sending_mutex;
 // This thread is used to poll for indication
 static pthread_t thread_polling;
 
+// Set to false to stop polling thread execution
+static bool m_polling_thread_running;
+
 // This thread is used to dispatch indication
 static pthread_t thread_dispatch;
+
+// Set to false to stop dispatch thread execution
+static bool m_dispatch_thread_running;
 
 // Last successful poll request
 static time_t m_last_successful_poll_ts;
@@ -86,12 +92,21 @@ static pthread_mutex_t m_poll_mutex;
 static void * dispatch_indication(void * unused)
 {
     pthread_mutex_lock(&m_queue_mutex);
-    while (true)
+    while (m_dispatch_thread_running)
     {
         if (m_queue_empty)
         {
             // Queue is empty, wait
             pthread_cond_wait(&m_queue_not_empty_cond, &m_queue_mutex);
+
+            // Check if we wake up but nothing in queue
+            if (m_queue_empty)
+            {
+                // Release the lock
+                pthread_mutex_unlock(&m_queue_mutex);
+                // Continue to evaluate the stop condition
+                continue;
+            }
         }
 
         // Get the oldest indication
@@ -115,7 +130,7 @@ static void * dispatch_indication(void * unused)
         }
     }
 
-    LOGE("Exiting dispatch thread\n");
+    LOGW("Exiting dispatch thread\n");
     return NULL;
 }
 
@@ -172,7 +187,7 @@ static void * poll_for_indication(void * unused)
     int get_ind_res;
     uint32_t wait_before_next_polling_ms = 0;
 
-    while (true)
+    while (m_polling_thread_running)
     {
         usleep(wait_before_next_polling_ms * 1000);
 
@@ -258,10 +273,8 @@ static void * poll_for_indication(void * unused)
         pthread_mutex_unlock(&m_poll_mutex);
     }
 
-    LOGE("Exiting polling thread\n");
+    LOGW("Exiting polling thread\n");
 
-    // Full process must be exited if uart doesnt' work
-    exit(EXIT_FAILURE);
     return NULL;
 }
 
@@ -331,6 +344,7 @@ bool Platform_init()
         goto error2_2;
     }
 
+    m_polling_thread_running = true;
     // Start a thread to poll for indication
     if (pthread_create(&thread_polling, NULL, poll_for_indication, NULL) != 0)
     {
@@ -338,6 +352,7 @@ bool Platform_init()
         goto error3;
     }
 
+    m_dispatch_thread_running = true;
     // Start a thread to dispatch indication
     if (pthread_create(&thread_dispatch, NULL, dispatch_indication, NULL) != 0)
     {
@@ -399,9 +414,22 @@ bool Platform_disable_poll_request(bool disabled)
 
 void Platform_close()
 {
+    void * res;
+    // Signal our dispatch thread to stop
+    m_dispatch_thread_running = false;
+    // Signal condition to wakeup thread
+    pthread_cond_signal(&m_queue_not_empty_cond);
+
+    // Signal our polling thread to stop
+    // No need to signal it as it will wakeup periodically
+    m_polling_thread_running = false;
+
+    // Wait for both tread to finish
+    pthread_join(thread_polling, &res);
+    pthread_join(thread_dispatch, &res);
+
+    // Destroy our mutexes
     pthread_mutex_destroy(&m_queue_mutex);
     pthread_mutex_destroy(&m_poll_mutex);
     pthread_mutex_destroy(&sending_mutex);
-    pthread_kill(thread_polling, SIGKILL);
-    pthread_kill(thread_dispatch, SIGKILL);
 }
