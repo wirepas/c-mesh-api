@@ -263,7 +263,10 @@ static void * poll_for_indication(void * unused)
             {
                 if (get_timestamp_s() - m_last_successful_poll_ts > m_max_poll_fail_duration_s)
                 {
-                    // Poll request has failed for too long, just exit
+                    // Poll request has failed for too long
+                    // This is a fatal error as the com with sink was not possible
+                    // for a too lonk period.
+                    exit(EXIT_FAILURE);
                     break;
                 }
             }
