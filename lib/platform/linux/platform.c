@@ -265,7 +265,7 @@ static void * poll_for_indication(void * unused)
                 {
                     // Poll request has failed for too long
                     // This is a fatal error as the com with sink was not possible
-                    // for a too lonk period.
+                    // for a too long period.
                     exit(EXIT_FAILURE);
                     break;
                 }
