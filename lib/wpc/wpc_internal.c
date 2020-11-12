@@ -118,6 +118,9 @@ static int send_request_locked(wpc_frame_t * request, wpc_frame_t * confirm, uin
             return confirm_size;
         }
 
+        // Even if it doesn't match, the node sent something so it is alive
+        Platform_valid_message_from_node();
+
         // Check the confirm
         rec_confirm = (wpc_frame_t *) buffer;
         if ((rec_confirm->primitive_id) != (request->primitive_id + SAP_CONFIRM_OFFSET))

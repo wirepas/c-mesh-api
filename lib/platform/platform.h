@@ -58,6 +58,14 @@ bool Platform_set_max_poll_fail_duration(unsigned long duration_s);
  */
 bool Platform_disable_poll_request(bool disabled);
 
+/**
+ * \brief   Inform platform part that a message was received correctly from node.
+ * \Note    Without it, only poll request are taken into account and sometimes
+ *          between two consecutive scratchpad exchanges, there is no poll request
+ *          so the timeout is not reseted.
+ */
+void Platform_valid_message_from_node();
+
 void Platform_close();
 
 #endif /* PLATFORM_H_ */

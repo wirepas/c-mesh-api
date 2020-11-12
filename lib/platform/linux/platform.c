@@ -390,6 +390,11 @@ bool Platform_set_max_poll_fail_duration(unsigned long duration_s)
     return true;
 }
 
+void Platform_valid_message_from_node()
+{
+    m_last_successful_poll_ts = get_timestamp_s();
+}
+
 bool Platform_disable_poll_request(bool disabled)
 {
     int res;
