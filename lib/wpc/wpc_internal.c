@@ -13,6 +13,7 @@
 #include "logger.h"
 
 #include "serial.h"
+#include "lsap.h"
 #include "slip.h"
 #include "wpc_types.h"
 #include "wpc_internal.h"
@@ -313,10 +314,23 @@ int WPC_Int_send_request(wpc_frame_t * frame, wpc_frame_t * confirm)
     return WPC_Int_send_request_timeout(frame, confirm, TIMEOUT_CONFIRM_MS);
 }
 
-int WPC_Int_initialize(char * port_name, unsigned long bitrate)
+static uint16_t convert_timeus_to_bytes(uint16_t time_us, unsigned long baudrate)
 {
+    // With 8n1 encoding a bytes is 10 symbols
+    uint32_t byte_time_us = 10 * 1000 * 1000 / baudrate;
+    uint16_t bytes_number = time_us / byte_time_us + (time_us % byte_time_us != 0);
+    LOGD("Time: %d us -> %d bytes\n", time_us, bytes_number);
+    return  bytes_number;
+}
+
+int WPC_Int_initialize(char * port_name, unsigned long baudrate)
+{
+    uint8_t att[2];
+    uint16_t wakeuptime_us;
+    int res;
+
     // Open the serial connection
-    if (Serial_open(port_name, bitrate) < 0)
+    if (Serial_open(port_name, baudrate) < 0)
         return WPC_INT_GEN_ERROR;
 
     // Initialize the slip module
@@ -329,6 +343,24 @@ int WPC_Int_initialize(char * port_name, unsigned long bitrate)
     }
 
     dsap_init();
+
+    // Set wakeup to exaggerated value to be sure the request to get real wakeup is
+    // received on the other side
+    Slip_set_wakeup_bytes_number(convert_timeus_to_bytes(500, baudrate));
+
+    // Determine the right number of wakeup symbols by asking the node
+    // If node doesn't support it, it will answer with error code
+    res = lsap_attribute_read_request(L_WAKEUP_TIME, 2, att);
+    if (res == 0) {
+        wakeuptime_us = uint16_decode_le(att);
+        LOGD("Wakeup_time is %d\n", wakeuptime_us);
+
+        Slip_set_wakeup_bytes_number(convert_timeus_to_bytes(wakeuptime_us, baudrate));
+    }
+    else
+    {
+        LOGW("Cannot determine wakeup_time res=%d Is is implemented?\n", res);
+    }
 
     LOGI("WPC initialized\n");
     return 0;

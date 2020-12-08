@@ -64,6 +64,16 @@ int Slip_send_buffer(uint8_t * buffer, uint32_t len);
 int Slip_get_buffer(uint8_t * buffer, uint32_t len, uint16_t timeout_ms);
 
 /**
+ * \brief   Set the number of wakeup symbols to add before any request
+ *          It is dependent on attached node and must be customized by
+ *          asking the node its wakeup time
+ * \param   num_bytes
+ *          Number of bytes to add
+ * \return  0 for success, -1 otherwise
+ */
+int Slip_set_wakeup_bytes_number(uint16_t num_bytes);
+
+/**
  * \brief    Function prototype to write data to serial
  * \param    buffer
  *           the buffer to write

@@ -59,12 +59,16 @@ static const uint16_t crc_ccitt_lut[] = {
 #define ESC_SUBS_OCTET 0xDD
 
 // An encoded buffer can be 2 times bigger if all bytes are
-// escaped, plus 2 bytes for CRC and 4 bytes for SLIP END symbols
+// escaped, plus 2 bytes for CRC and 2 bytes for SLIP END symbols
+// It doesn't include additionnal wakeup symbols
 #define MAX_SIZE_ENCODED_BUFFER(__initial_len__) \
-    ((__initial_len__ << 1) + 2 + 4)
+    ((__initial_len__ << 1) + 2 + 2)
 
 static write_f write_function = NULL;
 static read_f read_function = NULL;
+
+// Number of wakeup symbols to add before each request
+static uint16_t m_num_wakeup_bytes;
 
 /**
  * Compute the crc of a frame
@@ -208,25 +212,38 @@ int Slip_encode(uint8_t * buffer_in, uint32_t len_in, uint8_t * buffer_out, uint
 int Slip_send_buffer(uint8_t * buffer, uint32_t len)
 {
     int size, written_size;
+    size_t full_size=0;
 
     // Allocate the encoded buffer.
-    uint8_t encoded_buffer[MAX_SIZE_ENCODED_BUFFER(len)];
+    uint8_t encoded_buffer[MAX_SIZE_ENCODED_BUFFER(len) + m_num_wakeup_bytes];
 
-    // Add 3 end symbols at the beginning
-    for (int i = 0; i < 3; i++)
+    // Add m_num_wakeup_symbols symbols at the beginning + 1 start byte.
+    for (int i = 0; i < m_num_wakeup_bytes + 1; i++)
         encoded_buffer[i] = END_SLIP_OCTET;
 
-    size = Slip_encode(buffer, len, encoded_buffer + 3, sizeof(encoded_buffer) - 3);
+    // Wakeup symbols + start slip byte
+    full_size += (m_num_wakeup_bytes + 1);
+
+    size = Slip_encode(buffer,
+                       len,
+                       encoded_buffer + full_size,
+                       sizeof(encoded_buffer) - m_num_wakeup_bytes);
+
+    // Add encoded buffer
+    full_size += size;
 
     // Add end symbol at the end
-    encoded_buffer[size + 3] = END_SLIP_OCTET;
+    encoded_buffer[full_size] = END_SLIP_OCTET;
 
-    LOG_PRINT_BUFFER(encoded_buffer, size + 4);
+    // Add end byte
+    full_size += 1;
 
-    written_size = write_function(encoded_buffer, size + 4);
-    if (written_size != size + 4)
+    LOG_PRINT_BUFFER(encoded_buffer, full_size);
+
+    written_size = write_function(encoded_buffer, full_size);
+    if (written_size != full_size)
     {
-        LOGE("Not able to write all the encoded packet %d vs %d\n", written_size, size + 4);
+        LOGE("Not able to write all the encoded packet %d vs %d\n", written_size, full_size);
         return WPC_INT_GEN_ERROR;
     }
 
@@ -329,10 +346,19 @@ int Slip_get_buffer(uint8_t * buffer, uint32_t len, uint16_t timeout_ms)
     return decoded_size;
 }
 
+int Slip_set_wakeup_bytes_number(uint16_t num_bytes)
+{
+    m_num_wakeup_bytes = num_bytes;
+    return 0;
+}
+
 int Slip_init(write_f write, read_f read)
 {
     if (!write || !read)
         return WPC_INT_WRONG_PARAM_ERROR;
+
+    // Initialize number of wakeup symbols to 2 (as before)
+    m_num_wakeup_bytes = 2;
 
     write_function = write;
     read_function = read;
