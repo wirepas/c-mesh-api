@@ -293,6 +293,57 @@ static bool testAuthenticationKey()
     return true;
 }
 
+static bool testScratchpadTarget()
+{
+    uint8_t target_seq;
+    uint16_t target_crc;
+    uint8_t action;
+    uint8_t param;
+
+    // Read it a first time
+    if (WPC_read_target_scratchpad(&target_seq,
+                                   &target_crc,
+                                   &action,
+                                   &param) != APP_RES_OK)
+    {
+        LOGE("Cannot read target scratchpad\n");
+        return false;
+    }
+
+    LOGI("Target is: %d, 0x%x, %d, %d\n", target_seq, target_crc, action, param);
+
+    app_res_e res = WPC_write_target_scratchpad(12,
+            0x1234,
+            2,
+            13);
+    if (res != APP_RES_OK)
+    {
+        LOGE("Cannot write target scratchpad %d\n", res);
+        return false;
+    }
+
+    LOGI("Write new target\n");
+
+    if (WPC_read_target_scratchpad(&target_seq,
+                                   &target_crc,
+                                   &action,
+                                   &param))
+    {
+        LOGE("Cannot read target back scratchpad\n");
+        return false;
+    }
+
+    LOGI("Target read back is: %d, 0x%x, %d, %d\n", target_seq, target_crc, action, param);
+
+    if (target_seq != 12 || target_crc != 0x1234 || action != 2 || param != 13)
+    {
+        LOGE("Wrong read-back value\n");
+        return false;
+    }
+
+    return true;
+}
+
 void onDataSent(uint16_t pduid, uint32_t buffering_delay, uint8_t result)
 {
     LOGI("Indication received for %d, delay=%d, result=%d\n", pduid, buffering_delay, result);
@@ -788,6 +839,8 @@ int Test_runAll()
     RUN_TEST(testFactoryReset, true);
 
     setInitialState(APP_ROLE_SINK, 1234, 0x654321, 5, false);
+
+    RUN_TEST(testScratchpadTarget, true);
 
     RUN_TEST(dumpCSAPAttributes, true);
 

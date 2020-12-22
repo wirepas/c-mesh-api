@@ -77,6 +77,14 @@ typedef struct __attribute__((__packed__))
 
 typedef struct __attribute__((__packed__))
 {
+    uint8_t target_sequence;
+    uint16_t target_crc;
+    uint8_t action;
+    uint8_t param;
+} msap_scratchpad_write_req_pl_t;
+
+typedef struct __attribute__((__packed__))
+{
     uint32_t target;
 } msap_image_remote_status_req_pl_t;
 
@@ -170,6 +178,15 @@ typedef struct __attribute__((__packed__))
     uint8_t firmware_maint_ver;
     uint8_t firmware_dev_ver;
 } msap_scratchpad_status_conf_pl_t;
+
+typedef struct __attribute__((__packed__))
+{
+    uint8_t result;
+    uint8_t target_sequence;
+    uint16_t target_crc;
+    uint8_t action;
+    uint8_t param;
+} msap_scratchpad_read_conf_pl_t;
 
 typedef struct __attribute__((__packed__))
 {
@@ -362,6 +379,42 @@ int msap_scratchpad_update_request();
  *           a Mesh positive result otherwise
  */
 int msap_scratchpad_clear_request();
+
+/**
+ * \brief    Request to write target scratchpad and action
+ * \param    target_sequence
+ *           The target sequence to set
+ * \param    target_crc
+ *           The target crc to set
+ * \param    action
+ *           The action to perform with this scratchpad
+ * \param    param
+ *           Parameter for the associated action (if relevant)
+ * \return   negative value if the request fails,
+ *           a Mesh positive result otherwise
+ */
+int msap_scratchpad_target_write_request(uint8_t target_sequence,
+                                         uint16_t target_crc,
+                                         uint8_t action,
+                                         uint8_t param);
+
+/**
+ * \brief    Request to read target scratchpad and action
+ * \param    target_sequence_p
+ *           Pointer to store the target sequence to set
+ * \param    target_crc_p
+ *           Pointer to store the crc to set
+ * \param    action_p
+ *           Pointer to store the action to perform with this scratchpad
+ * \param    param_p
+ *           Pointer to store the parameter for the associated action (if relevant)
+ * \return   negative value if the request fails,
+ *           a Mesh positive result otherwise
+ */
+int msap_scratchpad_target_read_request(uint8_t * target_sequence_p,
+                                        uint16_t * target_crc_p,
+                                        uint8_t * action_p,
+                                        uint8_t * param_p);
 
 /**
  * \brief   Get status of a remote node scratchpad status
