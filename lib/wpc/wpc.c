@@ -880,6 +880,43 @@ app_res_e WPC_remote_scratchpad_update(app_addr_t destination_address, uint8_t s
     return convert_error_code(SCRATCHPAD_UPDATE_REMOTE_ERROR_CODE_LUT, res);
 }
 
+/* Error code LUT for target scratchpad write */
+static const app_res_e TARGET_SCRATCHPAD_ERROR_CODE_LUT[] = {
+    APP_RES_OK,               // 0
+    APP_RES_NODE_NOT_A_SINK,  // 1
+    APP_RES_INVALID_VALUE,    // 2
+    APP_RES_ACCESS_DENIED     // 3
+};
+
+app_res_e WPC_write_target_scratchpad(uint8_t target_sequence,
+                                      uint16_t target_crc,
+                                      uint8_t action,
+                                      uint8_t param)
+{
+    int res = msap_scratchpad_target_write_request(
+                                target_sequence,
+                                target_crc,
+                                action,
+                                param);
+
+    return convert_error_code(TARGET_SCRATCHPAD_ERROR_CODE_LUT, res);
+}
+
+app_res_e WPC_read_target_scratchpad(uint8_t * target_sequence_p,
+                                     uint16_t * target_crc_p,
+                                     uint8_t * action_p,
+                                     uint8_t * param_p)
+{
+    int res = msap_scratchpad_target_read_request(
+                                target_sequence_p,
+                                target_crc_p,
+                                action_p,
+                                param_p);
+
+    // We should always be able to read it if implemented
+    return res == 0 ? APP_RES_OK : APP_RES_INTERNAL_ERROR;
+}
+
 /* Error code LUT for scan neighbors */
 static const app_res_e SCAN_NEIGHBORS_ERROR_CODE_LUT[] = {
     APP_RES_OK,                // 0

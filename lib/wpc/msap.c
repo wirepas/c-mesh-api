@@ -342,6 +342,71 @@ int msap_scratchpad_clear_request()
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
+int msap_scratchpad_target_write_request(uint8_t target_sequence,
+                                         uint16_t target_crc,
+                                         uint8_t action,
+                                         uint8_t param)
+{
+    wpc_frame_t request, confirm;
+    int res;
+
+    request.primitive_id = MSAP_SCRATCH_TARGET_WRITE_REQUEST;
+    request.payload.msap_scratchpad_target_write_request_payload.target_sequence = target_sequence;
+    request.payload.msap_scratchpad_target_write_request_payload.target_crc = target_crc;
+    request.payload.msap_scratchpad_target_write_request_payload.action = action;
+    request.payload.msap_scratchpad_target_write_request_payload.param = param;
+
+    request.payload_length = sizeof(msap_scratchpad_write_req_pl_t);
+
+    res = WPC_Int_send_request(&request, &confirm);
+
+    if (res < 0)
+        return res;
+
+    LOGD(" Target scratchpad request result = 0x%02x\n",
+         confirm.payload.sap_generic_confirm_payload.result);
+    return confirm.payload.sap_generic_confirm_payload.result;
+}
+
+
+int msap_scratchpad_target_read_request(uint8_t * target_sequence_p,
+                                        uint16_t * target_crc_p,
+                                        uint8_t * action_p,
+                                        uint8_t * param_p)
+{
+    wpc_frame_t request, confirm;
+    uint8_t result;
+    int res;
+
+    request.primitive_id = MSAP_SCRATCH_TARGET_READ_REQUEST;
+    request.payload_length = 0;
+
+    res = WPC_Int_send_request(&request, &confirm);
+
+    if (res < 0)
+        return res;
+
+    result = confirm.payload.msap_scratchpad_target_read_confirm_payload.result;
+    if (result == 0)
+    {
+        *target_sequence_p = confirm.payload.msap_scratchpad_target_read_confirm_payload.target_sequence;
+        *target_crc_p =	confirm.payload.msap_scratchpad_target_read_confirm_payload.target_crc;
+        *action_p = confirm.payload.msap_scratchpad_target_read_confirm_payload.action;
+        *param_p = confirm.payload.msap_scratchpad_target_read_confirm_payload.param;
+        LOGD("Target scratchpad Read : seq=%d crc=0x%x action=%d param=%d\n",
+             *target_sequence_p,
+             *target_crc_p,
+             *action_p,
+             *param_p);
+    }
+    else
+    {
+        LOGE("Try to read target scratchpad but it failed %d\n", result);
+    }
+
+    return result;
+}
+
 int msap_scratchpad_remote_status(app_addr_t destination_address)
 {
     wpc_frame_t request, confirm;

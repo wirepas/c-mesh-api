@@ -729,6 +729,40 @@ app_res_e WPC_clear_local_scratchpad();
 app_res_e WPC_update_local_scratchpad();
 
 /**
+ * \brief    Request to write target scratchpad and action
+ * \param    target_sequence
+ *           The target sequence to set
+ * \param    target_crc
+ *           The target crc to set
+ * \param    action
+ *           The action to perform with this scratchpad
+ * \param    param
+ *           Parameter for the associated action (if relevant)
+ * \return  Return code of the operation
+ */
+app_res_e WPC_write_target_scratchpad(uint8_t target_sequence,
+                                      uint16_t target_crc,
+                                      uint8_t action,
+                                      uint8_t param);
+
+/**
+ * \brief    Request to read target scratchpad and action
+ * \param    target_sequence_p
+ *           Pointer to store the target sequence to set
+ * \param    target_crc_p
+ *           Pointer to store the crc to set
+ * \param    action_p
+ *           Pointer to store the action to perform with this scratchpad
+ * \param    param_p
+ *           Pointer to store the parameter for the associated action (if relevant)
+ * \return  Return code of the operation
+ */
+app_res_e WPC_read_target_scratchpad(uint8_t * target_sequence_p,
+                                     uint16_t * target_crc_p,
+                                     uint8_t * action_p,
+                                     uint8_t * param_p);
+
+/**
  * \brief   Query scratchpad status for a remote node
  * \param   destination_address
  *          Destination node address
