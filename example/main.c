@@ -123,18 +123,26 @@ int main(int argc, char * argv[])
     }
     LOGI("Network address set\n");
 
-    uint8_t config[16] = "Test Mesh API\0";
+    uint8_t config[100] = "Test Mesh API\0";
     uint8_t seq;
     uint16_t interval;
+    uint8_t max_size;
 
-    if (WPC_get_app_config_data(&seq, &interval, config, 16) == APP_RES_NO_CONFIG)
+    if (WPC_get_app_config_data_size(&max_size)  != APP_RES_OK)
+	{
+		LOGE("Cannot determine app config max size\n");
+		goto exit_on_error;
+	}
+	LOGI("App config max size is %d\n", max_size);
+
+    if (WPC_get_app_config_data(&seq, &interval, config, 100) == APP_RES_NO_CONFIG)
     {
         seq = 1;
         interval = 30;
     }
 
     if (NODE_ROLE == APP_ROLE_SINK &&
-        WPC_set_app_config_data(seq + 1, 30, config, 16) != APP_RES_OK)
+        WPC_set_app_config_data(seq + 1, 30, config, max_size) != APP_RES_OK)
     {
         LOGE("Cannot set config data\n");
         goto exit_on_error;
