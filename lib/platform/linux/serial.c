@@ -59,10 +59,9 @@ static int set_interface_attribs(int fd, unsigned long bitrate, int parity)
     tty.c_lflag = 0;
     // no remapping, no delays
     tty.c_oflag = 0;
-    // read doesn't block
+    // VMIN=0, VTIME=1 => blocking for max 100ms
     tty.c_cc[VMIN] = 0;
-    // No timeout
-    tty.c_cc[VTIME] = 0;
+    tty.c_cc[VTIME] = 1;
 
     // shut off xon/xoff ctrl
     tty.c_iflag &= ~(IXON | IXOFF | IXANY);
@@ -94,24 +93,6 @@ static int set_interface_attribs(int fd, unsigned long bitrate, int parity)
     return 0;
 }
 
-static void set_blocking(int fd, int should_block)
-{
-    struct termios tty;
-    memset(&tty, 0, sizeof tty);
-    if (tcgetattr(fd, &tty) != 0)
-    {
-        LOGE("Error %d from tggetattr", errno);
-        return;
-    }
-
-    tty.c_cc[VMIN] = should_block ? 1 : 0;
-    // No timeout
-    tty.c_cc[VTIME] = 0;
-
-    if (tcsetattr(fd, TCSANOW, &tty) != 0)
-        LOGE("Error %d setting term attributes", errno);
-}
-
 static int int_open()
 {
     fd = open(m_port_name, O_RDWR | O_NOCTTY | O_SYNC);
@@ -128,9 +109,6 @@ static int int_open()
         fd = -1;
         return -1;
     }
-
-    // set no blocking
-    set_blocking(fd, 0);
 
     LOGD("Serial opened\n");
     return 0;
@@ -166,54 +144,52 @@ int Serial_close()
     return 0;
 }
 
+static ssize_t get_single_char(unsigned char * c, unsigned int timeout_ms)
+{
+    static unsigned char m_buffer[128];
+    static uint8_t m_elem = 0;
+    static uint8_t m_read = 0;
+    ssize_t read_bytes;
+    uint16_t attempts;
+
+    // Do we still have char buffered?
+    if (m_elem > 0)
+    {
+        *c = m_buffer[m_read++];
+        m_elem--;
+        return 1;
+    }
+
+    // Convert timeout_ms in attempt of 100ms (timeout set)
+    attempts = ((timeout_ms + 99) / 100) - 1;
+
+    // Local buffer is empty, refill it
+    do
+    {
+        read_bytes = read(fd, m_buffer, sizeof(m_buffer));
+        if (read_bytes > 0)
+        {
+            m_elem = read_bytes;
+            m_read = 0;
+            *c = m_buffer[m_read++];
+            m_elem--;
+            return 1;
+        }
+    } while (attempts-- > 0);
+
+    LOGW("Timeout to wait for char on serial line\n");
+    return 0;
+}
+
 int Serial_read(unsigned char * c, unsigned int timeout_ms)
 {
-    fd_set rfds;
-    struct timeval tv;
-    int retval;
-
     if (fd < 0)
     {
         LOGE("No serial link opened\n");
         return -1;
     }
 
-    /* Watch our fd to see when it has char available */
-    FD_ZERO(&rfds);
-    FD_SET(fd, &rfds);
-
-    /* Set up timeout */
-    tv.tv_sec = timeout_ms / 1000;
-    tv.tv_usec = (timeout_ms % 1000) * 1000;
-
-    /* Block for the given timeout */
-    retval = select(fd + 1, &rfds, NULL, NULL, &tv);
-
-    /* Check the reason for exiting the select */
-    if (retval > 0)
-    {
-        /* Useless test as only one single fd monitored */
-        if (FD_ISSET(fd, &rfds))
-        {
-            // LOGD("Data available on serial\n");
-            return read(fd, c, 1);
-        }
-        else
-        {
-            LOGE("Problem in serial read, fd not set\n");
-            return -1;
-        }
-    }
-    else if (retval == 0)
-    {
-        LOGD("Timeout to wait for char on serial line\n");
-        return 0;
-    }
-    else
-    {
-        LOGE("Error in Serial read %d\n", retval);
-        return -1;
-    }
+    return get_single_char(c, timeout_ms);
 }
 
 int Serial_write(const unsigned char * buffer, unsigned int buffer_size)
