@@ -196,7 +196,7 @@ void dsap_data_tx_indication_handler(dsap_data_tx_ind_pl_t * payload)
         LOGD("App cb set, call it...\n");
         cb(payload->pdu_id,
            internal_time_to_ms(payload->buffering_delay),
-           payload->indication_status);
+           payload->result);
     }
 }
 
