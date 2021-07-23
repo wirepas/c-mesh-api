@@ -1,8 +1,8 @@
 # Wirepas Mesh API
 
 This repository contains a C implementation of the Wirepas Dual MCU API.
-The dual mcu api allows the exchange of data between the host and the
-Wirepas Mesh sink.
+The Dual MCU API allows the exchange of data between a host and a Wirepas node via UART.
+The C-Mesh library is used by the Wirepas Gateway software but can also be used in case of a Dual MCU architecture.
 
 ## C Library
 
