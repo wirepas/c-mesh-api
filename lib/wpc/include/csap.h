@@ -52,7 +52,7 @@ typedef struct __attribute__((__packed__))
  */
 static inline int csap_attribute_write_request(uint16_t attribute_id,
                                                uint8_t attribute_length,
-                                               uint8_t * attribute_value_p)
+                                               const uint8_t * attribute_value_p)
 {
     return attribute_write_request(CSAP_ATTRIBUTE_WRITE_REQUEST, attribute_id, attribute_length, attribute_value_p);
 }

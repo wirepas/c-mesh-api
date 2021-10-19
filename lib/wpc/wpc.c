@@ -39,7 +39,7 @@
 */
 #define TIMEOUT_AFTER_STOP_STACK_S 60
 
-app_res_e WPC_initialize(char * port_name, unsigned long bitrate)
+app_res_e WPC_initialize(const char * port_name, unsigned long bitrate)
 {
     return WPC_Int_initialize(port_name, bitrate) == 0 ? APP_RES_OK : APP_RES_INTERNAL_ERROR;
 }
@@ -221,7 +221,7 @@ app_res_e WPC_get_firmware_version(uint16_t version[4])
     return APP_RES_OK;
 }
 
-app_res_e WPC_set_cipher_key(uint8_t key[16])
+app_res_e WPC_set_cipher_key(const uint8_t key[16])
 {
     int res = csap_attribute_write_request(C_CIPHER_KEY_ID, 16, key);
 
@@ -250,7 +250,7 @@ app_res_e WPC_remove_cipher_key()
     return WPC_set_cipher_key(disable_key);
 }
 
-app_res_e WPC_set_authentication_key(uint8_t key[16])
+app_res_e WPC_set_authentication_key(const uint8_t key[16])
 {
     int res = csap_attribute_write_request(C_AUTH_KEY_ID, 16, key);
     return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
@@ -422,7 +422,7 @@ static const app_res_e APP_CONFIG_WRITE_ERROR_CODE_LUT[] = {
     APP_RES_ACCESS_DENIED           // 4
 };
 
-app_res_e WPC_set_app_config_data(uint8_t seq, uint16_t interval, uint8_t * config, uint8_t size)
+app_res_e WPC_set_app_config_data(uint8_t seq, uint16_t interval, const uint8_t * config, uint8_t size)
 {
     uint16_t interval_le;
     uint16_encode_le(interval, (uint8_t *) &interval_le);
@@ -730,7 +730,7 @@ app_res_e WPC_get_local_scratchpad_status(app_scratchpad_status_t * status_p)
     return APP_RES_OK;
 }
 
-app_res_e WPC_upload_local_scratchpad(uint32_t len, uint8_t * bytes, uint8_t seq)
+app_res_e WPC_upload_local_scratchpad(uint32_t len, const uint8_t * bytes, uint8_t seq)
 {
     app_res_e res;
 
@@ -775,7 +775,7 @@ static const app_res_e SCRATCHPAD_LOCAL_BLOCK_ERROR_CODE_LUT[] = {
     APP_RES_INVALID_SCRATCHPAD        // 7
 };
 
-app_res_e WPC_upload_local_block_scratchpad(uint32_t len, uint8_t * bytes, uint32_t start)
+app_res_e WPC_upload_local_block_scratchpad(uint32_t len, const uint8_t * bytes, uint32_t start)
 {
     app_res_e app_res;
     uint8_t res;
@@ -959,7 +959,7 @@ static const app_res_e SEND_DATA_ERROR_CODE_LUT[] = {
     APP_RES_INVALID_VALUE,     // 9
     APP_RES_ACCESS_DENIED      // 10
 };
-app_res_e WPC_send_data_with_options(app_message_t * message_t)
+app_res_e WPC_send_data_with_options(const app_message_t * message_t)
 {
     int res;
     uint32_t dst_addr_le;

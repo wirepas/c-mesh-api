@@ -86,7 +86,7 @@ int msap_stack_stop_request()
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
-int msap_app_config_data_write_request(uint8_t seq, uint16_t interval, uint8_t * config_p, uint8_t size)
+int msap_app_config_data_write_request(uint8_t seq, uint16_t interval, const uint8_t * config_p, uint8_t size)
 {
     wpc_frame_t request, confirm;
     int res;
@@ -251,7 +251,7 @@ int msap_scratchpad_start_request(uint32_t length, uint8_t seq)
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
-int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_bytes, uint8_t * bytes)
+int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_bytes, const uint8_t * bytes)
 {
     wpc_frame_t request, confirm;
     int res;
