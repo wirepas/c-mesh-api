@@ -280,7 +280,7 @@ int msap_stack_stop_request();
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_app_config_data_write_request(uint8_t seq, uint16_t interval, uint8_t * config_p, uint8_t size);
+int msap_app_config_data_write_request(uint8_t seq, uint16_t interval, const uint8_t * config_p, uint8_t size);
 
 /**
  * \brief    Request to read data config
@@ -355,7 +355,7 @@ int msap_scratchpad_start_request(uint32_t length, uint8_t seq);
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_bytes, uint8_t * bytes);
+int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_bytes, const uint8_t * bytes);
 
 /**
  * \brief    Get the status of currently stored and processed scratchpad
