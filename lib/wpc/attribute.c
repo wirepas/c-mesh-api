@@ -20,7 +20,7 @@ int attribute_write_request(uint8_t primitive_id,
     int res;
     wpc_frame_t request, confirm;
 
-    if (attribute_length > 16)
+    if (attribute_length > MAX_ATTRIBUTE_SIZE)
         return -1;
 
     request.primitive_id = primitive_id;
@@ -32,7 +32,8 @@ int attribute_write_request(uint8_t primitive_id,
            attribute_value_p,
            attribute_length);
 
-    request.payload_length = sizeof(attribute_write_req_pl_t) - (16 - attribute_length);
+    request.payload_length =
+        sizeof(attribute_write_req_pl_t) - (MAX_ATTRIBUTE_SIZE - attribute_length);
 
     res = WPC_Int_send_request(&request, &confirm);
 

@@ -711,6 +711,89 @@ app_res_e WPC_get_scratchpad_block_max(uint8_t * max_size_p)
     return read_single_byte_msap(MSAP_SCRATCHPAD_BLOCK_MAX, max_size_p);
 }
 
+app_res_e WPC_get_multicast_groups(app_addr_t * addr_list, uint8_t * num_addr_p)
+{
+    app_res_e ret;
+    uint32_t groups[MAXIMUM_NUMBER_OF_MULTICAST_GROUPS];
+
+    // Read multicast groups
+    int res = msap_attribute_read_request(MSAP_MULTICAST_GROUPS,
+                                          4 * MAXIMUM_NUMBER_OF_MULTICAST_GROUPS,
+                                          (uint8_t *) groups);
+
+    ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    if (ret != APP_RES_OK)
+    {
+        return ret;
+    }
+
+    for (uint8_t n = 0; n < MAXIMUM_NUMBER_OF_MULTICAST_GROUPS; n++)
+    {
+        if (n < *num_addr_p)
+        {
+            // Fix byte order
+            app_addr_t addr = uint32_decode_le((const uint8_t *) &groups[n]);
+
+            // Convert address to a real multicast address
+            if (addr != 0)
+            {
+                addr |= 0x80000000;
+            }
+
+            // Store address
+            addr_list[n] = addr;
+        }
+    }
+
+    // Set number of addresses found, even if not all could fit in the given buffer
+    *num_addr_p = MAXIMUM_NUMBER_OF_MULTICAST_GROUPS;
+
+    return APP_RES_OK;
+}
+
+app_res_e WPC_set_multicast_groups(const app_addr_t * addr_list, uint8_t num_addr)
+{
+    uint32_t groups[MAXIMUM_NUMBER_OF_MULTICAST_GROUPS];
+
+    if (num_addr > MAXIMUM_NUMBER_OF_MULTICAST_GROUPS)
+    {
+        // Too many multicast group addresses
+        return APP_RES_INVALID_VALUE;
+    }
+
+    // Clear unused slots
+    memset(groups, 0, sizeof(groups));
+
+    for (uint8_t n = 0; n < num_addr; n++)
+    {
+        app_addr_t addr = addr_list[n];
+
+        if (addr == 0)
+        {
+            // Unused slot
+            continue;
+        }
+        else if ((addr & 0xff000000) != 0x80000000)
+        {
+            // Not a valid multicast address
+            return APP_RES_INVALID_VALUE;
+        }
+
+        // Clear top eight bits, as mMulticastGroups does not use them
+        addr &= 0x00ffffff;
+
+        // Fix byte order and store address
+        uint32_encode_le(addr, (uint8_t *) &groups[n]);
+    }
+
+    // Write multicast groups
+    int res = msap_attribute_write_request(MSAP_MULTICAST_GROUPS,
+                                           4 * MAXIMUM_NUMBER_OF_MULTICAST_GROUPS,
+                                           (uint8_t *) groups);
+
+    return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
+}
+
 app_res_e WPC_get_local_scratchpad_status(app_scratchpad_status_t * status_p)
 {
     app_res_e res;
@@ -888,16 +971,10 @@ static const app_res_e TARGET_SCRATCHPAD_ERROR_CODE_LUT[] = {
     APP_RES_ACCESS_DENIED     // 3
 };
 
-app_res_e WPC_write_target_scratchpad(uint8_t target_sequence,
-                                      uint16_t target_crc,
-                                      uint8_t action,
-                                      uint8_t param)
+app_res_e
+WPC_write_target_scratchpad(uint8_t target_sequence, uint16_t target_crc, uint8_t action, uint8_t param)
 {
-    int res = msap_scratchpad_target_write_request(
-                                target_sequence,
-                                target_crc,
-                                action,
-                                param);
+    int res = msap_scratchpad_target_write_request(target_sequence, target_crc, action, param);
 
     return convert_error_code(TARGET_SCRATCHPAD_ERROR_CODE_LUT, res);
 }
@@ -907,11 +984,7 @@ app_res_e WPC_read_target_scratchpad(uint8_t * target_sequence_p,
                                      uint8_t * action_p,
                                      uint8_t * param_p)
 {
-    int res = msap_scratchpad_target_read_request(
-                                target_sequence_p,
-                                target_crc_p,
-                                action_p,
-                                param_p);
+    int res = msap_scratchpad_target_read_request(target_sequence_p, target_crc_p, action_p, param_p);
 
     // We should always be able to read it if implemented
     return res == 0 ? APP_RES_OK : APP_RES_INTERNAL_ERROR;
