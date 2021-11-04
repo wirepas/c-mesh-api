@@ -25,12 +25,16 @@
 #define MSAP_ACCESS_CYCLE_LIMITS 10
 #define MSAP_CURRENT_ACCESS_CYCLE 11
 #define MSAP_SCRATCHPAD_BLOCK_MAX 12
+#define MSAP_MULTICAST_GROUPS 13
 
 /* General constant */
 #define MAXIMUM_SCRATCHPAD_BLOCK_SIZE 112
 
 /* Maximum number of neighbors in a */
 #define MAXIMUM_NUMBER_OF_NEIGHBOR 8
+
+/* Maximum number of multicast groups for MSAP_MULTICAST_GROUPS */
+#define MAXIMUM_NUMBER_OF_MULTICAST_GROUPS 10
 
 #ifdef LEGACY_APP_CONFIG
 #    define MAXIMUM_APP_CONFIG_SIZE 16

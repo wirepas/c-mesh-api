@@ -16,11 +16,14 @@
 
 #include <stdint.h>
 
+// Maximum number of bytes in an attribute
+#define MAX_ATTRIBUTE_SIZE 40
+
 typedef struct __attribute__((__packed__))
 {
     uint16_t attribute_id;
     uint8_t attribute_length;
-    uint8_t attribute_value[16];
+    uint8_t attribute_value[MAX_ATTRIBUTE_SIZE];
 } attribute_write_req_pl_t;
 
 typedef struct __attribute__((__packed__))
@@ -33,7 +36,7 @@ typedef struct __attribute__((__packed__))
     uint8_t result;
     uint16_t attribute_id;
     uint8_t attribute_length;
-    uint8_t attribute_value[16];
+    uint8_t attribute_value[MAX_ATTRIBUTE_SIZE];
 } attribute_read_conf_pl_t;
 
 /**

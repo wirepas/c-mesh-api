@@ -207,6 +207,11 @@ typedef struct
 #define MAXIMUM_NUMBER_OF_NEIGHBOR 8
 
 /**
+ * \brief   Maximum number of multicast groups for MSAP_MULTICAST_GROUPS
+ */
+#define MAXIMUM_NUMBER_OF_MULTICAST_GROUPS 10
+
+/**
  * \brief   Neighbors info list
  */
 typedef struct
@@ -670,6 +675,36 @@ app_res_e WPC_get_current_access_cycle(uint16_t * cur_ac_p);
  * \return  Return code of the operation
  */
 app_res_e WPC_get_scratchpad_block_max(uint8_t * max_size_p);
+
+/**
+ * \brief   Get multicast group addresses
+ * \param   addr_list
+ *          An array of multicast addresses
+ *          Contents valid if return code is APP_RES_OK
+ * \param   num_addr_p
+ *          Pointer to the size of addr_list expressed in number of addresses.
+ *          If return code is APP_RES_OK, value will be set to the number of
+ *          addresses supported, even if not all of them fit in addr_list
+ * \return  Return code of the operation
+ * \note    Returned multicast addresses are in range 0x80000001-0x80FFFFFF,
+ *          or 0x00000000 (zero) for any item in the list not in use. Zero
+ *          addresses can appear anywhere in the list
+ */
+app_res_e WPC_get_multicast_groups(app_addr_t * addr_list, uint8_t * num_addr_p);
+
+/**
+ * \brief   Set multicast group addresses
+ * \param   addr_list
+ *          An array of multicast addresses
+ * \param   num_addr
+ *          Size of addr_list expressed in number of addresses, maximum of
+ *          MAXIMUM_NUMBER_OF_MULTICAST_GROUPS
+ * \return  Return code of the operation
+ * \note    Multicast addresses must be in range 0x80000001-0x80FFFFFF,
+ *          or 0x00000000 (zero) for any item in the list not in use. Zero
+ *          addresses can appear anywhere in the list
+ */
+app_res_e WPC_set_multicast_groups(const app_addr_t * addr_list, uint8_t num_addr);
 
 /**
  * \brief   Get the local scratchpad status
