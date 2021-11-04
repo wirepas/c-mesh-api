@@ -70,9 +70,10 @@ int attribute_read_request(uint8_t primitive_id,
 
     if (confirm.payload.attribute_read_confirm_payload.result == 0)
     {
-        if (attribute_length != confirm.payload.attribute_read_confirm_payload.attribute_length)
+        uint8_t actual_size = confirm.payload.attribute_read_confirm_payload.attribute_length;
+        if (attribute_length != actual_size)
         {
-            LOGE("Attribute read: wrong attribute size\n");
+            LOGE("Attribute read: wrong attribute size (%u received)\n", actual_size);
             return -1;
         }
         memcpy(attribute_value_p,

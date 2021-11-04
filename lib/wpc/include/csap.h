@@ -33,6 +33,7 @@
 #define C_CHANNEL_MAP 21
 #define C_FEATURE_LOCK_BITS 22
 #define C_FEATURE_LOCK_KEY 23
+#define C_RESERVED_CHANNELS 25
 
 typedef struct __attribute__((__packed__))
 {

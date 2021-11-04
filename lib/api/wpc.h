@@ -221,6 +221,11 @@ typedef struct
 } app_nbors_t;
 
 /**
+ * \brief   Maximum number of bytes to give to WPC_(set|get)_reserved_channels()
+ */
+#define RESERVED_CHANNELS_MAX_NUM_BYTES 16
+
+/**
  * \brief   Intialize the Wirepas Mesh serial communication
  * \param   port_name
  *          the name of the serial port ("/dev/ttyACM0" for example)
@@ -440,6 +445,38 @@ app_res_e WPC_get_channel_map(uint32_t * value_p);
  * \return  Return code of the operation
  */
 app_res_e WPC_set_channel_map(uint32_t channel_map);
+
+/**
+ * \brief   Get reserved channels mask
+ * \param   channels_p
+ *          Pointer to store the reserved channels bit array
+ *          Each set bit marks the channel as reserved
+ *          LSB of first byte is channel 1, MSB of first byte is channel 7,
+ *          LSB of second byte is channel 8, an so on
+ * \param   size
+ *          Number of bytes pointed by @p channels_p, up to
+ *          @ref RESERVED_CHANNELS_MAX_NUM_BYTES
+ * \return  Return code of the operation
+ * \note    @p size Must be large enough to contain the highest reserved
+ *          channel bit, otherwise APP_RES_INVALID_VALUE is returned
+ */
+app_res_e WPC_get_reserved_channels(uint8_t * channels_p, uint8_t size);
+
+/**
+ * \brief   Set reserved channels mask
+ * \param   channels_p
+ *          Pointer to bit array to load the reserved channels
+ *          Each set bit marks the channel as reserved
+ *          LSB of first byte is channel 1, MSB of first byte is channel 7,
+ *          LSB of second byte is channel 8, an so on
+ * \param   size
+ *          Number of bytes pointed by @p channels_p, up to
+ *          @ref RESERVED_CHANNELS_MAX_NUM_BYTES
+ * \return  Return code of the operation
+ * \note    if @p size is smaller than needed for the available number of
+ *          channels, the remaining channels are set as not reserved
+ */
+app_res_e WPC_set_reserved_channels(const uint8_t * channels_p, uint8_t size);
 
 /**
  * \brief   Start the stack
