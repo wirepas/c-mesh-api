@@ -375,6 +375,34 @@ app_res_e WPC_set_channel_map(uint32_t channel_map)
     return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
 }
 
+app_res_e WPC_get_reserved_channels(uint8_t * channels_p, uint8_t size)
+{
+    if (size > RESERVED_CHANNELS_MAX_NUM_BYTES)
+    {
+        return APP_RES_INVALID_VALUE;
+    }
+
+    memset(channels_p, 0, size);  // Clear unused bits
+    int res = csap_attribute_read_request(C_RESERVED_CHANNELS, size, channels_p);
+    if (res == 4)  // ATTR_INV_VALUE from the Dual-MCU app
+    {
+        // Not enough space to store set bits
+        return APP_RES_INVALID_VALUE;
+    }
+    return CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
+}
+
+app_res_e WPC_set_reserved_channels(const uint8_t * channels_p, uint8_t size)
+{
+    if (size > RESERVED_CHANNELS_MAX_NUM_BYTES)
+    {
+        return APP_RES_INVALID_VALUE;
+    }
+
+    int res = csap_attribute_write_request(C_RESERVED_CHANNELS, size, channels_p);
+    return CONVERT_ERROR_CODE(ATT_WRITE_ERROR_CODE_LUT, res);
+}
+
 /* Error code LUT for app_config read */
 static const app_res_e APP_CONFIG_READ_ERROR_CODE_LUT[] = {
     APP_RES_OK,            // 0
