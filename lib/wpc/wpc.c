@@ -389,7 +389,7 @@ app_res_e WPC_get_reserved_channels(uint8_t * channels_p, uint8_t size)
         // Not enough space to store set bits
         return APP_RES_INVALID_VALUE;
     }
-    return CONVERT_ERROR_CODE(ATT_READ_ERROR_CODE_LUT, res);
+    return convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
 }
 
 app_res_e WPC_set_reserved_channels(const uint8_t * channels_p, uint8_t size)
@@ -400,7 +400,7 @@ app_res_e WPC_set_reserved_channels(const uint8_t * channels_p, uint8_t size)
     }
 
     int res = csap_attribute_write_request(C_RESERVED_CHANNELS, size, channels_p);
-    return CONVERT_ERROR_CODE(ATT_WRITE_ERROR_CODE_LUT, res);
+    return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
 }
 
 /* Error code LUT for app_config read */
