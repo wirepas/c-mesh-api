@@ -2,7 +2,7 @@
 *.o
 *~
 *.flake8
-.ci/manifest/*
+.ci/manifest
 .clang-format
 .pre-commit*
 dev-requirements.txt
