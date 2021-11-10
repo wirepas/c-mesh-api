@@ -103,7 +103,6 @@ static int send_request_locked(wpc_frame_t * request, wpc_frame_t * confirm, uin
     // Send the request
     if (Slip_send_buffer((uint8_t *) request, request->payload_length + 3) < 0)
     {
-        LOGE("Cannot send request\n");
         return WPC_INT_GEN_ERROR;
     }
 

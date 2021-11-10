@@ -1083,6 +1083,11 @@ app_res_e WPC_send_data_with_options(const app_message_t * message_t)
                                message_t->is_unack_csma_ca,
                                message_t->hop_limit);
 
+    if (res != 0)
+    {
+        LOGE("Cannot send data. Dualmcu error code: %d\n", res);
+    }
+
     return convert_error_code(SEND_DATA_ERROR_CODE_LUT, res);
 }
 
