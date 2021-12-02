@@ -122,6 +122,7 @@ void dsap_data_tx_indication_handler(dsap_data_tx_ind_pl_t * payload);
 void dsap_data_rx_indication_handler(dsap_data_rx_ind_pl_t * rx_indication,
                                      unsigned long long timestamp_ms_epoch);
 
+#ifdef REGISTER_DATA_PER_ENDPOINT
 /**
  * \brief   Register for receiving data on a given EP
  * \param   dst_ep
@@ -139,6 +140,21 @@ bool dsap_register_for_data(uint8_t dst_ep, onDataReceived_cb_f onDataReceived);
  * \return  True if success, false otherwise
  */
 bool dsap_unregister_for_data(uint8_t dst_ep);
+#else
+/**
+ * \brief   Register for receiving all
+ * \param   onDataReceived
+ *          The callback to call when data is received
+ * \return  True if success, false otherwise
+ */
+bool dsap_register_for_data(onDataReceived_cb_f onDataReceived);
+
+/**
+ * \brief   Unregister from receiving data
+ * \return  True if success, false otherwise
+ */
+bool dsap_unregister_for_data();
+#endif
 
 /**
  * \brief   Initialize the dsap module

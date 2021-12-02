@@ -950,6 +950,7 @@ typedef bool (*onDataReceived_cb_f)(const uint8_t * bytes,
                                     uint8_t hop_count,
                                     unsigned long long timestamp_ms_epoch);
 
+#ifdef REGISTER_DATA_PER_ENDPOINT
 /**
  * \brief   Register for receiving data on a given EP
  * \param   dst_ep
@@ -970,7 +971,23 @@ app_res_e WPC_register_for_data(uint8_t dst_ep, onDataReceived_cb_f onDataReceiv
  * \return  Return code of the operation
  */
 app_res_e WPC_unregister_for_data(uint8_t dst_ep);
+#else
+/**
+ * \brief   Register for receiving all data
+ * \param   onDataReceived
+ *          The callback to call when data is received
+ * \note    The callback is called on a dedicated thread.
+ */
+app_res_e WPC_register_for_data(onDataReceived_cb_f onDataReceived);
 
+/**
+ * \brief   Unregister from receiving data
+ * \param   dst_ep
+ *          The destination endpoint to unregister
+ * \return  Return code of the operation
+ */
+app_res_e WPC_unregister_for_data();
+#endif
 /**
  * \brief   Callback definition to register for remote status update
  * \param   source_address

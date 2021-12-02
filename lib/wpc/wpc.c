@@ -1119,6 +1119,7 @@ app_res_e WPC_send_data(const uint8_t * bytes,
     return WPC_send_data_with_options(&message);
 }
 
+#ifdef REGISTER_DATA_PER_ENDPOINT
 app_res_e WPC_register_for_data(uint8_t dst_ep, onDataReceived_cb_f onDataReceived)
 {
     return dsap_register_for_data(dst_ep, onDataReceived) ? APP_RES_OK : APP_RES_INVALID_VALUE;
@@ -1128,6 +1129,17 @@ app_res_e WPC_unregister_for_data(uint8_t dst_ep)
 {
     return dsap_unregister_for_data(dst_ep) ? APP_RES_OK : APP_RES_INVALID_VALUE;
 }
+#else
+app_res_e WPC_register_for_data(onDataReceived_cb_f onDataReceived)
+{
+    return dsap_register_for_data(onDataReceived) ? APP_RES_OK : APP_RES_INVALID_VALUE;
+}
+
+app_res_e WPC_unregister_for_data()
+{
+    return dsap_unregister_for_data() ? APP_RES_OK : APP_RES_INVALID_VALUE;
+}
+#endif
 
 app_res_e WPC_register_for_remote_status(onRemoteStatus_cb_f onRemoteStatusReceived)
 {

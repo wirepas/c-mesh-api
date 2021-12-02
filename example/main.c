@@ -45,22 +45,6 @@ static bool onDataReceived(const uint8_t * bytes,
     return true;
 }
 
-static bool onDiagReceived(const uint8_t * bytes,
-                           uint8_t num_bytes,
-                           app_addr_t src_addr,
-                           app_addr_t dst_addr,
-                           app_qos_e qos,
-                           uint8_t src_ep,
-                           uint8_t dst_ep,
-                           uint32_t travel_time,
-                           uint8_t hop_count,
-                           unsigned long long timestamp_ms_epoch)
-{
-    // Handle diag packet here
-
-    return true;
-}
-
 int main(int argc, char * argv[])
 {
     app_res_e res;
@@ -89,10 +73,8 @@ int main(int argc, char * argv[])
 
     LOGI("Stack is stopped\n");
 
-    // Register for all datas from EP 50
-    WPC_register_for_data(50, onDataReceived);
-    // Register for all diagnostics from EP 255
-    WPC_register_for_data(255, onDiagReceived);
+    // Register for all datas
+    WPC_register_for_data(onDataReceived);
 
     // Configure the node
     if (WPC_set_node_address(NODE_ADDRESS) != APP_RES_OK)
