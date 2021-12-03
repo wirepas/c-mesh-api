@@ -15,6 +15,9 @@ CFLAGS  := -std=gnu99 -Wall -Werror
 # Uncomment the following line only if running with an old stack
 #CFLAGS  += -DLEGACY_APP_CONFIG
 
+# Uncomment the following line if you want the per endoint data reception
+#CFLAGS  += -DREGISTER_DATA_PER_ENDPOINT
+
 # Targets definition
 LIB_NAME := mesh_api_lib.a
 

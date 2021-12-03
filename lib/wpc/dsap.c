@@ -13,8 +13,12 @@
 
 #include "string.h"
 
+#ifdef REGISTER_DATA_PER_ENDPOINT
 // Table to store the registered client callbacks for Rx data
 static onDataReceived_cb_f data_cb_table[MAX_NUMBER_EP];
+#else
+static onDataReceived_cb_f m_data_cb;
+#endif
 
 typedef struct
 {
@@ -206,6 +210,7 @@ void dsap_data_rx_indication_handler(dsap_data_rx_ind_pl_t * payload,
     uint32_t internal_travel_time = uint32_decode_le((uint8_t *) &(payload->travel_time));
     app_qos_e qos;
     uint8_t hop_count;
+    onDataReceived_cb_f cb;
 
     LOGI("Data received: indication_status = %d, src_add = %d, lenght=%u, "
          "travel time = %d, dst_ep = %d, ts=%llu\n",
@@ -216,32 +221,41 @@ void dsap_data_rx_indication_handler(dsap_data_rx_ind_pl_t * payload,
          payload->dest_endpoint,
          timestamp_ms_epoch);
 
-    if (data_cb_table[payload->dest_endpoint] != 0)
+#ifdef REGISTER_DATA_PER_ENDPOINT
+    cb = data_cb_table[payload->dest_endpoint];
+#else
+    cb = m_data_cb;
+#endif
+    if (cb == NULL)
     {
-        // Create the qos
-        qos = APP_QOS_NORMAL;
-        if (payload->qos_hop_count & 0x01)
-        {
-            qos = APP_QOS_HIGH;
-        }
-
-        // Get the number of hops
-        hop_count = payload->qos_hop_count >> 2;
-
-        // Someone is registered on this endpoint
-        data_cb_table[payload->dest_endpoint](payload->apdu,
-                                              payload->apdu_length,
-                                              payload->src_add,
-                                              payload->dest_add,
-                                              qos,
-                                              payload->src_endpoint,
-                                              payload->dest_endpoint,
-                                              internal_time_to_ms(internal_travel_time),
-                                              hop_count,
-                                              timestamp_ms_epoch);
+        // No cb registered
+        return;
     }
+
+    // Create the qos
+    qos = APP_QOS_NORMAL;
+    if (payload->qos_hop_count & 0x01)
+    {
+        qos = APP_QOS_HIGH;
+    }
+
+    // Get the number of hops
+    hop_count = payload->qos_hop_count >> 2;
+
+    // Call the registered callback
+    cb(payload->apdu,
+       payload->apdu_length,
+       payload->src_add,
+       payload->dest_add,
+       qos,
+       payload->src_endpoint,
+       payload->dest_endpoint,
+       internal_time_to_ms(internal_travel_time),
+       hop_count,
+       timestamp_ms_epoch);
 }
 
+#ifdef REGISTER_DATA_PER_ENDPOINT
 bool dsap_register_for_data(uint8_t dst_ep, onDataReceived_cb_f onDataReceived)
 {
     bool ret = false;
@@ -271,10 +285,27 @@ bool dsap_unregister_for_data(uint8_t dst_ep)
 
     return ret;
 }
+#else
+bool dsap_register_for_data(onDataReceived_cb_f onDataReceived)
+{
+    m_data_cb = onDataReceived;
+    return true;
+}
+
+bool dsap_unregister_for_data()
+{
+    m_data_cb = NULL;
+    return true;
+}
+#endif
 
 void dsap_init()
 {
     // Initialize internal structures
+#ifdef REGISTER_DATA_PER_ENDPOINT
     memset(data_cb_table, 0, sizeof(data_cb_table));
+#else
+    m_data_cb = NULL;
+#endif
     memset(indication_sent_cb_table, 0, sizeof(indication_sent_cb_table));
 }
