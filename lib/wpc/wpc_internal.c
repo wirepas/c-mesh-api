@@ -263,7 +263,7 @@ static int get_indication_locked(unsigned int max_ind, onIndicationReceivedLocke
     ret = send_request_locked(&request, &confirm, TIMEOUT_CONFIRM_MS);
     if (ret < 0)
     {
-        LOGE("Unable to poll for request\n");
+        LOGE("No poll answer\n");
         return ret;
     }
 

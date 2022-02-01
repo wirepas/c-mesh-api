@@ -253,7 +253,7 @@ int Slip_get_buffer(uint8_t * buffer, uint32_t len, uint16_t timeout_ms)
         res = read_function(&read, timeout_ms);
         if (res == 0)
         {
-            LOGW("Timeout to receive frame (size=%d)\n", size);
+            LOGD("Timeout to receive frame (size=%d)\n", size);
             return WPC_INT_TIMEOUT_ERROR;
         }
         else if (res < 0 || res > 1)
