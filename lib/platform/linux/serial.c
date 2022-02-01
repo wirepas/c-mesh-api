@@ -177,7 +177,7 @@ static ssize_t get_single_char(unsigned char * c, unsigned int timeout_ms)
         }
     } while (attempts-- > 0);
 
-    LOGW("Timeout to wait for char on serial line\n");
+    LOGD("Timeout to wait for char on serial line\n");
     return 0;
 }
 
