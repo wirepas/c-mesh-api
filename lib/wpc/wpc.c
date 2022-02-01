@@ -570,11 +570,11 @@ app_res_e WPC_stop_stack(void)
 
     res = msap_stack_stop_request();
 
-    if (res < 0)
-    {
-        f_res = APP_RES_INTERNAL_ERROR;
-    }
-    else if (res == 1)
+    // res < 0 can happen if node reboot too early and doesn't
+    // have time to flush its buffer contatining stop request
+    // handle it as a normal case an try to obtain status after
+    // reboot
+    if (res == 1)
     {
         f_res = APP_RES_STACK_ALREADY_STOPPED;
     }
