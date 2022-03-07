@@ -21,11 +21,6 @@
 // Polling interval to check for indication
 #define POLLING_INTERVAL_MS 20
 
-// Maximum duration in s of failed poll request to declare the link broken
-// (unplugged) Set it to 0 to disable 60 sec is long period but it must cover
-// the OTAP exchange with neighbors that can be long with some profiles
-#define DEFAULT_MAX_POLL_FAIL_DURATION_S 60
-
 // Mutex for sending, ie serial access
 static pthread_mutex_t sending_mutex;
 
@@ -41,9 +36,7 @@ static pthread_t thread_dispatch;
 // Set to false to stop dispatch thread execution
 static bool m_dispatch_thread_running;
 
-// Last successful poll request
-static time_t m_last_successful_poll_ts;
-static unsigned int m_max_poll_fail_duration_s;
+
 
 /*****************************************************************************/
 /*                Indication queue related variables                        */
@@ -162,18 +155,6 @@ static void onIndicationReceivedLocked(wpc_frame_t * frame, unsigned long long t
 }
 
 /**
- * \brief   Utility function to get current timesatmp in s.
- */
-static time_t get_timestamp_s()
-{
-    struct timespec spec;
-
-    // Get timestamp in ms since epoch
-    clock_gettime(CLOCK_REALTIME, &spec);
-    return spec.tv_sec;
-}
-
-/**
  * \brief   Polling tread.
  *          This thread polls for indication and insert them to the queue
  *          shared with the dispatcher thread
@@ -241,27 +222,6 @@ static void * poll_for_indication(void * unused)
             // In case of error or if no more indication, just wait
             // the POLLING INTERVAL to avoid polling all the time
             wait_before_next_polling_ms = POLLING_INTERVAL_MS;
-        }
-
-        if (m_max_poll_fail_duration_s > 0)
-        {
-            if (get_ind_res >= 0 || get_ind_res == WPC_INT_SYNC_ERROR)
-            {
-                // Poll request executed fine or at least com is working with sink,
-                // reset fail counter
-                m_last_successful_poll_ts = get_timestamp_s();
-            }
-            else
-            {
-                if (get_timestamp_s() - m_last_successful_poll_ts > m_max_poll_fail_duration_s)
-                {
-                    // Poll request has failed for too long
-                    // This is a fatal error as the com with sink was not possible
-                    // for a too long period.
-                    exit(EXIT_FAILURE);
-                    break;
-                }
-            }
         }
     }
 
@@ -345,9 +305,6 @@ bool Platform_init()
         goto error4;
     }
 
-    m_last_successful_poll_ts = get_timestamp_s();
-    m_max_poll_fail_duration_s = DEFAULT_MAX_POLL_FAIL_DURATION_S;
-
     return true;
 
 error4:
@@ -360,24 +317,10 @@ error1:
     return false;
 }
 
-bool Platform_set_max_poll_fail_duration(unsigned long duration_s)
-{
-    if ((m_max_poll_fail_duration_s == 0) && (duration_s > 0))
-    {
-        m_last_successful_poll_ts = get_timestamp_s();
-    }
-    m_max_poll_fail_duration_s = duration_s;
-    return true;
-}
-
-void Platform_valid_message_from_node()
-{
-    m_last_successful_poll_ts = get_timestamp_s();
-}
-
 void Platform_close()
 {
     void * res;
+    pthread_t cur_thread = pthread_self();
     // Signal our dispatch thread to stop
     m_dispatch_thread_running = false;
     // Signal condition to wakeup thread
@@ -388,8 +331,15 @@ void Platform_close()
     m_polling_thread_running = false;
 
     // Wait for both tread to finish
-    pthread_join(thread_polling, &res);
-    pthread_join(thread_dispatch, &res);
+    if (cur_thread != thread_polling)
+    {
+        pthread_join(thread_polling, &res);
+    }
+
+    if (cur_thread != thread_dispatch)
+    {
+        pthread_join(thread_dispatch, &res);
+    }
 
     // Destroy our mutexes
     pthread_mutex_destroy(&m_queue_mutex);

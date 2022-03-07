@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 // This is the timeout in milliseconds to receive an indication
 // from stack after a poll request
@@ -38,6 +39,17 @@
 // So this mechanism allows to flush previous poll requests. Try several
 // times to get the right confirm.
 #define MAX_CONFIRM_ATTEMPT 50
+
+// Maximum duration in s of failed poll request to declare the link broken
+// (unplugged) Set it to 0 to disable 60 sec is long period but it must cover
+// the OTAP exchange with neighbors that can be long with some profiles
+#define DEFAULT_MAX_POLL_FAIL_DURATION_MS (60 * 1000)
+
+// Last successful exchange with node
+static unsigned long long m_last_successful_answer_ts;
+
+// Max delay before exiting
+static unsigned int m_timeout_no_answer_ms = DEFAULT_MAX_POLL_FAIL_DURATION_MS;
 
 // Struct that describes a received frame with its timestamp
 typedef struct
@@ -77,6 +89,23 @@ static int send_response_to_stack(uint8_t primitive_id, uint8_t frame_id, bool m
 /*                Request implementation                                     */
 /*****************************************************************************/
 
+static bool check_if_timeout_reached()
+{
+    // Check if it has failed for too long
+    if (m_timeout_no_answer_ms > 0)
+    {
+        if ((Platform_get_timestamp_ms_epoch() - m_last_successful_answer_ts) > m_timeout_no_answer_ms)
+        {
+            // Poll request has failed for too long
+            // This is a fatal error as the com with sink was not possible
+            // for a too long period.
+            Platform_close();
+            exit(EXIT_FAILURE);
+            return true;
+        }
+    }
+    return false;
+}
 /**
  * \brief   This function send a request to the stack and wait for confirmation
  * \param   request
@@ -105,6 +134,7 @@ static int send_request_locked(wpc_frame_t * request, wpc_frame_t * confirm, uin
     // Send the request
     if (Slip_send_buffer((uint8_t *) request, request->payload_length + 3) < 0)
     {
+        check_if_timeout_reached();
         return WPC_INT_GEN_ERROR;
     }
 
@@ -115,12 +145,14 @@ static int send_request_locked(wpc_frame_t * request, wpc_frame_t * confirm, uin
         if (confirm_size < 0)
         {
             LOGE("Didn't receive answer to the request 0x%02x\n", request->primitive_id);
+            check_if_timeout_reached();
             // Return confirm_size to propagate the error code
             return confirm_size;
         }
 
         // Even if it doesn't match, the node sent something so it is alive
-        Platform_valid_message_from_node();
+        // Update our last activity
+        m_last_successful_answer_ts = Platform_get_timestamp_ms_epoch();
 
         // Check the confirm
         rec_confirm = (wpc_frame_t *) buffer;
@@ -328,6 +360,17 @@ int WPC_Int_send_request(wpc_frame_t * frame, wpc_frame_t * confirm)
     return WPC_Int_send_request_timeout(frame, confirm, TIMEOUT_CONFIRM_MS);
 }
 
+bool WPC_Int_set_timeout_s_no_answer(unsigned int duration_s)
+{
+    if ((m_timeout_no_answer_ms == 0) && (duration_s > 0))
+    {
+        // Initialize last activity to now (if it is first not enabled yet)
+        m_last_successful_answer_ts = Platform_get_timestamp_ms_epoch();
+    }
+    m_timeout_no_answer_ms = duration_s * 1000;
+    return true;
+}
+
 int WPC_Int_initialize(const char * port_name, unsigned long bitrate)
 {
     // Open the serial connection
@@ -344,6 +387,8 @@ int WPC_Int_initialize(const char * port_name, unsigned long bitrate)
     }
 
     dsap_init();
+
+    m_last_successful_answer_ts = Platform_get_timestamp_ms_epoch();
 
     LOGI("WPC initialized\n");
     return 0;
