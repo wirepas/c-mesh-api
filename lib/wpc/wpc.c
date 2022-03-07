@@ -566,7 +566,7 @@ app_res_e WPC_stop_stack(void)
     int res;
     app_res_e f_res = APP_RES_OK;
     // Stop the poll request to avoid timeout error during reboot
-    Platform_disable_poll_request(true);
+    WPC_Int_disable_poll_request(true);
 
     res = msap_stack_stop_request();
 
@@ -598,7 +598,7 @@ app_res_e WPC_stop_stack(void)
         }
     }
 
-    Platform_disable_poll_request(false);
+    WPC_Int_disable_poll_request(false);
     return f_res;
 }
 
