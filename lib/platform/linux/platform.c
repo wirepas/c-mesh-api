@@ -80,9 +80,6 @@ static bool m_queue_empty = true;
 static pthread_mutex_t m_queue_mutex;
 static pthread_cond_t m_queue_not_empty_cond = PTHREAD_COND_INITIALIZER;
 
-// Mutex to stop the polling
-static pthread_mutex_t m_poll_mutex;
-
 /*****************************************************************************/
 /*                Dispatch indication Thread implementation                  */
 /*****************************************************************************/
@@ -191,9 +188,6 @@ static void * poll_for_indication(void * unused)
     {
         usleep(wait_before_next_polling_ms * 1000);
 
-        // Get the lock to be able to poll
-        pthread_mutex_lock(&m_poll_mutex);
-
         // Get the number of free buffers in the indication queue
         // Note: No need to lock the queue as only m_ind_queue_read can be updated
         // and could still be modified when we release the lock after computing
@@ -207,8 +201,6 @@ static void * poll_for_indication(void * unused)
             LOGW("Queue is full, do not poll\n");
             wait_before_next_polling_ms = POLLING_INTERVAL_MS;
 
-            // Release the poll mutex
-            pthread_mutex_unlock(&m_poll_mutex);
             continue;
         }
         else if (m_queue_empty)
@@ -271,9 +263,6 @@ static void * poll_for_indication(void * unused)
                 }
             }
         }
-
-        // Release the poll mutex
-        pthread_mutex_unlock(&m_poll_mutex);
     }
 
     LOGW("Exiting polling thread\n");
@@ -340,13 +329,6 @@ bool Platform_init()
         goto error2;
     }
 
-    // Initialize mutex to prevent polling
-    if (pthread_mutex_init(&m_poll_mutex, &attr) != 0)
-    {
-        LOGE("Polling Mutex init failed\n");
-        goto error2_2;
-    }
-
     m_polling_thread_running = true;
     // Start a thread to poll for indication
     if (pthread_create(&thread_polling, NULL, poll_for_indication, NULL) != 0)
@@ -371,8 +353,6 @@ bool Platform_init()
 error4:
     pthread_kill(thread_polling, SIGKILL);
 error3:
-    pthread_mutex_destroy(&m_poll_mutex);
-error2_2:
     pthread_mutex_destroy(&m_queue_mutex);
 error2:
     pthread_mutex_destroy(&sending_mutex);
@@ -395,31 +375,6 @@ void Platform_valid_message_from_node()
     m_last_successful_poll_ts = get_timestamp_s();
 }
 
-bool Platform_disable_poll_request(bool disabled)
-{
-    int res;
-    if (disabled)
-    {
-        // Polling thread must be stopped, lock the poll mutex
-        res = pthread_mutex_lock(&m_poll_mutex);
-    }
-    else
-    {
-        // Polling thread must be started again, unlock the poll mutex
-        res = pthread_mutex_unlock(&m_poll_mutex);
-    }
-
-    if (res != 0)
-    {
-        // It must never happen but add a check and
-        // return to avoid a deadlock
-        LOGE("Poll Mutex already locked or unlocked %d (%d)\n", res, disabled);
-        return false;
-    }
-
-    return true;
-}
-
 void Platform_close()
 {
     void * res;
@@ -438,6 +393,5 @@ void Platform_close()
 
     // Destroy our mutexes
     pthread_mutex_destroy(&m_queue_mutex);
-    pthread_mutex_destroy(&m_poll_mutex);
     pthread_mutex_destroy(&sending_mutex);
 }

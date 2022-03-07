@@ -49,16 +49,6 @@ void Platform_unlock_request();
 bool Platform_set_max_poll_fail_duration(unsigned long duration_s);
 
 /**
- * \brief   Disable/Enable the poll requests
- * \param   disabled
- *          true to disable the poll request
- *          false to enable it again
- * \Note    It is mainly in case of periodic polling to be disabled
- *          when we know that sink is not able to answer (when rebooting node)
- */
-bool Platform_disable_poll_request(bool disabled);
-
-/**
  * \brief   Inform platform part that a message was received correctly from node.
  * \Note    Without it, only poll request are taken into account and sometimes
  *          between two consecutive scratchpad exchanges, there is no poll request

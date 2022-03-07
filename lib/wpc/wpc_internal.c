@@ -46,6 +46,8 @@ typedef struct
     unsigned long long timestamp_ms_epoch;  //< The timestamp of reception
 } timestamped_frame_t;
 
+static bool m_disabled_poll_request = false;
+
 /*****************************************************************************/
 /*                Response implementation                                    */
 /*****************************************************************************/
@@ -290,8 +292,17 @@ static int get_indication_locked(unsigned int max_ind, onIndicationReceivedLocke
 
 int WPC_Int_get_indication(unsigned int max_ind, onIndicationReceivedLocked_cb_f cb_locked)
 {
+    int res;
     Platform_lock_request();
-    int res = get_indication_locked(max_ind, cb_locked);
+    if (!m_disabled_poll_request)
+    {
+        res = get_indication_locked(max_ind, cb_locked);
+    }
+    else
+    {
+        // Poll is temporarly disabled, just pretend there is nothing
+        res = 0;
+    }
     Platform_unlock_request();
 
     return res;
@@ -304,6 +315,11 @@ int WPC_Int_send_request_timeout(wpc_frame_t * frame, wpc_frame_t * confirm, uin
     Platform_unlock_request();
 
     return res;
+}
+
+void WPC_Int_disable_poll_request(bool disabled)
+{
+    m_disabled_poll_request = disabled;
 }
 
 int WPC_Int_send_request(wpc_frame_t * frame, wpc_frame_t * confirm)
