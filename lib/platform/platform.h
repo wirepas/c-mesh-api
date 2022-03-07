@@ -38,24 +38,6 @@ bool Platform_lock_request();
  */
 void Platform_unlock_request();
 
-/**
- * \brief   Set maximum duration the poll requests are accepted to fail
- * \param   duration_s
- *          maximum duration the polling can fail before exit,
- *          zero equals forever.
- * \return  true if setting is available in platform,
- *          false if setting is not available in platform
- */
-bool Platform_set_max_poll_fail_duration(unsigned long duration_s);
-
-/**
- * \brief   Inform platform part that a message was received correctly from node.
- * \Note    Without it, only poll request are taken into account and sometimes
- *          between two consecutive scratchpad exchanges, there is no poll request
- *          so the timeout is not reseted.
- */
-void Platform_valid_message_from_node();
-
 void Platform_close();
 
 #endif /* PLATFORM_H_ */

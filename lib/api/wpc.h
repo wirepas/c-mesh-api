@@ -246,7 +246,7 @@ void WPC_close(void);
  *          zero equals forever
  * \return  Return code of the operation
  */
-app_res_e WPC_set_max_poll_fail_duration(unsigned long duration_s);
+app_res_e WPC_set_max_poll_fail_duration(unsigned int duration_s);
 
 /**
  * \brief   Get the role of the node

@@ -91,6 +91,14 @@ void WPC_Int_dispatch_indication(wpc_frame_t * frame, unsigned long long timesta
  */
 void WPC_Int_disable_poll_request(bool disabled);
 
+/**
+ * \brief   Set timeout to consider the node lost (ie no answer)
+ * \param   duration_s
+ *          maximum duration the node can stay silent
+ * \return  True if success
+ */
+bool WPC_Int_set_timeout_s_no_answer(unsigned int duration_s);
+
 int WPC_Int_initialize(const char * port_name, unsigned long bitrate);
 
 void WPC_Int_close(void);
