@@ -7,8 +7,58 @@
 #define PLATFORM_H_
 
 #include <stdbool.h>
+#include "wpc_types.h"
 
-bool Platform_init();
+/**
+ * \brief   Callback to be called when an indication is received
+ * \param   frame
+ *          The received indication
+ * \param   timestamp_ms
+ *          Timestamp of teh received indication
+ */
+typedef void (*onIndicationReceivedLocked_cb_f)(wpc_frame_t * frame,
+                                                unsigned long long timestamp_ms);
+
+/**
+ * \brief   Function to retrieved indication
+ * \param   max_ind
+ *          Maximum number of indication to retrieve in a single poll request
+ * \param   cb_locked
+ *          Callback to call when an indication is received
+ * \return  Negative value if an error happen
+ *          0 if successfull and no more indication pending
+ *          1 if at least one indication is still pending
+ * \note    It is up to the platform implementation to call this method at
+ *          the right place from the decided context (polling Thread for example)
+ */
+typedef int (*Platform_get_indication_f)(unsigned int max_ind, onIndicationReceivedLocked_cb_f cb_locked);
+
+/**
+ * \brief   Dispatch a received indication
+ * \param   frame
+ *          The indication to dispatch
+ * \param   timestamp_ms
+ *          The timestamp of this indication reception
+ * \note    It is up to the platform implementation to call this method at
+ *          the right place
+ */
+typedef void (*Platform_dispatch_indication_f)(wpc_frame_t * frame, unsigned long long timestamp_ms);
+
+/**
+ * \brief   Initialization of the platform part
+ *          It is up to the platform to initialize all what is required to operate
+ *          correctly
+ * \param   get_indication_f
+ *          function pointer to be called by the platform code periodically or on
+ *          event depending on operation mode
+ * \param   dispatch_indication_f
+ *          function pointer to handle a received indication. It is a distinct call
+ *          from previous function to allow a more flexible design
+ * \return  true if platform is correctly initialized, false otherwise
+ */
+bool Platform_init(Platform_get_indication_f get_indication_f,
+                   Platform_dispatch_indication_f dispatch_indication_f);
+
 
 void Platform_usleep(unsigned int time_us);
 

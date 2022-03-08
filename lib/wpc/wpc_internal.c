@@ -192,7 +192,7 @@ static int send_request_locked(wpc_frame_t * request, wpc_frame_t * confirm, uin
 /*****************************************************************************/
 /*                Indication implementation                                  */
 /*****************************************************************************/
-void WPC_Int_dispatch_indication(wpc_frame_t * frame, unsigned long long timestamp_ms)
+static void dispatch_indication(wpc_frame_t * frame, unsigned long long timestamp_ms)
 {
     switch (frame->primitive_id)
     {
@@ -322,7 +322,7 @@ static int get_indication_locked(unsigned int max_ind, onIndicationReceivedLocke
     return remaining_ind > 0 ? 1 : 0;
 }
 
-int WPC_Int_get_indication(unsigned int max_ind, onIndicationReceivedLocked_cb_f cb_locked)
+static int get_indication(unsigned int max_ind, onIndicationReceivedLocked_cb_f cb_locked)
 {
     int res;
     Platform_lock_request();
@@ -380,7 +380,7 @@ int WPC_Int_initialize(const char * port_name, unsigned long bitrate)
     // Initialize the slip module
     Slip_init(&Serial_write, &Serial_read);
 
-    if (!Platform_init())
+    if (!Platform_init(get_indication, dispatch_indication))
     {
         Serial_close();
         return WPC_INT_GEN_ERROR;
