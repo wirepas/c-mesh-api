@@ -201,7 +201,7 @@ int Serial_write(const unsigned char * buffer, unsigned int buffer_size)
         if (int_open() < 0)
         {
             // Wait a bit before next try
-            Platform_usleep(1000 * 1000);
+            usleep(1000 * 1000);
             return 0;
         }
         LOGI("Serial reopened\n");
