@@ -13,7 +13,7 @@
 #define LOG_MODULE_NAME "linux_plat"
 #define MAX_LOG_LEVEL INFO_LOG_LEVEL
 #include "logger.h"
-#include "wpc_internal.h"
+#include "platform.h"
 
 // Maximum number of indication to be retrieved from a single poll
 #define MAX_NUMBER_INDICATION 30
@@ -36,7 +36,11 @@ static pthread_t thread_dispatch;
 // Set to false to stop dispatch thread execution
 static bool m_dispatch_thread_running;
 
+// Service to call to get indication from a node
+static Platform_get_indication_f m_get_indication_f;
 
+// Service to call to dispatch/handle indication from node
+static Platform_dispatch_indication_f m_dispatch_indication_f;
 
 /*****************************************************************************/
 /*                Indication queue related variables                        */
@@ -106,7 +110,7 @@ static void * dispatch_indication(void * unused)
         pthread_mutex_unlock(&m_queue_mutex);
 
         // Dispatch the indication
-        WPC_Int_dispatch_indication(&ind->frame, ind->timestamp_ms_epoch);
+        m_dispatch_indication_f(&ind->frame, ind->timestamp_ms_epoch);
 
         // Take the lock back to update empty status and wait on cond again in
         // next loop iteration
@@ -209,7 +213,7 @@ static void * poll_for_indication(void * unused)
 
         LOGD("Poll for %d indications\n", max_num_indication);
 
-        get_ind_res = WPC_Int_get_indication(max_num_indication, onIndicationReceivedLocked);
+        get_ind_res = m_get_indication_f(max_num_indication, onIndicationReceivedLocked);
 
         if (get_ind_res == 1)
         {
@@ -262,7 +266,8 @@ unsigned long long Platform_get_timestamp_ms_epoch()
     return ((unsigned long long) spec.tv_sec) * 1000 + (spec.tv_nsec) / 1000 / 1000;
 }
 
-bool Platform_init()
+bool Platform_init(Platform_get_indication_f get_indication_f,
+                   Platform_dispatch_indication_f dispatch_indication_f)
 {
     /* This linux implementation uses a dedicated thread
      * to poll for indication. The indication are then handled
@@ -274,6 +279,15 @@ bool Platform_init()
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
+
+    if (get_indication_f == NULL || dispatch_indication_f == NULL)
+    {
+        LOGE("Invalid parameters\n");
+        return false;
+    }
+
+    m_get_indication_f = get_indication_f;
+    m_dispatch_indication_f = dispatch_indication_f;
 
     // Initialize mutex to access critical section
     if (pthread_mutex_init(&sending_mutex, &attr) != 0)
