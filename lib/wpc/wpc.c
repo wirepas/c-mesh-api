@@ -584,10 +584,11 @@ app_res_e WPC_stop_stack(void)
     }
     else
     {
-        // Wait 500ms to avoid a systematic timeout
+        // Active wait of 500ms to avoid a systematic timeout
         // at each reboot. If status is asked immediately,
         // stack cannot answer
-        Platform_usleep(500 * 1000);
+        unsigned long long end_wait = Platform_get_timestamp_ms_epoch() + 500;
+        while (Platform_get_timestamp_ms_epoch() < end_wait);
 
         // A stop of the stack will reboot the device
         // Wait for the stack to be up again

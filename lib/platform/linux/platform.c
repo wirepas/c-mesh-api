@@ -234,11 +234,6 @@ static void * poll_for_indication(void * unused)
     return NULL;
 }
 
-void Platform_usleep(unsigned int time_us)
-{
-    usleep(time_us);
-}
-
 bool Platform_lock_request()
 {
     int res = pthread_mutex_lock(&sending_mutex);

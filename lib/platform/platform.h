@@ -59,9 +59,6 @@ typedef void (*Platform_dispatch_indication_f)(wpc_frame_t * frame, unsigned lon
 bool Platform_init(Platform_get_indication_f get_indication_f,
                    Platform_dispatch_indication_f dispatch_indication_f);
 
-
-void Platform_usleep(unsigned int time_us);
-
 /**
  * \brief   Get a timestamp in ms since epoch
  * \Note    If this information is not available on the platform,
