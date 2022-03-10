@@ -203,6 +203,10 @@ static void dispatch_indication(wpc_frame_t * frame, unsigned long long timestam
             dsap_data_rx_indication_handler(&frame->payload.dsap_data_rx_indication_payload,
                                             timestamp_ms);
             break;
+        case DSAP_DATA_RX_FRAG_INDICATION:
+            dsap_data_rx_frag_indication_handler(&frame->payload.dsap_data_rx_frag_indication_payload,
+                                            timestamp_ms);
+            break;
         case MSAP_STACK_STATE_INDICATION:
             msap_stack_state_indication_handler(&frame->payload.msap_stack_state_indication_payload);
             break;

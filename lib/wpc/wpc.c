@@ -83,6 +83,18 @@ app_res_e WPC_set_max_poll_fail_duration(unsigned int duration_s)
     }
 }
 
+app_res_e  WPC_set_max_fragment_duration(unsigned int duration_s)
+{
+    if (dsap_set_max_fragment_duration(duration_s))
+    {
+        return APP_RES_OK;
+    }
+    else
+    {
+        return APP_RES_ACCESS_DENIED;
+    }
+}
+
 app_res_e WPC_get_role(app_role_t * role_p)
 {
     int res = csap_attribute_read_request(C_NODE_ROLE_ID, 1, role_p);
@@ -1158,7 +1170,7 @@ app_res_e WPC_send_data_with_options(const app_message_t * message_t)
 }
 
 app_res_e WPC_send_data(const uint8_t * bytes,
-                        uint8_t num_bytes,
+                        size_t num_bytes,
                         uint16_t pdu_id,
                         app_addr_t dst_addr,
                         app_qos_e qos,
