@@ -261,6 +261,18 @@ unsigned long long Platform_get_timestamp_ms_epoch()
     return ((unsigned long long) spec.tv_sec) * 1000 + (spec.tv_nsec) / 1000 / 1000;
 }
 
+void * Platform_malloc(size_t size)
+{
+    LOGD("M: %d\n", size);
+    return malloc(size);
+}
+
+void Platform_free(void *ptr, size_t size)
+{
+    free(ptr);
+    LOGD("F: %d\n", size);
+}
+
 bool Platform_init(Platform_get_indication_f get_indication_f,
                    Platform_dispatch_indication_f dispatch_indication_f)
 {

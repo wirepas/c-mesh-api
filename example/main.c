@@ -25,7 +25,7 @@ char * port_name = "/dev/ttyACM0";
 #define NETWORK_ADDRESS 0xABCDEF
 
 static bool onDataReceived(const uint8_t * bytes,
-                           uint8_t num_bytes,
+                           size_t num_bytes,
                            app_addr_t src_addr,
                            app_addr_t dst_addr,
                            app_qos_e qos,

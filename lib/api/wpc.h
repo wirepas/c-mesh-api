@@ -193,7 +193,7 @@ typedef struct
                                       //!< sent (can be NULL)
     uint32_t buffering_delay;         //!< Initial buffering delay
     uint16_t pdu_id;                  //!< Pdu id (only needed if cb set)
-    uint8_t num_bytes;                //!< Size of payload
+    size_t num_bytes;                 //!< Size of payload
     uint8_t src_ep;                   //!< Source endpoint
     uint8_t dst_ep;                   //!< Destination endpoint
     uint8_t hop_limit;                //!< Hop limit for this transmission
@@ -247,6 +247,15 @@ void WPC_close(void);
  * \return  Return code of the operation
  */
 app_res_e WPC_set_max_poll_fail_duration(unsigned int duration_s);
+
+/**
+ * \brief   Set maximum duration for fragment
+ * \param   duration_s
+ *          the maximum duration in seconds to keep fragment from incomplete packets.
+ *          Zero equals forever
+ * \return  Return code of the operation
+ */
+app_res_e WPC_set_max_fragment_duration(unsigned int duration_s);
 
 /**
  * \brief   Get the role of the node
@@ -922,7 +931,7 @@ app_res_e WPC_get_neighbors(app_nbors_t * nbors_list_p);
  * \return  Return code of the operation
  */
 app_res_e WPC_send_data(const uint8_t * bytes,
-                        uint8_t num_bytes,
+                        size_t num_bytes,
                         uint16_t pdu_id,
                         app_addr_t dst_addr,
                         app_qos_e qos,
@@ -962,7 +971,7 @@ app_res_e WPC_send_data_with_options(const app_message_t * message_p);
  * \return  true if data is handled
  */
 typedef bool (*onDataReceived_cb_f)(const uint8_t * bytes,
-                                    uint8_t num_bytes,
+                                    size_t num_bytes,
                                     app_addr_t src_addr,
                                     app_addr_t dst_addr,
                                     app_qos_e qos,
