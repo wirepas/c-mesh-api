@@ -85,6 +85,23 @@ bool Platform_lock_request();
  */
 void Platform_unlock_request();
 
+/**
+ * \brief   Dynamic memory allocation
+ * \param   size
+ *          Size of memory to allocate
+ * \return  Pointer to the allocated memory, NULL otherwise
+ * \note    Dynamic allocation is only used in case of reassembly of packets on second mcu
+ */
+void * Platform_malloc(size_t size);
+
+/**
+ * \brief   Free memory allocated with \ref Platform_malloc
+ * \param   ptr
+ *          Pointer to the memory to release
+ * \note    Dynamic allocation is only used in case of reassembly of packets on second mcu
+ */
+void Platform_free(void *ptr, size_t size);
+
 void Platform_close();
 
 #endif /* PLATFORM_H_ */

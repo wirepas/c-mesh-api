@@ -51,6 +51,7 @@ typedef struct __attribute__((__packed__))
         // Request
         dsap_data_tx_req_pl_t dsap_data_tx_request_payload;
         dsap_data_tx_tt_req_pl_t dsap_data_tx_tt_request_payload;
+        dsap_data_tx_frag_req_pl_t dsap_data_tx_frag_request_payload;
         msap_stack_start_req_pl_t msap_stack_start_request_payload;
         msap_app_config_data_write_req_pl_t msap_app_config_data_write_request_payload;
         msap_attribute_write_req_pl_t sap_attribute_write_request_payload;
@@ -67,6 +68,7 @@ typedef struct __attribute__((__packed__))
         // Indication
         dsap_data_tx_ind_pl_t dsap_data_tx_indication_payload;
         dsap_data_rx_ind_pl_t dsap_data_rx_indication_payload;
+        dsap_data_rx_frag_ind_pl_t dsap_data_rx_frag_indication_payload;
         msap_stack_state_ind_pl_t msap_stack_state_indication_payload;
         msap_app_config_data_rx_ind_pl_t msap_app_config_data_rx_indication_payload;
         msap_image_remote_status_ind_pl_t msap_image_remote_status_indication_payload;

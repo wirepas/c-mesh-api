@@ -20,10 +20,14 @@
 #define DSAP_DATA_TX_CONFIRM                   (SAP_CONFIRM_OFFSET + DSAP_DATA_TX_REQUEST)
 #define DSAP_DATA_TX_TT_REQUEST                0x1F
 #define DSAP_DATA_TX_TT_CONFIRM                (SAP_CONFIRM_OFFSET + DSAP_DATA_TX_TT_REQUEST)
+#define DSAP_DATA_TX_FRAG_REQUEST              0x0F
+#define DSAP_DATA_TX_FRAG_CONFIRM              (SAP_CONFIRM_OFFSET + DSAP_DATA_TX_TT_REQUEST)
 #define DSAP_DATA_TX_INDICATION                0x02
 #define DSAP_DATA_TX_RESPONSE                  (SAP_RESPONSE_OFFSET + DSAP_DATA_TX_INDICATION)
 #define DSAP_DATA_RX_INDICATION                0x03
 #define DSAP_DATA_RX_RESPONSE                  (SAP_RESPONSE_OFFSET + DSAP_DATA_RX_INDICATION)
+#define DSAP_DATA_RX_FRAG_INDICATION           0x10
+#define DSAP_DATA_RX_FRAG_RESPONSE             (SAP_RESPONSE_OFFSET + DSAP_DATA_RX_FRAG_INDICATION)
 
 /*
  * Management Service Access Points
@@ -105,6 +109,9 @@
 
 /* Maximun PDU size for all platforms */
 #define MAX_DATA_PDU_SIZE    102
+
+/* Maximun Full packet size for all platforms */
+#define MAX_FULL_PACKET_SIZE    1500
 
 
 #endif

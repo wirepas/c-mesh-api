@@ -11,6 +11,12 @@
 #include "wpc.h"
 #include "wpc_constants.h"
 
+// Fragment offset: Lowest 12 bits
+#define DSAP_FRAG_LENGTH_MASK 0x0fff
+
+// Last fragment: Highest bit
+#define DSAP_FRAG_LAST_FLAG_MASK 0x8000
+
 typedef struct __attribute__((__packed__))
 {
     uint16_t pdu_id;
@@ -36,6 +42,21 @@ typedef struct __attribute__((__packed__))
     uint8_t apdu[MAX_DATA_PDU_SIZE];
 } dsap_data_tx_tt_req_pl_t;
 
+typedef struct __attribute__ ((__packed__))
+{
+    uint16_t    pdu_id;
+    uint8_t     src_endpoint;
+    uint32_t    dest_add;
+    uint8_t     dest_endpoint;
+    uint8_t     qos;
+    uint8_t     tx_options;
+    uint32_t    buffering_delay;
+    uint16_t    full_packet_id : 12;
+    uint16_t    fragment_offset_flag;
+    uint8_t     apdu_length;
+    uint8_t     apdu[MAX_DATA_PDU_SIZE];
+} dsap_data_tx_frag_req_pl_t;
+
 typedef struct __attribute__((__packed__))
 {
     uint8_t indication_status;
@@ -59,6 +80,21 @@ typedef struct __attribute__((__packed__))
     uint8_t apdu_length;
     uint8_t apdu[MAX_DATA_PDU_SIZE];
 } dsap_data_rx_ind_pl_t;
+
+typedef struct __attribute__((__packed__))
+{
+    uint8_t indication_status;
+    uint32_t src_add;
+    uint8_t src_endpoint;
+    uint32_t dest_add;
+    uint8_t dest_endpoint;
+    uint8_t qos_hop_count;
+    uint32_t travel_time;
+    uint16_t full_packet_id : 12;
+    uint16_t fragment_offset_flag;
+    uint8_t apdu_length;
+    uint8_t apdu[MAX_DATA_PDU_SIZE];
+} dsap_data_rx_frag_ind_pl_t;
 
 typedef struct __attribute__((__packed__))
 {
@@ -95,7 +131,7 @@ typedef struct __attribute__((__packed__))
  *          a Mesh positive result otherwise
  */
 int dsap_data_tx_request(const uint8_t * buffer,
-                         int len,
+                         size_t len,
                          uint16_t pdu_id,
                          uint32_t dest_add,
                          uint8_t qos,
@@ -121,6 +157,16 @@ void dsap_data_tx_indication_handler(dsap_data_tx_ind_pl_t * payload);
  */
 void dsap_data_rx_indication_handler(dsap_data_rx_ind_pl_t * rx_indication,
                                      unsigned long long timestamp_ms_epoch);
+
+/**
+ * \brief   Handler for rx fragment indication
+ * \param   rx_indication
+ *          Pointer to rx indication containing the fragment
+ * \param   timestamp
+ *          Timestamp of reception of rx reception
+ */
+void dsap_data_rx_frag_indication_handler(dsap_data_rx_frag_ind_pl_t * payload,
+                                          unsigned long long timestamp_ms_epoch);
 
 #ifdef REGISTER_DATA_PER_ENDPOINT
 /**
@@ -155,6 +201,13 @@ bool dsap_register_for_data(onDataReceived_cb_f onDataReceived);
  */
 bool dsap_unregister_for_data();
 #endif
+
+/**
+ * \brief   Set maximum duration to keep fragment in our buffer until packet is ful
+ * \param   fragment_max_duration_s
+ *          Maximum time in s to keep fragments from incomplete packets inside our buffers
+ */
+bool dsap_set_max_fragment_duration(unsigned int fragment_max_duration_s);
 
 /**
  * \brief   Initialize the dsap module
