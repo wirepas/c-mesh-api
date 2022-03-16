@@ -47,7 +47,8 @@ typedef struct __attribute__((__packed__))
     // Lenght of the payload in bytes
     uint8_t payload_length;
     // Payload of the frame
-    union {
+    union
+    {
         // Request
         dsap_data_tx_req_pl_t dsap_data_tx_request_payload;
         dsap_data_tx_tt_req_pl_t dsap_data_tx_tt_request_payload;
@@ -63,7 +64,8 @@ typedef struct __attribute__((__packed__))
         attribute_write_req_pl_t attribute_write_request_payload;
         attribute_read_req_pl_t attribute_read_request_payload;
         csap_factory_reset_req_pl_t csap_factory_reset_request_payload;
-        msap_scratchpad_write_req_pl_t msap_scratchpad_target_write_request_payload;
+        msap_scratchpad_target_write_req_pl_t msap_scratchpad_target_write_request_payload;
+        msap_image_block_read_req_pl_t msap_image_block_read_request_payload;
         // Indication
         dsap_data_tx_ind_pl_t dsap_data_tx_indication_payload;
         dsap_data_rx_ind_pl_t dsap_data_rx_indication_payload;
@@ -81,7 +83,8 @@ typedef struct __attribute__((__packed__))
         msap_get_nbors_conf_pl_t msap_get_nbors_confirm_payload;
         msap_scratchpad_status_conf_pl_t msap_scratchpad_status_confirm_payload;
         attribute_read_conf_pl_t attribute_read_confirm_payload;
-        msap_scratchpad_read_conf_pl_t msap_scratchpad_target_read_confirm_payload;
+        msap_scratchpad_target_read_conf_pl_t msap_scratchpad_target_read_confirm_payload;
+        msap_image_block_read_conf_pl_t msap_image_block_read_confirm_payload;
         // Response
         sap_resp_pl_t sap_response_payload;
     } payload;

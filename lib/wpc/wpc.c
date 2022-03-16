@@ -588,7 +588,8 @@ app_res_e WPC_stop_stack(void)
         // at each reboot. If status is asked immediately,
         // stack cannot answer
         unsigned long long end_wait = Platform_get_timestamp_ms_epoch() + 500;
-        while (Platform_get_timestamp_ms_epoch() < end_wait);
+        while (Platform_get_timestamp_ms_epoch() < end_wait)
+            ;
 
         // A stop of the stack will reboot the device
         // Wait for the stack to be up again
@@ -823,6 +824,22 @@ app_res_e WPC_set_multicast_groups(const app_addr_t * addr_list, uint8_t num_add
     return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
 }
 
+app_res_e WPC_get_scratchpad_size(uint32_t * value_p)
+{
+    app_res_e ret;
+    uint8_t att[4];
+    int res = msap_attribute_read_request(MSAP_SCRATCHPAD_NUM_BYTES, 4, att);
+
+    ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    if (ret != APP_RES_OK)
+    {
+        return ret;
+    }
+
+    *value_p = uint32_decode_le(att);
+    return APP_RES_OK;
+}
+
 app_res_e WPC_get_local_scratchpad_status(app_scratchpad_status_t * status_p)
 {
     app_res_e res;
@@ -1017,6 +1034,54 @@ app_res_e WPC_read_target_scratchpad(uint8_t * target_sequence_p,
 
     // We should always be able to read it if implemented
     return res == 0 ? APP_RES_OK : APP_RES_INTERNAL_ERROR;
+}
+
+/* Error code LUT for local scratchpad block read */
+static const app_res_e SCRATCHPAD_LOCAL_BLOCK_READ_ERROR_CODE_LUT[] = {
+    APP_RES_OK,                       // 0
+    APP_RES_STACK_NOT_STOPPED,        // 1
+    APP_RES_INVALID_START_ADDRESS,    // 2
+    APP_RES_INVALID_NUMBER_OF_BYTES,  // 3
+    APP_RES_NO_VALID_SCRATCHPAD,      // 4
+    APP_RES_ACCESS_DENIED             // 5
+};
+
+app_res_e WPC_download_local_scratchpad(uint32_t len, uint8_t * bytes, uint32_t start)
+{
+    app_res_e app_res;
+    uint8_t res;
+    uint32_t loaded = 0;
+    uint8_t max_block_size, block_size;
+
+    app_res = WPC_get_scratchpad_block_max(&max_block_size);
+    if (app_res != APP_RES_OK)
+    {
+        LOGE("Cannot get max block scratchpad size\n");
+        return app_res;
+    }
+
+    while (loaded < len)
+    {
+        uint32_t remaining = len - loaded;
+        block_size = (remaining > max_block_size) ? max_block_size : remaining;
+        uint32_t addr_le;
+        uint32_encode_le(start + loaded, (uint8_t *) &addr_le);
+
+        res = msap_scratchpad_block_read_request(addr_le, block_size, bytes + loaded);
+        if (res > 1)
+        {
+            LOGE("Error in reading scratchpad block -> %d\n", res);
+            return convert_error_code(SCRATCHPAD_LOCAL_BLOCK_READ_ERROR_CODE_LUT, res);
+        }
+
+        if (res == 1)
+        {
+            LOGD("Last block read\n");
+        }
+
+        loaded += block_size;
+    }
+    return APP_RES_OK;
 }
 
 /* Error code LUT for scan neighbors */

@@ -21,6 +21,9 @@ static bool setInitialState(app_role_t role,
 {
     WPC_stop_stack();
 
+    // Wait for stack to stop
+    usleep(3 * 1000 * 1000);
+
     if (WPC_set_node_address(id) != APP_RES_OK)
         return false;
 
@@ -301,10 +304,7 @@ static bool testScratchpadTarget()
     uint8_t param;
 
     // Read it a first time
-    if (WPC_read_target_scratchpad(&target_seq,
-                                   &target_crc,
-                                   &action,
-                                   &param) != APP_RES_OK)
+    if (WPC_read_target_scratchpad(&target_seq, &target_crc, &action, &param) != APP_RES_OK)
     {
         LOGE("Cannot read target scratchpad\n");
         return false;
@@ -312,10 +312,7 @@ static bool testScratchpadTarget()
 
     LOGI("Target is: %d, 0x%x, %d, %d\n", target_seq, target_crc, action, param);
 
-    app_res_e res = WPC_write_target_scratchpad(12,
-            0x1234,
-            2,
-            13);
+    app_res_e res = WPC_write_target_scratchpad(12, 0x1234, 2, 13);
     if (res != APP_RES_OK)
     {
         LOGE("Cannot write target scratchpad %d\n", res);
@@ -324,10 +321,7 @@ static bool testScratchpadTarget()
 
     LOGI("Write new target\n");
 
-    if (WPC_read_target_scratchpad(&target_seq,
-                                   &target_crc,
-                                   &action,
-                                   &param))
+    if (WPC_read_target_scratchpad(&target_seq, &target_crc, &action, &param))
     {
         LOGE("Cannot read target back scratchpad\n");
         return false;
@@ -593,20 +587,24 @@ bool testClearScratchpad()
 
 #define BLOCK_SIZE 128
 #define SEQ_NUMBER 50
-#define OTAP_FILE_PATH "source/test/scratchpad_nrf52.otap"
-bool testLoadScratchpad()
+
+#define OTAP_UPLOAD_FILE_PATH "source/test/scratchpad_nrf52_upload.otap"
+#define OTAP_DOWNLOAD_FILE_PATH "source/test/scratchpad_nrf52_download.otap"
+
+bool testUploadScratchpad()
 {
     FILE * fp;
     app_scratchpad_status_t status;
     long file_size = 0;
     long written = 0;
-    const char * filename = OTAP_FILE_PATH;
+    const char * filename = OTAP_UPLOAD_FILE_PATH;
     uint8_t block[BLOCK_SIZE];
 
     fp = fopen(filename, "rb");
     if (fp == NULL)
     {
-        LOGE("Cannot open file %s. Please update OTAP_FILE_PATH to a valid "
+        LOGE("Cannot open file %s. Please update OTAP_UPLOAD_FILE_PATH to a "
+             "valid "
              "otap image\n",
              filename);
         return false;
@@ -620,7 +618,7 @@ bool testLoadScratchpad()
         LOGE("Cannot determine file size\n");
         return false;
     }
-    LOGI("Loading otap file of %d bytes\n", file_size);
+    LOGI("Uploading otap file of %d bytes\n", file_size);
 
     /* Set cursor to beginning of file */
     fseek(fp, 0L, SEEK_SET);
@@ -633,7 +631,7 @@ bool testLoadScratchpad()
     }
 
     /* Send scratchpad image block by block */
-    LOGI("Start sending otap (it mays take up to 1 minute)\n");
+    LOGI("Start sending otap (it may take up to 1 minute)\n");
     long remaining = file_size;
     while (remaining > 0)
     {
@@ -644,18 +642,23 @@ bool testLoadScratchpad()
         if (read != block_size)
         {
             LOGE("Error while reading file asked = %d read = %d\n", block_size, read);
-            return false;
+            break;
         }
 
         /* Send the block */
         if (WPC_upload_local_block_scratchpad(block_size, block, written) != APP_RES_OK)
         {
             LOGE("Cannot upload scratchpad block\n");
-            return false;
+            break;
         }
 
         written += block_size;
         remaining -= block_size;
+    }
+
+    if (remaining > 0)
+    {
+        return false;
     }
 
     if (WPC_get_local_scratchpad_status(&status) != APP_RES_OK)
@@ -666,7 +669,7 @@ bool testLoadScratchpad()
 
     if (status.scrat_len != file_size)
     {
-        LOGE("Scratchpad is not loaded correctly (wrong size) %d vs %d\n",
+        LOGE("Scratchpad is not uploaded correctly (wrong size) %d vs %d\n",
              status.scrat_len,
              file_size);
         return false;
@@ -674,9 +677,72 @@ bool testLoadScratchpad()
 
     if (status.scrat_seq_number != SEQ_NUMBER)
     {
-        LOGE("Wrong seq number after loading a scratchpad image \n");
+        LOGE("Wrong seq number after uploading a scratchpad image \n");
         return false;
     }
+
+    return true;
+}
+
+bool testDownloadScratchpad()
+{
+    FILE * fp;
+    uint32_t scratchpad_size;
+    long read = 0;
+    const char * filename = OTAP_DOWNLOAD_FILE_PATH;
+    uint8_t block[BLOCK_SIZE];
+
+    fp = fopen(filename, "wb");
+    if (fp == NULL)
+    {
+        LOGE("Cannot open file %s. Please update OTAP_DOWNLOAD_FILE_PATH to a "
+             "valid path\n",
+             filename);
+        return false;
+    }
+
+    /* Get size of scratchpad */
+    if (WPC_get_scratchpad_size(&scratchpad_size) != APP_RES_OK)
+    {
+        LOGE("Cannot read scratchpad size\n");
+        return false;
+    }
+
+    LOGI("Downloading otap file of %d bytes\n", scratchpad_size);
+
+    /* Receive scratchpad image block by block */
+    LOGI("Start receiving otap (it may take up to 1 minute)\n");
+    uint32_t remaining = scratchpad_size;
+    while (remaining > 0)
+    {
+        uint8_t block_size = (remaining > BLOCK_SIZE) ? BLOCK_SIZE : remaining;
+
+        /* Receive the block */
+        if (WPC_download_local_scratchpad(block_size, block, read) != APP_RES_OK)
+        {
+            LOGE("Cannot download scratchpad block\n");
+            break;
+        }
+
+        size_t written = fwrite(block, 1, block_size, fp);
+        if (written != block_size)
+        {
+            LOGE("Error while writing file asked = %d read = %d\n", block_size, written);
+            break;
+        }
+
+        read += block_size;
+        remaining -= block_size;
+    }
+
+    fclose(fp);
+
+    if (remaining > 0)
+    {
+        return false;
+    }
+
+    LOGI("Please compare files %s and %s\n", OTAP_UPLOAD_FILE_PATH, OTAP_DOWNLOAD_FILE_PATH);
 
     return true;
 }
@@ -896,7 +962,9 @@ int Test_scratchpad()
 
     RUN_TEST(testClearScratchpad, true);
 
-    RUN_TEST(testLoadScratchpad, true);
+    RUN_TEST(testUploadScratchpad, true);
+
+    RUN_TEST(testDownloadScratchpad, true);
 
     // Start the stack for following tests
     WPC_start_stack();

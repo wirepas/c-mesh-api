@@ -512,7 +512,8 @@ app_res_e WPC_get_app_config_data_size(uint8_t * value_p);
  * \return  Return code of the operation
  * \note    This call can only be made from a sink node
  */
-app_res_e WPC_set_app_config_data(uint8_t seq, uint16_t interval, const uint8_t * config_p, uint8_t size);
+app_res_e
+WPC_set_app_config_data(uint8_t seq, uint16_t interval, const uint8_t * config_p, uint8_t size);
 
 /**
  * \brief   Get app config data
@@ -744,6 +745,15 @@ app_res_e WPC_get_multicast_groups(app_addr_t * addr_list, uint8_t * num_addr_p)
 app_res_e WPC_set_multicast_groups(const app_addr_t * addr_list, uint8_t num_addr);
 
 /**
+ * \brief   Get the length of the currently stored scratchpad in bytes
+ * \param   value_p
+ *          Pointer to store the result
+ *          Updated if return code is APP_RES_OK
+ * \return  Return code of the operation
+ */
+app_res_e WPC_get_scratchpad_size(uint32_t * value_p);
+
+/**
  * \brief   Get the local scratchpad status
  * \param   status
  *          Status of the currently stored scratchpad
@@ -756,7 +766,7 @@ app_res_e WPC_get_local_scratchpad_status(app_scratchpad_status_t * status);
  * \brief   Start the process of clearing and rewriting the Scratchpad contents
  *          of this node
  * \param   len
- *          Lenght of the scratchpad to upload
+ *          Length of the scratchpad to upload
  * \param   seq
  *          Sequence of the scratchpad to upload
  * \return  Return code of the operation
@@ -764,9 +774,9 @@ app_res_e WPC_get_local_scratchpad_status(app_scratchpad_status_t * status);
 app_res_e WPC_start_local_scratchpad_update(uint32_t len, uint8_t seq);
 
 /**
- * \brief   Upload a scratchpad block
+ * \brief   Upload (write) a scratchpad block
  * \param   len
- *          Lenght of the block (must be a multiple of 4 bytes)
+ *          Length of the block (must be a multiple of 4 bytes)
  * \param   bytes
  *          Block content
  * \param   start
@@ -776,9 +786,9 @@ app_res_e WPC_start_local_scratchpad_update(uint32_t len, uint8_t seq);
 app_res_e WPC_upload_local_block_scratchpad(uint32_t len, const uint8_t * bytes, uint32_t start);
 
 /**
- * \brief   Upload a full scratchpad
+ * \brief   Upload (write) a full scratchpad
  * \param   len
- *          Lenght of the scratchpad (must be a multiple of 4 bytes)
+ *          Length of the scratchpad (must be a multiple of 4 bytes)
  * \param   bytes
  *          scratchpad content
  * \param   seq
@@ -833,6 +843,18 @@ app_res_e WPC_read_target_scratchpad(uint8_t * target_sequence_p,
                                      uint16_t * target_crc_p,
                                      uint8_t * action_p,
                                      uint8_t * param_p);
+
+/**
+ * \brief   Download (read) local scratchpad or a block of it
+ * \param   len
+ *          Length of the block (must be a multiple of 4 bytes)
+ * \param   bytes
+ *          Block content
+ * \param   start
+ *          Offset of the block relatively to the beginning of scratchpad
+ * \return  Return code of the operation
+ */
+app_res_e WPC_download_local_scratchpad(uint32_t len, uint8_t * bytes, uint32_t start);
 
 /**
  * \brief   Query scratchpad status for a remote node
