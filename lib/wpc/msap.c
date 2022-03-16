@@ -46,7 +46,7 @@ static onStackStatusReceived_cb_f m_stack_status_cb = NULL;
  *          It can be long because writing flash can be long
  *          especially if written in external memory
  */
-#define SCRATCHPAD_BLOK_TIMEOUT_MS 5000
+#define SCRATCHPAD_BLOCK_TIMEOUT_MS 5000
 
 int msap_stack_start_request(uint8_t start_option)
 {
@@ -273,7 +273,7 @@ int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_byte
     // Copy the block to the request
     memcpy(request.payload.msap_image_block_request_payload.bytes, bytes, number_of_bytes);
 
-    res = WPC_Int_send_request_timeout(&request, &confirm, SCRATCHPAD_BLOK_TIMEOUT_MS);
+    res = WPC_Int_send_request_timeout(&request, &confirm, SCRATCHPAD_BLOCK_TIMEOUT_MS);
 
     if (res < 0)
     {
@@ -356,7 +356,7 @@ int msap_scratchpad_target_write_request(uint8_t target_sequence,
     request.payload.msap_scratchpad_target_write_request_payload.action = action;
     request.payload.msap_scratchpad_target_write_request_payload.param = param;
 
-    request.payload_length = sizeof(msap_scratchpad_write_req_pl_t);
+    request.payload_length = sizeof(msap_scratchpad_target_write_req_pl_t);
 
     res = WPC_Int_send_request(&request, &confirm);
 
@@ -367,7 +367,6 @@ int msap_scratchpad_target_write_request(uint8_t target_sequence,
          confirm.payload.sap_generic_confirm_payload.result);
     return confirm.payload.sap_generic_confirm_payload.result;
 }
-
 
 int msap_scratchpad_target_read_request(uint8_t * target_sequence_p,
                                         uint16_t * target_crc_p,
@@ -389,8 +388,10 @@ int msap_scratchpad_target_read_request(uint8_t * target_sequence_p,
     result = confirm.payload.msap_scratchpad_target_read_confirm_payload.result;
     if (result == 0)
     {
-        *target_sequence_p = confirm.payload.msap_scratchpad_target_read_confirm_payload.target_sequence;
-        *target_crc_p =	confirm.payload.msap_scratchpad_target_read_confirm_payload.target_crc;
+        *target_sequence_p =
+            confirm.payload.msap_scratchpad_target_read_confirm_payload.target_sequence;
+        *target_crc_p =
+            confirm.payload.msap_scratchpad_target_read_confirm_payload.target_crc;
         *action_p = confirm.payload.msap_scratchpad_target_read_confirm_payload.action;
         *param_p = confirm.payload.msap_scratchpad_target_read_confirm_payload.param;
         LOGD("Target scratchpad Read : seq=%d crc=0x%x action=%d param=%d\n",
@@ -405,6 +406,43 @@ int msap_scratchpad_target_read_request(uint8_t * target_sequence_p,
     }
 
     return result;
+}
+
+int msap_scratchpad_block_read_request(uint32_t start_address, uint8_t number_of_bytes, uint8_t * bytes)
+{
+    wpc_frame_t request, confirm;
+    int res;
+
+    if (number_of_bytes > MAXIMUM_SCRATCHPAD_BLOCK_SIZE)
+    {
+        LOGE("Block size is too big %d > %d\n", number_of_bytes, MAXIMUM_SCRATCHPAD_BLOCK_SIZE);
+        // Not necessary to send the request, directly return the mesh code
+        return 6;
+    }
+
+    LOGD("Read_request: start_address = %d, number_of_bytes = %d\n", start_address, number_of_bytes);
+    request.primitive_id = MSAP_SCRATCH_BLOCK_READ_REQUEST;
+    request.payload.msap_image_block_read_request_payload.start_add = start_address;
+    request.payload.msap_image_block_read_request_payload.number_of_bytes = number_of_bytes;
+    request.payload_length = sizeof(msap_image_block_read_req_pl_t);
+
+    res = WPC_Int_send_request(&request, &confirm);
+
+    if (res < 0)
+    {
+        LOGE("Read request res=%d start_address=%d, number_of_bytes= %d\n", res, start_address, number_of_bytes);
+        return res;
+    }
+
+    if (confirm.payload.msap_image_block_read_confirm_payload.result == 0)
+    {
+        // Copy the block from the confirmation
+        memcpy(bytes, confirm.payload.msap_image_block_read_confirm_payload.bytes, number_of_bytes);
+    }
+
+    LOGD("Read request result = 0x%02x\n",
+         confirm.payload.msap_image_block_read_confirm_payload.result);
+    return confirm.payload.msap_image_block_read_confirm_payload.result;
 }
 
 int msap_scratchpad_remote_status(app_addr_t destination_address)

@@ -26,6 +26,7 @@
 #define MSAP_CURRENT_ACCESS_CYCLE 11
 #define MSAP_SCRATCHPAD_BLOCK_MAX 12
 #define MSAP_MULTICAST_GROUPS 13
+#define MSAP_SCRATCHPAD_NUM_BYTES 14
 
 /* General constant */
 #define MAXIMUM_SCRATCHPAD_BLOCK_SIZE 112
@@ -85,7 +86,13 @@ typedef struct __attribute__((__packed__))
     uint16_t target_crc;
     uint8_t action;
     uint8_t param;
-} msap_scratchpad_write_req_pl_t;
+} msap_scratchpad_target_write_req_pl_t;
+
+typedef struct __attribute__((__packed__))
+{
+    uint32_t start_add;
+    uint8_t number_of_bytes;
+} msap_image_block_read_req_pl_t;
 
 typedef struct __attribute__((__packed__))
 {
@@ -190,7 +197,13 @@ typedef struct __attribute__((__packed__))
     uint16_t target_crc;
     uint8_t action;
     uint8_t param;
-} msap_scratchpad_read_conf_pl_t;
+} msap_scratchpad_target_read_conf_pl_t;
+
+typedef struct __attribute__((__packed__))
+{
+    uint8_t result;
+    uint8_t bytes[MAXIMUM_SCRATCHPAD_BLOCK_SIZE];
+} msap_image_block_read_conf_pl_t;
 
 typedef struct __attribute__((__packed__))
 {
@@ -284,7 +297,10 @@ int msap_stack_stop_request();
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_app_config_data_write_request(uint8_t seq, uint16_t interval, const uint8_t * config_p, uint8_t size);
+int msap_app_config_data_write_request(uint8_t seq,
+                                       uint16_t interval,
+                                       const uint8_t * config_p,
+                                       uint8_t size);
 
 /**
  * \brief    Request to read data config
@@ -359,7 +375,9 @@ int msap_scratchpad_start_request(uint32_t length, uint8_t seq);
  * \return   negative value if the request fails,
  *           a Mesh positive result otherwise
  */
-int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_bytes, const uint8_t * bytes);
+int msap_scratchpad_block_request(uint32_t start_address,
+                                  uint8_t number_of_bytes,
+                                  const uint8_t * bytes);
 
 /**
  * \brief    Get the status of currently stored and processed scratchpad
@@ -419,6 +437,22 @@ int msap_scratchpad_target_read_request(uint8_t * target_sequence_p,
                                         uint16_t * target_crc_p,
                                         uint8_t * action_p,
                                         uint8_t * param_p);
+
+/**
+ * \brief    Request to receive a scratchpad block
+ * \param    start_address
+ *           Start address of block (relative to beginning of scratchpad)
+ * \param    number_of_bytes
+ *           Number of bytes in the block
+ *           Between 1 and 112
+ * \param    bytes
+ *           Bytes of scratchpad data
+ * \return   negative value if the request fails,
+ *           a Mesh positive result otherwise
+ */
+int msap_scratchpad_block_read_request(uint32_t start_address,
+                                       uint8_t number_of_bytes,
+                                       uint8_t * bytes);
 
 /**
  * \brief   Get status of a remote node scratchpad status
