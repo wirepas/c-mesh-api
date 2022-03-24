@@ -184,6 +184,10 @@ int dsap_data_tx_request(const uint8_t * buffer,
         // Packet must be fragmented
         fragments = (len + MAX_DATA_PDU_SIZE - 1)  / MAX_DATA_PDU_SIZE;
         last_fragment_size = len % MAX_DATA_PDU_SIZE;
+        if (last_fragment_size == 0)
+        {
+            last_fragment_size = MAX_DATA_PDU_SIZE;
+        }
         LOGI("Packet of size %d must be splitted in %d fragments (last is %d bytes)\n", len, fragments, last_fragment_size);
     }
 
