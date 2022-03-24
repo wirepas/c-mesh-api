@@ -5,13 +5,13 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #define LOG_MODULE_NAME "Test"
 #define MAX_LOG_LEVEL INFO_LOG_LEVEL
 #include "logger.h"
 
 #include "wpc.h"
-#include "platform.h"
 
 static bool setInitialState(app_role_t role,
                             app_addr_t id,
@@ -703,7 +703,7 @@ static bool testRemoteStatus()
 
     // Wait for network to form
     // TODO replace by getneighbors
-    Platform_usleep(60 * 1000 * 1000);
+    usleep(60 * 1000 * 1000);
 
     if (WPC_get_remote_status(APP_ADDR_BROADCAST) != APP_RES_OK)
     {
@@ -712,7 +712,7 @@ static bool testRemoteStatus()
     }
 
     // Wait for remote status
-    Platform_usleep(30 * 1000 * 1000);
+    usleep(30 * 1000 * 1000);
 
     if (WPC_unregister_for_remote_status() != APP_RES_OK)
     {
@@ -762,7 +762,7 @@ static bool testScanNeighbors()
     }
 
     LOGI("Wait 5 seconds for scan result\n");
-    Platform_usleep(5 * 1000 * 1000);
+    usleep(5 * 1000 * 1000);
 
     // scan_done should be protected but we can assume
     // that 5 sec is enough and no race can occur

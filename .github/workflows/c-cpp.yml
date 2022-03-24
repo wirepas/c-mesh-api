@@ -1,4 +1,4 @@
-name: Build example
+name: Check example ant test app
 
 on:
   push:
@@ -13,6 +13,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+
     - name: make example
       run: make
       working-directory: example
+
+    - name: make test
+      run: make
+      working-directory: test
