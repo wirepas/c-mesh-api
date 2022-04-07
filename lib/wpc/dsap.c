@@ -176,7 +176,9 @@ int dsap_data_tx_request(const uint8_t * buffer,
 
     if (len > MAX_FULL_PACKET_SIZE)
     {
-        return -1;
+        // Not very clean, but reuse dualmcu 6 error code for sending data
+        // to generate a INVALID_PARAM at gateway level instead of INTERNAL_ERROR
+        return 6;
     }
 
     if (len > MAX_DATA_PDU_SIZE)
