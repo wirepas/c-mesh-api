@@ -4,7 +4,7 @@
  *
  */
 #define LOG_MODULE_NAME "dsap"
-#define MAX_LOG_LEVEL WARNING_LOG_LEVEL
+#define MAX_LOG_LEVEL INFO_LOG_LEVEL
 #include "logger.h"
 #include "wpc_types.h"
 #include "wpc_internal.h"

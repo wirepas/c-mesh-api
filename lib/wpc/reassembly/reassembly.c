@@ -4,7 +4,7 @@
  *
  */
 #define LOG_MODULE_NAME "reassembly"
-#define MAX_LOG_LEVEL INFO_LOG_LEVEL
+#define MAX_LOG_LEVEL DEBUG_LOG_LEVEL
 #define PRINT_BUFFERS
 #include "logger.h"
 

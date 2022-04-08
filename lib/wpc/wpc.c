@@ -1098,7 +1098,7 @@ app_res_e WPC_send_data_with_options(const app_message_t * message_t)
 
     if (res != 0)
     {
-        LOGE("Cannot send data. Dualmcu error code: %d\n", res);
+        LOGE("Cannot send data. Dualmcu error code: %d (size is %d)\n", res, message_t->num_bytes);
     }
 
     return convert_error_code(SEND_DATA_ERROR_CODE_LUT, res);
