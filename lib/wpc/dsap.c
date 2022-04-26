@@ -12,6 +12,8 @@
 #include "platform.h"
 #include "reassembly.h"
 
+#include <unistd.h>
+
 #include "string.h"
 
 #ifdef REGISTER_DATA_PER_ENDPOINT
@@ -269,6 +271,7 @@ int dsap_data_tx_request(const uint8_t * buffer,
 
             // Check stack return code
             confirm_res = confirm.payload.dsap_data_tx_confirm_payload.result;
+            usleep(100*1000);
 
             if (confirm_res != 0)
             {
