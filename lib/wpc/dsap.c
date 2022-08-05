@@ -346,6 +346,7 @@ void dsap_data_rx_frag_indication_handler(dsap_data_rx_frag_ind_pl_t * payload,
 
     if (reassembly_add_fragment(&frag, &full_size) && full_size != 0 )
     {
+        onDataReceived_cb_f cb;
         size_t full_size = sizeof(reassembly_buffer);
 
         if (!reassembly_get_full_message(payload->src_add, payload->full_packet_id, reassembly_buffer, &full_size))
@@ -356,7 +357,12 @@ void dsap_data_rx_frag_indication_handler(dsap_data_rx_frag_ind_pl_t * payload,
         // Full packet received
         LOGD("Full size is %d\n", full_size);
 
-        if (m_data_cb == NULL)
+#ifdef REGISTER_DATA_PER_ENDPOINT
+        cb = data_cb_table[payload->dest_endpoint];
+#else
+        cb = m_data_cb;
+#endif
+        if (cb == NULL)
         {
             // No cb registered
             return;
@@ -373,7 +379,7 @@ void dsap_data_rx_frag_indication_handler(dsap_data_rx_frag_ind_pl_t * payload,
         hop_count = payload->qos_hop_count >> 2;
 
         // Call the registered callback
-        m_data_cb(reassembly_buffer,
+        cb(reassembly_buffer,
             full_size,
             payload->src_add,
             payload->dest_add,
