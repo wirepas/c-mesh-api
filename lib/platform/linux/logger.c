@@ -14,10 +14,10 @@ static char INFO[] = "INFO";
 static char WARNING[] = "WARNING";
 static char ERROR[] = "ERROR";
 
-static inline void get_timestamp(char timestamp[37])
+static inline void get_timestamp(char * timestamp)
 {
     struct tm result;
-    long ms;
+    uint16_t ms;
     time_t s;
     struct timespec spec;
 
@@ -26,10 +26,13 @@ static inline void get_timestamp(char timestamp[37])
     s = spec.tv_sec;
     localtime_r(&s, &result);
 
-    ms = spec.tv_nsec / 1.0e6;  // Convert nanoseconds to milliseconds
+    ms = (uint16_t) (spec.tv_nsec / 1.0e6);  // Convert nanoseconds to milliseconds
 
+    // We know that output is always 23 bytes. We could use snprintf,
+    // but recent compiler would complain about size of the output.
+    // In fact, we know that ms is <= 999 so only 3 digits but compiler doesn't know
     sprintf(timestamp,
-            "%d-%02d-%02d %02d:%02d:%02d,%03ld",
+            "%04d-%02d-%02d %02d:%02d:%02d,%03d",
             result.tm_year + 1900,  // tm_year is in year - 1900
             result.tm_mon + 1,      // tm_mon is in [0-11]
             result.tm_mday,
@@ -41,7 +44,8 @@ static inline void get_timestamp(char timestamp[37])
 
 static inline void print_prefix(char level, char * module)
 {
-    char timestamp[37];
+    // Timestamp should always feat to 23 char, but some margins
+    char timestamp[50];
     char * full_level;
 
     switch (level)
