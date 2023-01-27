@@ -14,6 +14,16 @@ static char INFO[] = "INFO";
 static char WARNING[] = "WARNING";
 static char ERROR[] = "ERROR";
 
+#define DEBUG_LOG_LEVEL 3
+
+/* By default m_logger_global_max_log_level does not filter logs. */
+int8_t m_logger_global_max_log_level = DEBUG_LOG_LEVEL;
+
+void Logger_set_global_max_log_level(int8_t max_log_level)
+{
+    m_logger_global_max_log_level = max_log_level;
+}
+
 static inline void get_timestamp(char * timestamp)
 {
     struct tm result;

@@ -37,7 +37,7 @@
  * \brief   Implemented in platform specific part to print a LOG
  * \param   level
  *          Log level as a letter: D, I, W, E
- * \param   moule
+ * \param   module
  *          Module nam
  * \param   format
  *          Message to print
@@ -66,13 +66,13 @@ extern void Platform_print_buffer(uint8_t * buffer, int size);
 #define NO_LOG_LEVEL -1
 
 /**
- * Only logs with a level lower or equal to MAX_LOG_LEVEL will be printed
+ * Only logs with a level lower or equal to MAX_LOG_LEVEL can be printed
  *
  * \note this constant can be defined in each file including this file
  */
 #ifndef MAX_LOG_LEVEL
-/* By default only errors are displayed */
-#    define MAX_LOG_LEVEL ERROR_LOG_LEVEL
+/* By default, the global maximum log level will prevail. */
+#    define MAX_LOG_LEVEL DEBUG_LOG_LEVEL
 #endif
 
 #ifndef LOG_MODULE_NAME
@@ -81,15 +81,30 @@ extern void Platform_print_buffer(uint8_t * buffer, int size);
 #endif
 
 /**
+ * Global maximum log level for the files including this file.
+ *
+ * \note MAX_LOG_LEVEL can only decrease the global maximum log level.
+ */
+extern int8_t m_logger_global_max_log_level;
+
+/**
+ * Initialize m_logger_global_max_log_level variable with environment variable
+ */
+extern void Logger_set_global_max_log_level(int8_t max_log_level);
+
+/**
  * Helpers macros to print logs
  */
 #if MAX_LOG_LEVEL >= DEBUG_LOG_LEVEL
 static inline void LOGD(char * format, ...)
 {
-    va_list arg;
-    va_start(arg, format);
-    Platform_LOG('D', LOG_MODULE_NAME, format, arg);
-    va_end(arg);
+    if(m_logger_global_max_log_level >= DEBUG_LOG_LEVEL)
+    {
+        va_list arg;
+        va_start(arg, format);
+        Platform_LOG('D', LOG_MODULE_NAME, format, arg);
+        va_end(arg);
+    }
 }
 #else
 #    define LOGD(__log__, ...)
@@ -98,10 +113,13 @@ static inline void LOGD(char * format, ...)
 #if MAX_LOG_LEVEL >= INFO_LOG_LEVEL
 static inline void LOGI(char * format, ...)
 {
-    va_list arg;
-    va_start(arg, format);
-    Platform_LOG('I', LOG_MODULE_NAME, format, arg);
-    va_end(arg);
+    if(m_logger_global_max_log_level >= INFO_LOG_LEVEL)
+    {
+        va_list arg;
+        va_start(arg, format);
+        Platform_LOG('I', LOG_MODULE_NAME, format, arg);
+        va_end(arg);
+    }
 }
 #else
 #    define LOGI(__log__, ...)
@@ -110,10 +128,13 @@ static inline void LOGI(char * format, ...)
 #if MAX_LOG_LEVEL >= WARNING_LOG_LEVEL
 static inline void LOGW(char * format, ...)
 {
-    va_list arg;
-    va_start(arg, format);
-    Platform_LOG('W', LOG_MODULE_NAME, format, arg);
-    va_end(arg);
+    if(m_logger_global_max_log_level >= WARNING_LOG_LEVEL)
+    {
+        va_list arg;
+        va_start(arg, format);
+        Platform_LOG('W', LOG_MODULE_NAME, format, arg);
+        va_end(arg);
+    }
 }
 #else
 #    define LOGW(__log__, ...)
@@ -122,10 +143,13 @@ static inline void LOGW(char * format, ...)
 #if MAX_LOG_LEVEL >= ERROR_LOG_LEVEL
 static inline void LOGE(char * format, ...)
 {
-    va_list arg;
-    va_start(arg, format);
-    Platform_LOG('E', LOG_MODULE_NAME, format, arg);
-    va_end(arg);
+    if(m_logger_global_max_log_level >= ERROR_LOG_LEVEL)
+    {
+        va_list arg;
+        va_start(arg, format);
+        Platform_LOG('E', LOG_MODULE_NAME, format, arg);
+        va_end(arg);
+    }
 }
 #else
 #    define LOGE(__log__, ...)
