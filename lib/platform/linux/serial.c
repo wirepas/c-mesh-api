@@ -110,7 +110,7 @@ static int int_open()
         return -1;
     }
 
-    LOGD("Serial opened\n");
+    LOGV("Serial opened\n");
     return 0;
 }
 /****************************************************************************/
@@ -140,7 +140,7 @@ int Serial_close()
     }
 
     fd = -1;
-    LOGD("Serial closed\n");
+    LOGV("Serial closed\n");
     return 0;
 }
 

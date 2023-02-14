@@ -40,7 +40,7 @@ int attribute_write_request(uint8_t primitive_id,
     if (res < 0)
         return res;
 
-    LOGD("Attribute write result = %d\n",
+    LOGV("Attribute write result = %d\n",
          confirm.payload.sap_generic_confirm_payload.result);
     return confirm.payload.sap_generic_confirm_payload.result;
 }
@@ -64,7 +64,7 @@ int attribute_read_request(uint8_t primitive_id,
     if (res < 0)
         return res;
 
-    LOGD("Attribute Id = %d read result = %d\n",
+    LOGV("Attribute Id = %d read result = %d\n",
          confirm.payload.attribute_read_confirm_payload.attribute_id,
          confirm.payload.attribute_read_confirm_payload.result);
 

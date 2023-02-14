@@ -36,7 +36,7 @@
 /**
  * \brief   Implemented in platform specific part to print a LOG
  * \param   level
- *          Log level as a letter: D, I, W, E
+ *          Log level as a letter: D, V, I, W, E
  * \param   module
  *          Module nam
  * \param   format
@@ -56,10 +56,11 @@ extern void Platform_LOG(char level, char * module, char * format, va_list args)
 extern void Platform_print_buffer(uint8_t * buffer, int size);
 
 /**
- * Macros to define several level of Log: Debug(3), Info(2), Warning(1),
+ * Macros to define several level of Log:  Debug(4), Verbose(3), Info(2), Warning(1),
  * Error(0)
  */
-#define DEBUG_LOG_LEVEL 3
+#define DEBUG_LOG_LEVEL 4
+#define VERBOSE_LOG_LEVEL 3
 #define INFO_LOG_LEVEL 2
 #define WARNING_LOG_LEVEL 1
 #define ERROR_LOG_LEVEL 0
@@ -138,6 +139,21 @@ static inline void LOGW(char * format, ...)
 }
 #else
 #    define LOGW(__log__, ...)
+#endif
+
+#if MAX_LOG_LEVEL >= VERBOSE_LOG_LEVEL
+static inline void LOGV(char * format, ...)
+{
+    if(m_logger_global_max_log_level >= VERBOSE_LOG_LEVEL)
+    {
+        va_list arg;
+        va_start(arg, format);
+        Platform_LOG('V', LOG_MODULE_NAME, format, arg);
+        va_end(arg);
+    }
+}
+#else
+#    define LOGV(__log__, ...)
 #endif
 
 #if MAX_LOG_LEVEL >= ERROR_LOG_LEVEL

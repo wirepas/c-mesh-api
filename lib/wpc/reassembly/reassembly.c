@@ -170,7 +170,7 @@ static bool is_packet_full(full_packet_t * full_packet_p)
     {
         // Cached the full status
         full_packet_p->is_full = true;
-        LOGD("Packet is full\n");
+        LOGV("Packet is full\n");
         return true;
     }
     else

@@ -508,7 +508,7 @@ app_res_e WPC_get_sink_cost(uint8_t * cost_p)
     return convert_error_code(SINK_COST_ERROR_CODE_LUT, res);
 }
 
-static bool get_statck_status(uint16_t timeout_s)
+static bool get_stack_status(uint16_t timeout_s)
 {
     uint8_t status;
     app_res_e res = APP_RES_INTERNAL_ERROR;
@@ -519,7 +519,7 @@ static bool get_statck_status(uint16_t timeout_s)
     while (res != APP_RES_OK && Platform_get_timestamp_ms_epoch() < timeout)
     {
         res = WPC_get_stack_status(&status);
-        LOGD("Cannot get status after start/stop, try again...\n");
+        LOGV("Cannot get status after start/stop, try again...\n");
     }
 
     if (res != APP_RES_OK)
@@ -565,7 +565,7 @@ app_res_e WPC_start_stack(void)
     // of service but let's poll for it to be symmetric with stop
     // and for some reason it was seen on some platforms that the
     // first request following a start is lost
-    if (!get_statck_status(2))
+    if (!get_stack_status(2))
     {
         return APP_RES_INTERNAL_ERROR;
     }
@@ -606,7 +606,7 @@ app_res_e WPC_stop_stack(void)
         // A stop of the stack will reboot the device
         // Wait for the stack to be up again
         // It can be quite long in case a scratchpad is processed
-        if (!get_statck_status(TIMEOUT_AFTER_STOP_STACK_S))
+        if (!get_stack_status(TIMEOUT_AFTER_STOP_STACK_S))
         {
             f_res = APP_RES_INTERNAL_ERROR;
         }
@@ -946,7 +946,7 @@ app_res_e WPC_upload_local_block_scratchpad(uint32_t len, const uint8_t * bytes,
 
         if (res == 1)
         {
-            LOGD("Last block loaded\n");
+            LOGV("Last block loaded\n");
         }
 
         loaded += block_size;
@@ -1088,7 +1088,7 @@ app_res_e WPC_download_local_scratchpad(uint32_t len, uint8_t * bytes, uint32_t 
 
         if (res == 1)
         {
-            LOGD("Last block read\n");
+            LOGV("Last block read\n");
         }
 
         loaded += block_size;

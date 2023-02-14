@@ -35,7 +35,7 @@ int Serial_set_termios2_bitrate(int fd, unsigned long bitrate)
         return -1;
     }
 
-    LOGD("Custom bitrate set: %lu\n", bitrate);
+    LOGV("Custom bitrate set: %lu\n", bitrate);
 
     return 0;
 }

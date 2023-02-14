@@ -133,7 +133,7 @@ int msap_app_config_data_read_request(uint8_t * seq, uint16_t * interval, uint8_
                confirm.payload.msap_app_config_data_read_confirm_payload.app_config_data,
                size);
 
-        LOGD("App config : seq=%d, interval=%d\n", *seq, *interval);
+        LOGV("App config : seq=%d, interval=%d\n", *seq, *interval);
     }
     else
     {
@@ -157,7 +157,7 @@ int msap_sink_cost_write_request(uint8_t cost)
     if (res < 0)
         return res;
 
-    LOGD(" Cost write request result = 0x%02x\n",
+    LOGV(" Cost write request result = 0x%02x\n",
          confirm.payload.sap_generic_confirm_payload.result);
     return confirm.payload.sap_generic_confirm_payload.result;
 }
@@ -178,7 +178,7 @@ int msap_sink_cost_read_request(uint8_t * cost_p)
     if (confirm.payload.msap_sink_cost_read_confirm_payload.result == 0)
     {
         *cost_p = confirm.payload.msap_sink_cost_read_confirm_payload.cost;
-        LOGD("Sink Cost Read : %d\n", *cost_p);
+        LOGV("Sink Cost Read : %d\n", *cost_p);
     }
     else
     {
@@ -263,7 +263,7 @@ int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_byte
         return 6;
     }
 
-    LOGD("Block_request: start_address = %d, number_of_bytes = %d\n", start_address, number_of_bytes);
+    LOGV("Block_request: start_address = %d, number_of_bytes = %d\n", start_address, number_of_bytes);
     request.primitive_id = MSAP_SCRATCH_BLOCK_REQUEST;
     request.payload.msap_image_block_request_payload.start_add = start_address;
     request.payload.msap_image_block_request_payload.number_of_bytes = number_of_bytes;
@@ -281,7 +281,7 @@ int msap_scratchpad_block_request(uint32_t start_address, uint8_t number_of_byte
         return res;
     }
 
-    LOGD("Block request result = 0x%02x\n",
+    LOGV("Block request result = 0x%02x\n",
          confirm.payload.sap_generic_confirm_payload.result);
     return confirm.payload.sap_generic_confirm_payload.result;
 }
@@ -363,7 +363,7 @@ int msap_scratchpad_target_write_request(uint8_t target_sequence,
     if (res < 0)
         return res;
 
-    LOGD(" Target scratchpad request result = 0x%02x\n",
+    LOGV("Target scratchpad request result = 0x%02x\n",
          confirm.payload.sap_generic_confirm_payload.result);
     return confirm.payload.sap_generic_confirm_payload.result;
 }
@@ -394,7 +394,7 @@ int msap_scratchpad_target_read_request(uint8_t * target_sequence_p,
             confirm.payload.msap_scratchpad_target_read_confirm_payload.target_crc;
         *action_p = confirm.payload.msap_scratchpad_target_read_confirm_payload.action;
         *param_p = confirm.payload.msap_scratchpad_target_read_confirm_payload.param;
-        LOGD("Target scratchpad Read : seq=%d crc=0x%x action=%d param=%d\n",
+        LOGV("Target scratchpad Read : seq=%d crc=0x%x action=%d param=%d\n",
              *target_sequence_p,
              *target_crc_p,
              *action_p,
@@ -420,7 +420,7 @@ int msap_scratchpad_block_read_request(uint32_t start_address, uint8_t number_of
         return 6;
     }
 
-    LOGD("Read_request: start_address = %d, number_of_bytes = %d\n", start_address, number_of_bytes);
+    LOGV("Read_request: start_address = %d, number_of_bytes = %d\n", start_address, number_of_bytes);
     request.primitive_id = MSAP_SCRATCH_BLOCK_READ_REQUEST;
     request.payload.msap_image_block_read_request_payload.start_add = start_address;
     request.payload.msap_image_block_read_request_payload.number_of_bytes = number_of_bytes;
@@ -440,7 +440,7 @@ int msap_scratchpad_block_read_request(uint32_t start_address, uint8_t number_of
         memcpy(bytes, confirm.payload.msap_image_block_read_confirm_payload.bytes, number_of_bytes);
     }
 
-    LOGD("Read request result = 0x%02x\n",
+    LOGV("Read request result = 0x%02x\n",
          confirm.payload.msap_image_block_read_confirm_payload.result);
     return confirm.payload.msap_image_block_read_confirm_payload.result;
 }
@@ -480,7 +480,7 @@ int msap_scratchpad_remote_update(app_addr_t destination_address, uint8_t sequen
     if (res < 0)
         return res;
 
-    LOGD("Remote update request result = 0x%02x\n",
+    LOGV("Remote update request result = 0x%02x\n",
          confirm.payload.sap_generic_confirm_payload.result);
     return confirm.payload.sap_generic_confirm_payload.result;
 }
