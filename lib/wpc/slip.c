@@ -159,9 +159,17 @@ int Slip_decode(uint8_t * buffer, uint32_t len)
     /* Compare crc */
     if (crc != crc_from_frame)
     {
-        LOG_PRINT_BUFFER(buffer, len);
-        LOGE("Wrong crc 0x%04x (computed) vs 0x%04x (received)\n", crc, crc_from_frame);
-        return WPC_INT_WRONG_CRC;
+        if (crc_from_frame == 0xFFFF)
+        {
+            LOGE("Wrong CRC from host to node detected: %d (%d)\n", buffer[0], *((uint16_t *) (buffer + 1)));
+            return WPC_INT_WRONG_CRC_FROM_HOST;
+        }
+        else
+        {
+            LOG_PRINT_BUFFER(buffer, len);
+            LOGE("Wrong CRC 0x%04x (computed) vs 0x%04x (received)\n", crc, crc_from_frame);
+            return WPC_INT_WRONG_CRC;
+        }
     }
 
     return decoded_len - 2;
@@ -276,16 +284,6 @@ int Slip_get_buffer(uint8_t * buffer, uint32_t len, uint16_t timeout_ms)
                     // the start of a frame instead of the end
                     LOGW("Too small packet received (size=%d)\n", size);
                     size = 0;
-                    continue;
-                }
-                else if (receiving_buffer[0] == 0x7F)
-                {
-                    // Id 0x7f is used for internal debugging
-                    // It shouldn't be produced in released builds but
-                    // discard them anyway
-                    LOGW("Old internal debug print received (size=%d)\n", size);
-                    size = 0;
-                    start_of_frame_detected = false;
                     continue;
                 }
                 break;
