@@ -16,6 +16,7 @@ typedef enum
     WPC_INT_WRONG_PARAM_ERROR = -4,  //< Wrong parameter
     WPC_INT_WRONG_CRC = -5,          //< Wrong crc
     WPC_INT_WRONG_BUFFER_SIZE = -6,  //< Wrong provided buffer size
+    WPC_INT_WRONG_CRC_FROM_HOST = -7,//< Wrong crc detected from host to node (indirect detection)
 } WPC_Int_error_code_e;
 
 /**

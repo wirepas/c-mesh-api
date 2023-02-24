@@ -40,6 +40,11 @@
 // times to get the right confirm.
 #define MAX_CONFIRM_ATTEMPT 50
 
+// Maximum attempt to retrieve request in case a CRC error was detetcted in
+// the request. It is detected when node sends a dummy confirm with CRC
+// explicitly set to 0xFFFF
+#define MAX_CRC_REQUEST_ERROR_RETRIES 3
+
 // Maximum duration in s of failed poll request to declare the link broken
 // (unplugged) Set it to 0 to disable 60 sec is long period but it must cover
 // the OTAP exchange with neighbors that can be long with some profiles
@@ -123,6 +128,7 @@ static int send_request_locked(wpc_frame_t * request, wpc_frame_t * confirm, uin
     static uint8_t frame_id = 0;
     int confirm_size;
     int attempt = 0;
+    uint8_t crc_request_retries = 0;
     uint8_t buffer[MAX_FRAME_SIZE];
     wpc_frame_t * rec_confirm;
 
@@ -144,8 +150,35 @@ static int send_request_locked(wpc_frame_t * request, wpc_frame_t * confirm, uin
         confirm_size = Slip_get_buffer(buffer, sizeof(buffer), timeout_ms);
         if (confirm_size < 0)
         {
-            LOGE("Didn't receive answer to the request 0x%02x\n", request->primitive_id);
-            check_if_timeout_reached();
+            if (confirm_size == WPC_INT_WRONG_CRC_FROM_HOST)
+            {
+                // CRC error is in the request, so not handled on the other side
+                // Safe to resend it
+                if (crc_request_retries++ < MAX_CRC_REQUEST_ERROR_RETRIES)
+                {
+                    LOGW("Wrong CRC for request 0x%02x, send it again %d/%d\n", request->primitive_id, crc_request_retries, MAX_CRC_REQUEST_ERROR_RETRIES);
+                    if (Slip_send_buffer((uint8_t *) request, request->payload_length + 3) < 0)
+                    {
+                        check_if_timeout_reached();
+                        return WPC_INT_GEN_ERROR;
+                    }
+                    continue;
+                }
+
+                LOGE("Too many CRC errors for request (%d), propagate error\n", MAX_CRC_REQUEST_ERROR_RETRIES);
+            }
+            else if (confirm_size == WPC_INT_WRONG_CRC)
+            {
+                // We received a CRC error for the confirm,
+                // we cannot resend the request as we don't know if it was executed or not
+                LOGE("CRC error in confirm for request 0x%02x\n", request->primitive_id);
+            }
+            else
+            {
+                LOGE("Didn't receive answer to the request 0x%02x error is: %d\n", request->primitive_id, confirm_size);
+                check_if_timeout_reached();
+            }
+
             // Return confirm_size to propagate the error code
             return confirm_size;
         }
