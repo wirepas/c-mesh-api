@@ -167,7 +167,8 @@ static void * poll_for_indication(void * unused)
 {
     unsigned int max_num_indication, free_buffer_room;
     int get_ind_res;
-    uint32_t wait_before_next_polling_ms = 0;
+    // Initially wait for 500ms before any polling
+    uint32_t wait_before_next_polling_ms = 500;
 
     while (m_polling_thread_running)
     {
