@@ -274,7 +274,7 @@ int dsap_data_tx_request(const uint8_t * buffer,
             {
                 // No way to recall previous fragment, they will be sent
                 LOGE("Stack refused (res=%d) intermediate frag %d/%d for dst=%d id=%d size=%d\n", confirm_res, i, fragments, dest_add, p_id, frag_len);
-                return res;
+                return confirm_res;
             }
         }
     }
