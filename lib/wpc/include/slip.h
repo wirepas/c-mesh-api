@@ -7,9 +7,7 @@
 #define SLIP_H__
 
 #include <stdint.h>
-
-// Helper macro to correctly size the encoded buffer
-#define RECOMMENDED_BUFFER_SIZE(__buffer_in_len__) ((__buffer_in_len__) *2 + 2)
+#include <stddef.h>
 
 /**
  * \brief   Decode a slip encoded buffer
@@ -90,8 +88,10 @@ typedef int (*read_f)(unsigned char * c, unsigned int timeout_ms);
  *           A function to write on the serial line
  * \param    read
  *           A function to read on the serial line
+ * \param    num_wakeup_symbols
+ *           Number of wakeup symbols to send for every request (< 0 for autodetection)
  * \return   0 in case of success, -1 otherwise
  */
-int Slip_init(write_f write, read_f read);
+int Slip_init(write_f write, read_f read, int num_wakeup_symbols);
 
 #endif

@@ -15,6 +15,7 @@
 #include "wpc_internal.h"
 #include "slip.h"
 #include "util.h"
+#include "platform.h"
 
 //#define PRINT_RECEIVED_CHAR
 
@@ -58,10 +59,13 @@ static const uint16_t crc_ccitt_lut[] = {
 #define END_SUBS_OCTET 0xDC
 #define ESC_SUBS_OCTET 0xDD
 
+// Number of wakeup END char to use
+static uint8_t m_num_end_symbols;
+
 // An encoded buffer can be 2 times bigger if all bytes are
 // escaped, plus 2 bytes for CRC and 4 bytes for SLIP END symbols
 #define MAX_SIZE_ENCODED_BUFFER(__initial_len__) \
-    ((__initial_len__ << 1) + 2 + 4)
+    ((__initial_len__ << 1) + 2 + m_num_end_symbols + 1)
 
 static write_f write_function = NULL;
 static read_f read_function = NULL;
@@ -216,25 +220,29 @@ int Slip_encode(uint8_t * buffer_in, uint32_t len_in, uint8_t * buffer_out, uint
 int Slip_send_buffer(uint8_t * buffer, uint32_t len)
 {
     int size, written_size;
+    size_t full_size;
 
     // Allocate the encoded buffer.
     uint8_t encoded_buffer[MAX_SIZE_ENCODED_BUFFER(len)];
 
-    // Add 3 end symbols at the beginning
-    for (int i = 0; i < 3; i++)
+    // Add m_num_end_symbols end symbols at the beginning
+    for (int i = 0; i < m_num_end_symbols; i++)
         encoded_buffer[i] = END_SLIP_OCTET;
 
-    size = Slip_encode(buffer, len, encoded_buffer + 3, sizeof(encoded_buffer) - 3);
+    size = Slip_encode(buffer, len, encoded_buffer + m_num_end_symbols,
+                       sizeof(encoded_buffer) - m_num_end_symbols);
 
     // Add end symbol at the end
-    encoded_buffer[size + 3] = END_SLIP_OCTET;
+    encoded_buffer[size + m_num_end_symbols] = END_SLIP_OCTET;
 
-    LOG_PRINT_BUFFER(encoded_buffer, size + 4);
+    full_size = size + m_num_end_symbols + 1;
 
-    written_size = write_function(encoded_buffer, size + 4);
-    if (written_size != size + 4)
+    LOG_PRINT_BUFFER(encoded_buffer, full_size);
+
+    written_size = write_function(encoded_buffer, full_size);
+    if (written_size != full_size)
     {
-        LOGE("Not able to write all the encoded packet %d vs %d\n", written_size, size + 4);
+        LOGE("Not able to write all the encoded packet %d vs %d\n", written_size, full_size);
         return WPC_INT_GEN_ERROR;
     }
 
@@ -327,12 +335,52 @@ int Slip_get_buffer(uint8_t * buffer, uint32_t len, uint16_t timeout_ms)
     return decoded_size;
 }
 
-int Slip_init(write_f write, read_f read)
+int Slip_init(write_f write, read_f read, int num_wakeup_symbols)
 {
+    uint8_t test_request[] = {0x0e, 0x00 ,0x02, 0x08, 0x00};
+    uint8_t test_confirm[15];
     if (!write || !read)
         return WPC_INT_WRONG_PARAM_ERROR;
 
     write_function = write;
     read_function = read;
+
+    if (num_wakeup_symbols < 0)
+    {
+        // Automatic wakeup symbolols detection
+        m_num_end_symbols = 0;
+        LOGI("Starting automatic wakeup detection\n");
+        // Determine the number of wakeup_symbols
+        while (m_num_end_symbols < 20)
+        {
+            LOGD("Trying with %d wakeup symbols\n", m_num_end_symbols);
+            if (Slip_send_buffer(test_request, sizeof(test_request)) != 0)
+            {
+                LOGE("Cannot determine wakeup symbols numbers, hardcode it to 3\n");
+                m_num_end_symbols = 3;
+                break;
+            }
+
+            int ret = Slip_get_buffer(test_confirm, sizeof(test_confirm), 100);
+            if (ret < 0)
+            {
+                LOGD("No answer with %d wakeup symbols (ret=%d)\n", m_num_end_symbols, ret);
+                m_num_end_symbols ++;
+            }
+            else
+            {
+                LOGI("Number of requested wakeup symbols is %d\n", m_num_end_symbols);
+                break;
+            }
+            // wait for 200ms to be sure node is sleeping again
+            unsigned long long now = Platform_get_timestamp_ms_epoch();
+            while (Platform_get_timestamp_ms_epoch() < (now + 200));
+        }
+    }
+    else
+    {
+        m_num_end_symbols = num_wakeup_symbols;
+    }
+
     return 0;
 }

@@ -415,7 +415,7 @@ int WPC_Int_initialize(const char * port_name, unsigned long bitrate)
         return WPC_INT_GEN_ERROR;
 
     // Initialize the slip module
-    Slip_init(&Serial_write, &Serial_read);
+    Slip_init(&Serial_write, &Serial_read, -1);
 
     if (!Platform_init(get_indication, dispatch_indication))
     {
