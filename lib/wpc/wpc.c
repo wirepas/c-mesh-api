@@ -32,12 +32,14 @@
         ret;                                    \
     })
 
+#define DEFAULT_TIMEOUT_AFTER_STOP_STACK_S 60
+
 /** \brief   Timeout to get a valid stack response after
  *           a stop stack. It can be quite long in case of
  *           the bootloader is processing a scratchpad
  *           (especially from an external memory)
 */
-#define TIMEOUT_AFTER_STOP_STACK_S 60
+static unsigned int m_timeout_after_stop_task_s = DEFAULT_TIMEOUT_AFTER_STOP_STACK_S;
 
 app_res_e WPC_initialize(const char * port_name, unsigned long bitrate)
 {
@@ -75,6 +77,9 @@ app_res_e WPC_set_max_poll_fail_duration(unsigned int duration_s)
 {
     if (WPC_Int_set_timeout_s_no_answer(duration_s))
     {
+        // keep track of the timeout to stay allign with the timeout for
+        // status after stack is stopped
+        m_timeout_after_stop_task_s = duration_s;
         return APP_RES_OK;
     }
     else
@@ -606,7 +611,7 @@ app_res_e WPC_stop_stack(void)
         // A stop of the stack will reboot the device
         // Wait for the stack to be up again
         // It can be quite long in case a scratchpad is processed
-        if (!get_statck_status(TIMEOUT_AFTER_STOP_STACK_S))
+        if (!get_statck_status(m_timeout_after_stop_task_s))
         {
             f_res = APP_RES_INTERNAL_ERROR;
         }
