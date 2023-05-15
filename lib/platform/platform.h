@@ -69,6 +69,12 @@ bool Platform_init(Platform_get_indication_f get_indication_f,
 unsigned long long Platform_get_timestamp_ms_epoch();
 
 /**
+ * \brief   Get a monotonic timestamp in ms.
+ * \return  Monotonic timestamp when the call to this function is made
+ */
+unsigned long long Platform_get_timestamp_ms_monotonic();
+
+/**
  * \brief  Call at the beginning of a locked section to send a request
  * \Note   It is up to the platform implementation to see if
  *         this lock must be implemented or not. If all the requests

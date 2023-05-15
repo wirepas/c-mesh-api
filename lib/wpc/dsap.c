@@ -394,11 +394,11 @@ void dsap_data_rx_frag_indication_handler(dsap_data_rx_frag_ind_pl_t * payload,
     // Do GC synchronously to avoid races as all fragment related actions happens on same thread
     // and no need for an another scheduling method to add in Platform
     if (m_fragment_max_duration_s > 0 &&
-        Platform_get_timestamp_ms_epoch() - last_gc_ts_ms > (MIN_GARBAGE_COLLECT_PERIOD_S * 1000))
+        Platform_get_timestamp_ms_monotonic() - last_gc_ts_ms > (MIN_GARBAGE_COLLECT_PERIOD_S * 1000))
     {
         // Time for a new GC
         reassembly_garbage_collect(m_fragment_max_duration_s);
-        last_gc_ts_ms = Platform_get_timestamp_ms_epoch();
+        last_gc_ts_ms = Platform_get_timestamp_ms_monotonic();
     }
 }
 
