@@ -14,7 +14,7 @@
 
 #include "wpc.h"  // For DEFAULT_BITRATE
 #include "wpc_internal.h"
-#include "platform.h"  // For Platform_get_timestamp_ms_epoch()
+#include "platform.h"  // For Platform_get_timestamp_ms_monotonic()
 
 /**
  * \brief   Macro to convert dual_mcu return code
@@ -519,9 +519,9 @@ static bool get_statck_status(uint16_t timeout_s)
     app_res_e res = APP_RES_INTERNAL_ERROR;
 
     // Compute timeout
-    unsigned long long timeout = Platform_get_timestamp_ms_epoch() + timeout_s * 1000;
+    unsigned long long timeout = Platform_get_timestamp_ms_monotonic() + timeout_s * 1000;
 
-    while (res != APP_RES_OK && Platform_get_timestamp_ms_epoch() < timeout)
+    while (res != APP_RES_OK && Platform_get_timestamp_ms_monotonic() < timeout)
     {
         res = WPC_get_stack_status(&status);
         LOGD("Cannot get status after start/stop, try again...\n");
@@ -604,8 +604,8 @@ app_res_e WPC_stop_stack(void)
         // Active wait of 500ms to avoid a systematic timeout
         // at each reboot. If status is asked immediately,
         // stack cannot answer
-        unsigned long long end_wait = Platform_get_timestamp_ms_epoch() + 500;
-        while (Platform_get_timestamp_ms_epoch() < end_wait)
+        unsigned long long end_wait = Platform_get_timestamp_ms_monotonic() + 500;
+        while (Platform_get_timestamp_ms_monotonic() < end_wait)
             ;
 
         // A stop of the stack will reboot the device

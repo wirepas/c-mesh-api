@@ -262,6 +262,15 @@ unsigned long long Platform_get_timestamp_ms_epoch()
     return ((unsigned long long) spec.tv_sec) * 1000 + (spec.tv_nsec) / 1000 / 1000;
 }
 
+unsigned long long Platform_get_timestamp_ms_monotonic()
+{
+    struct timespec spec;
+
+    // Get timestamp in ms since epoch
+    clock_gettime(CLOCK_MONOTONIC, &spec);
+    return ((unsigned long long) spec.tv_sec) * 1000 + (spec.tv_nsec) / 1000 / 1000;
+}
+
 void * Platform_malloc(size_t size)
 {
     LOGD("M: %d\n", size);

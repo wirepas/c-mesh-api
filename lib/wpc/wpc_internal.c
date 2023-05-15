@@ -99,7 +99,7 @@ static bool check_if_timeout_reached()
     // Check if it has failed for too long
     if (m_timeout_no_answer_ms > 0)
     {
-        if ((Platform_get_timestamp_ms_epoch() - m_last_successful_answer_ts) > m_timeout_no_answer_ms)
+        if ((Platform_get_timestamp_ms_monotonic() - m_last_successful_answer_ts) > m_timeout_no_answer_ms)
         {
             // Poll request has failed for too long
             // This is a fatal error as the com with sink was not possible
@@ -185,7 +185,7 @@ static int send_request_locked(wpc_frame_t * request, wpc_frame_t * confirm, uin
 
         // Even if it doesn't match, the node sent something so it is alive
         // Update our last activity
-        m_last_successful_answer_ts = Platform_get_timestamp_ms_epoch();
+        m_last_successful_answer_ts = Platform_get_timestamp_ms_monotonic();
 
         // Check the confirm
         rec_confirm = (wpc_frame_t *) buffer;
@@ -402,7 +402,7 @@ bool WPC_Int_set_timeout_s_no_answer(unsigned int duration_s)
     if ((m_timeout_no_answer_ms == 0) && (duration_s > 0))
     {
         // Initialize last activity to now (if it is first not enabled yet)
-        m_last_successful_answer_ts = Platform_get_timestamp_ms_epoch();
+        m_last_successful_answer_ts = Platform_get_timestamp_ms_monotonic();
     }
     m_timeout_no_answer_ms = duration_s * 1000;
     return true;
@@ -425,7 +425,7 @@ int WPC_Int_initialize(const char * port_name, unsigned long bitrate)
 
     dsap_init();
 
-    m_last_successful_answer_ts = Platform_get_timestamp_ms_epoch();
+    m_last_successful_answer_ts = Platform_get_timestamp_ms_monotonic();
 
     LOGI("WPC initialized\n");
     return 0;

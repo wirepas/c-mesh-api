@@ -47,8 +47,6 @@ typedef struct
     bool is_full;
     // List of already received frag
     internal_fragment_t *head;
-    // Timestamp of first fragment received
-    unsigned long long timestamp_ms_epoch_first;
     // Timestamp of last rx fragment received
     unsigned long long timestamp_ms_epoch_last;
     UT_hash_handle hh;
@@ -138,7 +136,7 @@ static bool add_fragment_to_full_packet(full_packet_t * full_packet_p, reassembl
     }
 
     // Update timestamp of latest fragment
-    full_packet_p->timestamp_ms_epoch_last = frag_p->timestamp;
+    full_packet_p->timestamp_ms_epoch_last = Platform_get_timestamp_ms_monotonic();
 
     return true;
 }
@@ -237,9 +235,6 @@ bool reassembly_add_fragment(reassembly_fragment_t * frag, size_t * full_size_p)
             LOGE("Cannot allocate packet from hash\n");
             return false;
         }
-
-        // Set timestamp for first fragment
-        full_packet_p->timestamp_ms_epoch_first = frag->timestamp;
     }
 
     // Now we have our full packet holder in full_packet_p
@@ -280,7 +275,7 @@ void reassembly_garbage_collect(uint32_t timeout_s)
     uint32_t messages_removed = 0;
     HASH_ITER(hh, m_packets, fp, tmp) {
         uint32_t last_activity =
-            (Platform_get_timestamp_ms_epoch() - fp->timestamp_ms_epoch_last) / 1000;
+            (Platform_get_timestamp_ms_monotonic() - fp->timestamp_ms_epoch_last) / 1000;
 
         /* Check if message is not getting too old */
         if (last_activity > timeout_s)
