@@ -770,60 +770,6 @@ bool testDownloadScratchpad()
     return true;
 }
 
-static void onRemoteStatusCb(app_addr_t source_address,
-                             app_scratchpad_status_t * status,
-                             uint16_t request_timeout)
-{
-    LOGI("Received status from %d with tiemout to %d\n", source_address, request_timeout);
-    LOGI("Stored Seq/Crc:%d/0x%04x, Processed Seq/Crc:%d/0x%04x\n",
-         status->scrat_seq_number,
-         status->scrat_crc,
-         status->processed_scrat_seq_number,
-         status->processed_scrat_crc);
-}
-
-static bool testRemoteStatus()
-{
-    if (WPC_register_for_remote_status(onRemoteStatusCb) != APP_RES_OK)
-    {
-        LOGE("Cannot register for remote status \n");
-        return false;
-    }
-
-    // Wait for network to form
-    // TODO replace by getneighbors
-    usleep(60 * 1000 * 1000);
-
-    if (WPC_get_remote_status(APP_ADDR_BROADCAST) != APP_RES_OK)
-    {
-        LOGE("Cannot send remote status\n");
-        return false;
-    }
-
-    // Wait for remote status
-    usleep(30 * 1000 * 1000);
-
-    if (WPC_unregister_for_remote_status() != APP_RES_OK)
-    {
-        LOGE("Cannot unregister from remote status \n");
-        return false;
-    }
-
-    return true;
-}
-
-static bool testRemoteUpdate()
-{
-    // Send a update with a 0 reboot delay to just test the command
-    if (WPC_remote_scratchpad_update(APP_ADDR_BROADCAST, 50, 0) != APP_RES_OK)
-    {
-        LOGE("Cannot send remote update\n");
-        return false;
-    }
-
-    return true;
-}
-
 static bool scan_done = false;
 
 static void onScanNeighborsDone(uint8_t status)
@@ -991,11 +937,6 @@ int Test_scratchpad()
 
     // Start the stack for following tests
     WPC_start_stack();
-
-    // The following test needs at least a second connected node in the network
-    RUN_TEST(testRemoteStatus, true);
-
-    RUN_TEST(testRemoteUpdate, true);
 
     return 0;
 }
