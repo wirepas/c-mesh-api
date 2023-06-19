@@ -476,6 +476,7 @@ static bool testMSAPAttributesStackOff()
 
 static bool testMSAPAttributesStackOn()
 {
+    app_res_e res;
     uint8_t res8;
     uint16_t res16;
     uint32_t res32;
@@ -502,33 +503,46 @@ static bool testMSAPAttributesStackOn()
     LOGI("PDU buffer capacity is %d\n", res8);
 
     // Battery remaining setting
-    if (WPC_get_remaining_energy(&res8) != APP_RES_OK)
+    res = WPC_get_remaining_energy(&res8);
+    if (res == APP_RES_INTERNAL_ERROR)
     {
-        LOGE("Cannot get remaining battery usage\n");
-        return false;
+        // Dualmcu API error code 1 while reading attributes
+        // means "Unsupported attribute id". That is mapped to
+        // APP_RES_INTERNAL_ERROR. Not ideal error code to
+        // indicate that the feature has been depricated or
+        // not implemented in this particular dualmcu implementation.
+        LOGI("Energy interface not implemented.\n");
     }
-    LOGI("Remaining battery is %d\n", res8);
-
-    if (WPC_set_remaining_energy(128) != APP_RES_OK)
+    else if (res != APP_RES_OK)
     {
-        LOGE("Cannot set remaining battery usage\n");
+        LOGE("Cannot get remaining battery usage. Result = 0x%02x.\n", res);
         return false;
     }
     else
     {
-        if (WPC_get_remaining_energy(&res8) != APP_RES_OK)
-        {
-            LOGE("Cannot get just set remaining battery usage\n");
-            return false;
-        }
+        LOGI("Remaining battery is %d\n", res8);
 
-        if (res8 != 128)
+        if (WPC_set_remaining_energy(128) != APP_RES_OK)
         {
-            LOGE("Expecting 128 but receive %d\n", res8);
+            LOGE("Cannot set remaining battery usage\n");
             return false;
         }
+        else
+        {
+            if (WPC_get_remaining_energy(&res8) != APP_RES_OK)
+            {
+                LOGE("Cannot get just set remaining battery usage\n");
+                return false;
+            }
+
+            if (res8 != 128)
+            {
+                LOGE("Expecting 128 but receive %d\n", res8);
+                return false;
+            }
+        }
+        LOGI("Able to set remaining battery to %d\n", res8);
     }
-    LOGI("Able to set remaining battery to %d\n", res8);
 
     if (WPC_get_autostart(&res8) != APP_RES_OK)
     {
