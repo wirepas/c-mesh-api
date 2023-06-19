@@ -866,31 +866,6 @@ app_res_e WPC_read_target_scratchpad(uint8_t * target_sequence_p,
 app_res_e WPC_download_local_scratchpad(uint32_t len, uint8_t * bytes, uint32_t start);
 
 /**
- * \brief   Query scratchpad status for a remote node
- * \param   destination_address
- *          Destination node address
- * \return  Return code of the operation
- */
-app_res_e WPC_get_remote_status(app_addr_t destination_address);
-
-/**
- * \brief   Start a countdown on a remote node to take a stored
- *          scratchpad into use
- * \param   destination_address
- *          Destination node address of the command
- * \param   seq
- *          Scratchpad sequence to proceed
- * \param   reboot_delay_s
- *          Number of seconds before the scratchpad is marked for
- *          processing and the node is rebooted
- *          Setting the reboot delay to 0 cancels an ongoing update
- * \return  Return code of the operation
- */
-app_res_e WPC_remote_scratchpad_update(app_addr_t destination_address,
-                                       uint8_t seq,
-                                       uint16_t reboot_delay_s);
-
-/**
  * \brief   Start a neighbors scan
  * \return  Return code of the operation
  * \note    A callback can be registered to be called once the scan is done.
@@ -1019,37 +994,6 @@ app_res_e WPC_register_for_data(onDataReceived_cb_f onDataReceived);
  */
 app_res_e WPC_unregister_for_data();
 #endif
-/**
- * \brief   Callback definition to register for remote status update
- * \param   source_address
- *          Source node address
- * \param   status
- *          Remote node status
- * \param   request_timeout
- *          Number of seconds left before the OTAP scratchpad is marked
- *          to be processed and the node is rebooted
- *          0 means that no update request is ongoing
- */
-typedef void (*onRemoteStatus_cb_f)(app_addr_t source_address,
-                                    app_scratchpad_status_t * status,
-                                    uint16_t request_timeout);
-
-/**
- * \brief   Register for receiving remote status packets
- * \param   onRemoteStatusaReceived
- *          The callback to call when remote status is received
- * \note    The callback is called on a dedicated thread.
- *          All the registered callback share the same thread,
- *          so the handling of a callback must be kept as simple
- *          as possible or dispatched to another thread for long operations.
- */
-app_res_e WPC_register_for_remote_status(onRemoteStatus_cb_f onRemoteStatusReceived);
-
-/**
- * \brief   Unregister for receiving remote status packets
- * \return  Return code of the operation
- */
-app_res_e WPC_unregister_for_remote_status();
 
 /**
  * \brief   Callback definition to register for scan neighbors done

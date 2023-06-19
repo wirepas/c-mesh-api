@@ -20,11 +20,6 @@
 static onAppConfigDataReceived_cb_f m_app_conf_cb = NULL;
 
 /**
- * \brief   Registered callback for remote status
- */
-static onRemoteStatus_cb_f m_remote_status_cb = NULL;
-
-/**
  * \brief   Registered callback for scan neighbors
  */
 static onScanNeighborsDone_cb_f m_scan_neighbor_cb = NULL;
@@ -445,46 +440,6 @@ int msap_scratchpad_block_read_request(uint32_t start_address, uint8_t number_of
     return confirm.payload.msap_image_block_read_confirm_payload.result;
 }
 
-int msap_scratchpad_remote_status(app_addr_t destination_address)
-{
-    wpc_frame_t request, confirm;
-    int res;
-
-    request.primitive_id = MSAP_SCRATCH_REMOTE_STATUS_REQUEST;
-    request.payload.msap_image_remote_status_request_payload.target = destination_address;
-    request.payload_length = sizeof(msap_image_remote_status_req_pl_t);
-
-    res = WPC_Int_send_request(&request, &confirm);
-
-    if (res < 0)
-        return res;
-
-    LOGI("Remote status request result = 0x%02x\n",
-         confirm.payload.sap_generic_confirm_payload.result);
-    return confirm.payload.sap_generic_confirm_payload.result;
-}
-
-int msap_scratchpad_remote_update(app_addr_t destination_address, uint8_t sequence, uint16_t delay_s)
-{
-    wpc_frame_t request, confirm;
-    int res;
-
-    request.primitive_id = MSAP_SCRATCH_REMOTE_UPDATE_REQUEST;
-    request.payload.msap_image_remote_update_request_payload.target = destination_address;
-    request.payload.msap_image_remote_update_request_payload.seq = sequence;
-    request.payload.msap_image_remote_update_request_payload.delay_s = delay_s;
-    request.payload_length = sizeof(msap_image_remote_update_req_pl_t);
-
-    res = WPC_Int_send_request(&request, &confirm);
-
-    if (res < 0)
-        return res;
-
-    LOGD("Remote update request result = 0x%02x\n",
-         confirm.payload.sap_generic_confirm_payload.result);
-    return confirm.payload.sap_generic_confirm_payload.result;
-}
-
 void msap_stack_state_indication_handler(msap_stack_state_ind_pl_t * payload)
 {
     LOGI("Status is 0x%02x\n", payload->status);
@@ -502,17 +457,6 @@ void msap_app_config_data_rx_indication_handler(msap_app_config_data_rx_ind_pl_t
         m_app_conf_cb(payload->sequence_number,
                       payload->diag_data_interval,
                       payload->app_config_data);
-    }
-}
-
-void msap_image_remote_status_indication_handler(msap_image_remote_status_ind_pl_t * payload)
-{
-    app_scratchpad_status_t app_status;
-    LOGI("Received remote status from %d\n", payload->source_address);
-    if (m_remote_status_cb != NULL)
-    {
-        convert_internal_to_app_scratchpad_status(&app_status, &payload->status);
-        m_remote_status_cb(payload->source_address, &app_status, payload->update_timeout);
     }
 }
 
@@ -562,16 +506,6 @@ bool msap_register_for_app_config(onAppConfigDataReceived_cb_f cb)
 bool msap_unregister_from_app_config()
 {
     return UNREGISTER_CB(m_app_conf_cb);
-}
-
-bool msap_register_for_remote_status(onRemoteStatus_cb_f cb)
-{
-    return REGISTER_CB(cb, m_remote_status_cb);
-}
-
-bool msap_unregister_from_remote_status()
-{
-    return UNREGISTER_CB(m_remote_status_cb);
 }
 
 bool msap_register_for_scan_neighbors_done(onScanNeighborsDone_cb_f cb)
