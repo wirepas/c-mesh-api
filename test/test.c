@@ -79,34 +79,43 @@ static bool setAppconfig(uint8_t * config, uint16_t interval, uint8_t size)
     uint8_t cur_seq, new_seq = 0;
     uint16_t cur_interval;
     uint8_t cur_config[128];
+    app_res_e res;
 
-    if (size > 128)
+    if (size > sizeof(cur_config))
     {
-        LOGE("Specified size is too big\n");
+        LOGE("Specified size (%d) is too big.\n", size);
         return false;
     }
 
-    if (WPC_get_app_config_data(&cur_seq, &cur_interval, cur_config, size) == APP_RES_OK)
+    res = WPC_get_app_config_data(&cur_seq, &cur_interval, cur_config, sizeof(cur_config));
+    if (res == APP_RES_OK)
     {
         new_seq = cur_seq + 1;
     }
-
-    if (WPC_set_app_config_data(new_seq, interval, config, size) != APP_RES_OK)
+    else
     {
-        LOGE("Cannot set new app config with seq = %d\n", new_seq);
+        LOGE("Cannot get current app config seq. Result = 0x%02x.\n", res);
+        return false;
+    }
+
+    res = WPC_set_app_config_data(new_seq, interval, config, size);
+    if (res != APP_RES_OK)
+    {
+        LOGE("Cannot set new app config with seq = %d. Result = 0x%02x.\n", new_seq, res);
         return false;
     }
 
     // Read back App config
-    if (WPC_get_app_config_data(&cur_seq, &cur_interval, cur_config, size) != APP_RES_OK)
+    res = WPC_get_app_config_data(&cur_seq, &cur_interval, cur_config, sizeof(cur_config));
+    if (res != APP_RES_OK)
     {
-        LOGE("Cannot read back new app config\n", new_seq);
+        LOGE("Cannot read back new app config. Result = 0x%02x.\n", res);
         return false;
     }
 
     if (memcmp(config, cur_config, size) != 0)
     {
-        LOGE("App config set differs from app config read\n", new_seq);
+        LOGE("App config set differs from app config read.\n");
         return false;
     }
 
