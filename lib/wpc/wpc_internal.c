@@ -247,10 +247,6 @@ static void dispatch_indication(wpc_frame_t * frame, unsigned long long timestam
             msap_app_config_data_rx_indication_handler(
                 &frame->payload.msap_app_config_data_rx_indication_payload);
             break;
-        case MSAP_SCRATCH_REMOTE_STATUS_INDICATION:
-            msap_image_remote_status_indication_handler(
-                &frame->payload.msap_image_remote_status_indication_payload);
-            break;
         case MSAP_SCAN_NBORS_INDICATION:
             msap_scan_nbors_indication_handler(&frame->payload.msap_scan_nbors_indication_payload);
             break;

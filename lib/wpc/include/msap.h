@@ -96,19 +96,6 @@ typedef struct __attribute__((__packed__))
 
 typedef struct __attribute__((__packed__))
 {
-    uint32_t target;
-} msap_image_remote_status_req_pl_t;
-
-typedef struct __attribute__((__packed__))
-{
-    uint32_t target;
-    uint8_t seq;
-    uint16_t delay_s;
-
-} msap_image_remote_update_req_pl_t;
-
-typedef struct __attribute__((__packed__))
-{
     uint32_t add;
     uint8_t link_rel;
     uint8_t norm_rssi;
@@ -204,14 +191,6 @@ typedef struct __attribute__((__packed__))
     uint8_t result;
     uint8_t bytes[MAXIMUM_SCRATCHPAD_BLOCK_SIZE];
 } msap_image_block_read_conf_pl_t;
-
-typedef struct __attribute__((__packed__))
-{
-    uint8_t indication_status;
-    uint32_t source_address;
-    msap_scratchpad_status_conf_pl_t status;
-    uint16_t update_timeout;
-} msap_image_remote_status_ind_pl_t;
 
 static inline void
 convert_internal_to_app_scratchpad_status(app_scratchpad_status_t * status_p,
@@ -454,30 +433,6 @@ int msap_scratchpad_block_read_request(uint32_t start_address,
                                        uint8_t number_of_bytes,
                                        uint8_t * bytes);
 
-/**
- * \brief   Get status of a remote node scratchpad status
- * \param   destination_address
- *          Node address of the node to query the status
- * \return  negative value if the request fails,
- *          a Mesh positive result otherwise
- */
-int msap_scratchpad_remote_status(app_addr_t destination_address);
-
-/**
- * \brief   Start the scratchpad update on a remote node
- * \param   destination_address
- *          Node address of the node to start the update
- * \param   sequence
- *          Sequence number of the scratchpad to proceed
- * \param   delay_s
- *          Number of seconds before the OTAP scratchpad
- *          is marked for processing and the node is rebooted
- *          Setting the reboot delay to 0 cancels an ongoing
- *          update request
- * \return  negative value if the request fails,
- *          a Mesh positive result otherwise
- */
-int msap_scratchpad_remote_update(app_addr_t destination_address, uint8_t sequence, uint16_t delay_s);
 
 static inline int msap_attribute_write_request(uint16_t attribute_id,
                                                uint8_t attribute_length,
@@ -508,13 +463,6 @@ void msap_stack_state_indication_handler(msap_stack_state_ind_pl_t * payload);
 void msap_app_config_data_rx_indication_handler(msap_app_config_data_rx_ind_pl_t * payload);
 
 /**
- * \brief   Handler for image remote status indication
- * \param   payload
- *          pointer to payload
- */
-void msap_image_remote_status_indication_handler(msap_image_remote_status_ind_pl_t * payload);
-
-/**
  * \brief   Handler for scan neighbors indication
  * \param   payload
  *          pointer to payload
@@ -534,20 +482,6 @@ bool msap_register_for_app_config(onAppConfigDataReceived_cb_f cb);
  * \return  True if unregistered successfully, false otherwise
  */
 bool msap_unregister_from_app_config();
-
-/**
- * \brief   Register for remote status
- * \param   cb
- *          Callback to invoke when remote status is received
- * \return  True if registered successfully, false otherwise
- */
-bool msap_register_for_remote_status(onRemoteStatus_cb_f cb);
-
-/**
- * \brief   Unregister from remote status
- * \return  True if unregistered successfully, false otherwise
- */
-bool msap_unregister_from_remote_status();
 
 /**
  * \brief   Register for scan neighbors status

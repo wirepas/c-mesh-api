@@ -988,44 +988,6 @@ app_res_e WPC_update_local_scratchpad()
     return convert_error_code(SCRATCHPAD_UPDATE_LOCAL_ERROR_CODE_LUT, res);
 }
 
-/* Error code LUT for scratchpad remote status */
-static const app_res_e SCRATCHPAD_STATUS_REMOTE_ERROR_CODE_LUT[] = {APP_RES_OK,  // 0
-                                                                    APP_RES_STACK_IS_STOPPED,  // 1
-                                                                    APP_RES_NOT_A_SINK,  // 2
-                                                                    APP_RES_OUT_OF_MEMORY,  // 3
-                                                                    APP_RES_ACCESS_DENIED};
-
-app_res_e WPC_get_remote_status(app_addr_t destination_address)
-{
-    uint32_t destination_address_le;
-    uint32_encode_le(destination_address, (uint8_t *) &destination_address_le);
-    int res = msap_scratchpad_remote_status(destination_address_le);
-
-    return convert_error_code(SCRATCHPAD_STATUS_REMOTE_ERROR_CODE_LUT, res);
-}
-
-/* Error code LUT for scratchpad remote update */
-static const app_res_e SCRATCHPAD_UPDATE_REMOTE_ERROR_CODE_LUT[] = {
-    APP_RES_OK,                // 0
-    APP_RES_STACK_IS_STOPPED,  // 1
-    APP_RES_NOT_A_SINK,        // 2
-    APP_RES_OUT_OF_MEMORY,     // 3
-    APP_RES_INVALID_SEQ,       // 4
-    APP_RES_INVALID_VALUE,     // 5
-    APP_RES_ACCESS_DENIED      // 6
-};
-
-app_res_e WPC_remote_scratchpad_update(app_addr_t destination_address, uint8_t seq, uint16_t reboot_delay_s)
-{
-    uint32_t destination_address_le;
-    uint32_encode_le(destination_address, (uint8_t *) &destination_address_le);
-    uint16_t reboot_delay_s_le;
-    uint16_encode_le(reboot_delay_s, (uint8_t *) &reboot_delay_s_le);
-    int res = msap_scratchpad_remote_update(destination_address_le, seq, reboot_delay_s_le);
-
-    return convert_error_code(SCRATCHPAD_UPDATE_REMOTE_ERROR_CODE_LUT, res);
-}
-
 /* Error code LUT for target scratchpad write */
 static const app_res_e TARGET_SCRATCHPAD_ERROR_CODE_LUT[] = {
     APP_RES_OK,               // 0
@@ -1223,16 +1185,6 @@ app_res_e WPC_unregister_for_data()
     return dsap_unregister_for_data() ? APP_RES_OK : APP_RES_INVALID_VALUE;
 }
 #endif
-
-app_res_e WPC_register_for_remote_status(onRemoteStatus_cb_f onRemoteStatusReceived)
-{
-    return msap_register_for_remote_status(onRemoteStatusReceived) ? APP_RES_OK : APP_RES_INVALID_VALUE;
-}
-
-app_res_e WPC_unregister_for_remote_status()
-{
-    return msap_unregister_from_remote_status() ? APP_RES_OK : APP_RES_INVALID_VALUE;
-}
 
 app_res_e WPC_register_for_app_config_data(onAppConfigDataReceived_cb_f onAppConfigDataReceived)
 {

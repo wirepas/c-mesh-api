@@ -59,8 +59,6 @@ typedef struct __attribute__((__packed__))
         msap_attribute_read_req_pl_t msap_attribute_read_request_payload;
         msap_image_start_req_pl_t msap_image_start_request_payload;
         msap_image_block_req_pl_t msap_image_block_request_payload;
-        msap_image_remote_status_req_pl_t msap_image_remote_status_request_payload;
-        msap_image_remote_update_req_pl_t msap_image_remote_update_request_payload;
         msap_sink_cost_write_req_pl_t msap_sink_cost_write_request_payload;
         attribute_write_req_pl_t attribute_write_request_payload;
         attribute_read_req_pl_t attribute_read_request_payload;
@@ -73,7 +71,6 @@ typedef struct __attribute__((__packed__))
         dsap_data_rx_frag_ind_pl_t dsap_data_rx_frag_indication_payload;
         msap_stack_state_ind_pl_t msap_stack_state_indication_payload;
         msap_app_config_data_rx_ind_pl_t msap_app_config_data_rx_indication_payload;
-        msap_image_remote_status_ind_pl_t msap_image_remote_status_indication_payload;
         msap_scan_nbors_ind_pl_t msap_scan_nbors_indication_payload;
         generic_ind_pl_t generic_indication_payload;
         // Confirm
