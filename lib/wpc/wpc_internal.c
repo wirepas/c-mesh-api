@@ -94,7 +94,7 @@ static int send_response_to_stack(uint8_t primitive_id, uint8_t frame_id, bool m
 /*                Request implementation                                     */
 /*****************************************************************************/
 
-static bool check_if_timeout_reached()
+static bool check_if_timeout_reached_locked()
 {
     // Check if it has failed for too long
     if (m_timeout_no_answer_ms > 0)
@@ -104,8 +104,14 @@ static bool check_if_timeout_reached()
             // Poll request has failed for too long
             // This is a fatal error as the com with sink was not possible
             // for a too long period.
+            // Close the platform but release our lock first as someone else could be waiting for it
+            // No need to keep, we are exiting anyway
+            Platform_unlock_request();
+
             Platform_close();
             exit(EXIT_FAILURE);
+
+            // Never executed
             return true;
         }
     }
@@ -140,7 +146,7 @@ static int send_request_locked(wpc_frame_t * request, wpc_frame_t * confirm, uin
     // Send the request
     if (Slip_send_buffer((uint8_t *) request, request->payload_length + 3) < 0)
     {
-        check_if_timeout_reached();
+        check_if_timeout_reached_locked();
         return WPC_INT_GEN_ERROR;
     }
 
@@ -159,7 +165,7 @@ static int send_request_locked(wpc_frame_t * request, wpc_frame_t * confirm, uin
                     LOGW("Wrong CRC for request 0x%02x, send it again %d/%d\n", request->primitive_id, crc_request_retries, MAX_CRC_REQUEST_ERROR_RETRIES);
                     if (Slip_send_buffer((uint8_t *) request, request->payload_length + 3) < 0)
                     {
-                        check_if_timeout_reached();
+                        check_if_timeout_reached_locked();
                         return WPC_INT_GEN_ERROR;
                     }
                     continue;
@@ -176,7 +182,7 @@ static int send_request_locked(wpc_frame_t * request, wpc_frame_t * confirm, uin
             else
             {
                 LOGE("Didn't receive answer to the request 0x%02x error is: %d\n", request->primitive_id, confirm_size);
-                check_if_timeout_reached();
+                check_if_timeout_reached_locked();
             }
 
             // Return confirm_size to propagate the error code
