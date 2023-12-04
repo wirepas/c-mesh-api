@@ -102,7 +102,10 @@ static bool add_fragment_to_full_packet(full_packet_t * full_packet_p, reassembl
     LL_SEARCH_SCALAR(full_packet_p->head, f, offset, frag_p->offset);
     if (f != NULL)
     {
-        LOGE("Already a fragment at this offset! Duplicated packet received?\n");
+        LOGE("Already a fragment at this offset (Src=%u, ID=%u, Off=%zu) ! Duplicated packet?\n",
+                                    frag_p->src_add,
+                                    frag_p->packet_id,
+                                    frag_p->offset);
         return false;
     }
 
@@ -115,7 +118,10 @@ static bool add_fragment_to_full_packet(full_packet_t * full_packet_p, reassembl
         // Fine to call free on NULL
         Platform_free(f, sizeof(internal_fragment_t));
         Platform_free(data, frag_p->size);
-        LOGE("Cannot alocate memory for the fragment\n");
+        LOGE("Cannot alocate memory for the fragment (Src=%u, ID=%u, Off=%zu)\n",
+                                    frag_p->src_add,
+                                    frag_p->packet_id,
+                                    frag_p->offset);
         return false;
     }
 
@@ -132,7 +138,7 @@ static bool add_fragment_to_full_packet(full_packet_t * full_packet_p, reassembl
     if (frag_p->last_fragment)
     {
         full_packet_p->full_size = frag_p->offset + frag_p->size;
-        LOGD("Full size known = %u\n", full_packet_p->full_size);
+        LOGD("Full size known = %zu\n", full_packet_p->full_size);
     }
 
     // Update timestamp of latest fragment
@@ -173,7 +179,11 @@ static bool is_packet_full(full_packet_t * full_packet_p)
     }
     else
     {
-        LOGW("Packet not full yet but last fragment received. Out of order?\n");
+        LOGW("Packet not full. Last fragment received. Out of order? (Src=%u, ID=%u, rx_size=%zu, full_size=%zu)\n",
+                        full_packet_p->key.src_add,
+                        full_packet_p->key.packet_id,
+                        rx_size,
+                        full_packet_p->full_size);
         return false;
     }
 }
@@ -232,7 +242,9 @@ bool reassembly_add_fragment(reassembly_fragment_t * frag, size_t * full_size_p)
         full_packet_p = create_packet_in_hash(frag->src_add, frag->packet_id);
         if (full_packet_p == NULL)
         {
-            LOGE("Cannot allocate packet from hash\n");
+            LOGE("Cannot allocate packet from hash (Src=%u, ID=%u)\n",
+                        frag->src_add,
+                        frag->packet_id);
             return false;
         }
     }
@@ -240,7 +252,9 @@ bool reassembly_add_fragment(reassembly_fragment_t * frag, size_t * full_size_p)
     // Now we have our full packet holder in full_packet_p
     if (!add_fragment_to_full_packet(full_packet_p, frag))
     {
-        LOGE("Cannot add fragment to full packet\n");
+        LOGE("Cannot add fragment to full packet (Src=%u, ID=%u)\n",
+                        full_packet_p->key.src_add,
+                        full_packet_p->key.packet_id);
         //TODO Remove the full packet as it will never be full
         return false;
     }
