@@ -43,7 +43,14 @@ static unsigned int m_timeout_after_stop_task_s = DEFAULT_TIMEOUT_AFTER_STOP_STA
 
 app_res_e WPC_initialize(const char * port_name, unsigned long bitrate)
 {
-    return WPC_Int_initialize(port_name, bitrate) == 0 ? APP_RES_OK : APP_RES_INTERNAL_ERROR;
+    int res = WPC_Int_initialize(port_name, bitrate);
+
+    if (res == 0)
+    {
+        WPC_Int_set_mtu();
+    }
+
+    return res == 0 ? APP_RES_OK : APP_RES_INTERNAL_ERROR;
 }
 
 void WPC_close(void)

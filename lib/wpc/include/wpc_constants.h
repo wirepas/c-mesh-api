@@ -103,8 +103,17 @@
 /* Maximun sent packet with indication */
 #define MAX_SENT_PACKET_WITH_INDICATION    16
 
-/* Maximun PDU size for all platforms */
-#define MAX_DATA_PDU_SIZE    102
+/**
+ * Maximum PDU size for all platforms, some platforms have larger size than
+ * others.
+ *
+ * This is the maximum among all platforms and it is used for the DSAP buffers.
+ *
+ */
+#define MAX_APDU_DSAP_SIZE    180
+
+/* Default value for the maximum transmission unit */
+#define DEFAULT_MTU_SIZE 102
 
 /* Maximun Full packet size for all platforms */
 #define MAX_FULL_PACKET_SIZE    1500

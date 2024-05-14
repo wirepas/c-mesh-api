@@ -26,7 +26,7 @@ typedef struct __attribute__((__packed__))
     uint8_t qos;
     uint8_t tx_options;
     uint8_t apdu_length;
-    uint8_t apdu[MAX_DATA_PDU_SIZE];
+    uint8_t apdu[MAX_APDU_DSAP_SIZE];
 } dsap_data_tx_req_pl_t;
 
 typedef struct __attribute__((__packed__))
@@ -39,7 +39,7 @@ typedef struct __attribute__((__packed__))
     uint8_t tx_options;
     uint32_t buffering_delay;
     uint8_t apdu_length;
-    uint8_t apdu[MAX_DATA_PDU_SIZE];
+    uint8_t apdu[MAX_APDU_DSAP_SIZE];
 } dsap_data_tx_tt_req_pl_t;
 
 typedef struct __attribute__ ((__packed__))
@@ -54,7 +54,7 @@ typedef struct __attribute__ ((__packed__))
     uint16_t    full_packet_id : 12;
     uint16_t    fragment_offset_flag;
     uint8_t     apdu_length;
-    uint8_t     apdu[MAX_DATA_PDU_SIZE];
+    uint8_t     apdu[MAX_APDU_DSAP_SIZE];
 } dsap_data_tx_frag_req_pl_t;
 
 typedef struct __attribute__((__packed__))
@@ -78,7 +78,7 @@ typedef struct __attribute__((__packed__))
     uint8_t qos_hop_count;
     uint32_t travel_time;
     uint8_t apdu_length;
-    uint8_t apdu[MAX_DATA_PDU_SIZE];
+    uint8_t apdu[MAX_APDU_DSAP_SIZE];
 } dsap_data_rx_ind_pl_t;
 
 typedef struct __attribute__((__packed__))
@@ -93,7 +93,7 @@ typedef struct __attribute__((__packed__))
     uint16_t full_packet_id : 12;
     uint16_t fragment_offset_flag;
     uint8_t apdu_length;
-    uint8_t apdu[MAX_DATA_PDU_SIZE];
+    uint8_t apdu[MAX_APDU_DSAP_SIZE];
 } dsap_data_rx_frag_ind_pl_t;
 
 typedef struct __attribute__((__packed__))
