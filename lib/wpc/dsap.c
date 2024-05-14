@@ -173,6 +173,7 @@ int dsap_data_tx_request(const uint8_t * buffer,
     size_t last_fragment_size = 0;
     // Packet id used for fragmented packet
     static uint16_t packet_id = 0;
+    uint8_t max_data_pdu_size = WPC_Int_get_mtu();
 
     if (len > MAX_FULL_PACKET_SIZE)
     {
@@ -181,14 +182,14 @@ int dsap_data_tx_request(const uint8_t * buffer,
         return 6;
     }
 
-    if (len > MAX_DATA_PDU_SIZE)
+    if (len > max_data_pdu_size)
     {
         // Packet must be fragmented
-        fragments = (len + MAX_DATA_PDU_SIZE - 1)  / MAX_DATA_PDU_SIZE;
-        last_fragment_size = len % MAX_DATA_PDU_SIZE;
+        fragments = (len + max_data_pdu_size - 1)  / max_data_pdu_size;
+        last_fragment_size = len % max_data_pdu_size;
         if (last_fragment_size == 0)
         {
-            last_fragment_size = MAX_DATA_PDU_SIZE;
+            last_fragment_size = max_data_pdu_size;
         }
         LOGI("Packet of size %d must be splitted in %d fragments (last is %d bytes)\n", len, fragments, last_fragment_size);
     }
@@ -216,7 +217,7 @@ int dsap_data_tx_request(const uint8_t * buffer,
         request.primitive_id = DSAP_DATA_TX_TT_REQUEST;
         fill_tx_tt_request(&request, buffer, len, pdu_id, dest_add, qos, src_ep, dest_ep, tx_options, buffering_delay);
         request.payload_length =
-            sizeof(dsap_data_tx_tt_req_pl_t) - (MAX_DATA_PDU_SIZE - len);
+            sizeof(dsap_data_tx_tt_req_pl_t) - (max_data_pdu_size - len);
 
         // Do the sending
         res = WPC_Int_send_request(&request, &confirm);
@@ -230,9 +231,9 @@ int dsap_data_tx_request(const uint8_t * buffer,
         // Send all fragment except last
         for (size_t i = 0; i < fragments; i++)
         {
-            uint16_t offset = i * MAX_DATA_PDU_SIZE;
+            uint16_t offset = i * max_data_pdu_size;
             bool last = false;
-            size_t frag_len = MAX_DATA_PDU_SIZE;
+            size_t frag_len = max_data_pdu_size;
 
             if (i == (fragments -1))
             {
@@ -256,7 +257,7 @@ int dsap_data_tx_request(const uint8_t * buffer,
                                  last);
 
             request.payload_length =
-            sizeof(dsap_data_tx_frag_req_pl_t) - (MAX_DATA_PDU_SIZE - frag_len);
+            sizeof(dsap_data_tx_frag_req_pl_t) - (max_data_pdu_size - frag_len);
 
             // Do the sending
             res = WPC_Int_send_request(&request, &confirm);

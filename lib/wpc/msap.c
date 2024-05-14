@@ -447,6 +447,8 @@ void msap_stack_state_indication_handler(msap_stack_state_ind_pl_t * payload)
     {
         m_stack_status_cb(payload->status);
     }
+
+    WPC_Int_set_mtu();
 }
 
 void msap_app_config_data_rx_indication_handler(msap_app_config_data_rx_ind_pl_t * payload)

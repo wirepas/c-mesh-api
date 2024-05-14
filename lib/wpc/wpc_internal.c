@@ -56,6 +56,9 @@ static unsigned long long m_last_successful_answer_ts;
 // Max delay before exiting
 static unsigned int m_timeout_no_answer_ms = DEFAULT_MAX_POLL_FAIL_DURATION_MS;
 
+// Maximum transmission unit for a single PDU without segmentation
+static unsigned int m_mtu = DEFAULT_MTU_SIZE;
+
 // Struct that describes a received frame with its timestamp
 typedef struct
 {
@@ -438,4 +441,18 @@ void WPC_Int_close(void)
     Platform_close();
 
     Serial_close();
+}
+
+void WPC_Int_set_mtu(void)
+{
+    uint8_t mtu = DEFAULT_MTU_SIZE;
+    if (WPC_get_mtu(&mtu) == APP_RES_OK)
+    {
+        m_mtu = mtu;
+    }
+}
+
+uint8_t WPC_Int_get_mtu(void)
+{
+    return m_mtu;
 }

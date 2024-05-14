@@ -69,4 +69,15 @@ int WPC_Int_initialize(const char * port_name, unsigned long bitrate);
 
 void WPC_Int_close(void);
 
+/**
+ * \brief Set the maximum transmission unit retrieved from the sink
+ */
+void WPC_Int_set_mtu(void);
+
+/**
+ * \brief Get the maximum transmission unit retrieved from the sink at
+ * initialization
+ */
+uint8_t WPC_Int_get_mtu(void);
+
 #endif
