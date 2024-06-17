@@ -217,7 +217,7 @@ int dsap_data_tx_request(const uint8_t * buffer,
         request.primitive_id = DSAP_DATA_TX_TT_REQUEST;
         fill_tx_tt_request(&request, buffer, len, pdu_id, dest_add, qos, src_ep, dest_ep, tx_options, buffering_delay);
         request.payload_length =
-            sizeof(dsap_data_tx_tt_req_pl_t) - (max_data_pdu_size - len);
+            sizeof(dsap_data_tx_tt_req_pl_t) - (MAX_APDU_DSAP_SIZE - len);
 
         // Do the sending
         res = WPC_Int_send_request(&request, &confirm);
@@ -257,7 +257,7 @@ int dsap_data_tx_request(const uint8_t * buffer,
                                  last);
 
             request.payload_length =
-            sizeof(dsap_data_tx_frag_req_pl_t) - (max_data_pdu_size - frag_len);
+            sizeof(dsap_data_tx_frag_req_pl_t) - (MAX_APDU_DSAP_SIZE - frag_len);
 
             // Do the sending
             res = WPC_Int_send_request(&request, &confirm);
