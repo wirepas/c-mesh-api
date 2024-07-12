@@ -1,0 +1,107 @@
+syntax="proto2";
+
+package wp;
+
+import "error.proto";
+// import "nanopb.proto";
+
+// Global request header
+// NB: Gateway id is not present in header as gateway will only subscribe to their id
+message RequestHeader {
+    // Unique request id
+    required uint64 req_id = 1;
+    // Sink id if relevant for request
+    optional string sink_id = 2 /*[(nanopb).max_size = 128]*/;
+    // Timestamp for the request generation
+    optional uint64 time_ms_epoch = 3;
+}
+
+message ResponseHeader {
+    // Same as in Request
+    required uint64 req_id = 1;
+    // Gw id that handled the request
+    required string gw_id = 2 /*[(nanopb).max_size = 128]*/;
+    // Sink id if relevant for request
+    optional string sink_id = 3 /*[(nanopb).max_size = 128]*/;
+    // Global result of request
+    required ErrorCode res = 4;
+    // Timestamp for the response generation
+    optional uint64 time_ms_epoch = 5;
+}
+
+message EventHeader {
+    // Gw id that generated the event
+    required string gw_id = 1 /*[(nanopb).max_size = 128]*/;
+    // Sink id if relevant for event
+    optional string sink_id = 2 /*[(nanopb).max_size = 128]*/;
+    // Random event id to help duplicate event filtering
+    required uint64 event_id = 3;
+    // Timestamp for the event generation
+    optional uint64 time_ms_epoch = 4;
+}
+
+enum OnOffState {
+    ON = 1;
+    OFF = 2;
+}
+
+message FirmwareVersion {
+    required uint32 major = 1;
+    required uint32 minor = 2;
+    required uint32 maint = 3;
+    required uint32 dev = 4;
+}
+
+enum ScratchpadType {
+    BLANK = 1;
+    PRESENT = 2;
+    PROCESS = 3;
+}
+
+enum ScratchpadStatus {
+    SUCCESS = 1;
+    NEW = 2;
+    ERROR = 3;
+}
+
+enum ScratchpadAction {
+    // Will be the default value in case it is later extended
+    UNKNOWN_ACTION = 0;
+    // No propagation, no processing of scratchpad
+    NO_OTAP = 1;
+    // Propagate the target scratchpad but no processing
+    PROPAGATE_ONLY = 2;
+    // Propagate the target scratchpad and process it as soon as received
+    PROPAGATE_AND_PROCESS = 3;
+    // Propagate the target scratchpad and process it after delay (starting when scratchpad is present and this info received)
+    PROPAGATE_AND_PROCESS_WITH_DELAY = 4;
+    // Otap propagation works as before with sequence comparison and processing through remote API
+    LEGACY_OTAP = 5;
+}
+
+enum ProcessingDelay {
+    UNKNOWN_DELAY = 0;
+    TEN_MINUTES = 1;
+    THIRTY_MINUTES = 2;
+    ONE_HOUR = 3;
+    SIX_HOURS = 4;
+    ONE_DAY = 5;
+    TWO_DAYS = 6;
+    FIVE_DAYS = 7;
+}
+
+message ScratchpadInfo {
+    required uint32 len = 1;
+    required uint32 crc = 2;
+    required uint32 seq = 3;
+}
+
+message TargetScratchpadAndAction {
+    required ScratchpadAction action = 1; // What is the action to perform with the current scratchpad
+    optional uint32 target_sequence = 2; // Between 1 and 254 (if missing using local scratchpad sequence if present)
+    optional uint32 target_crc = 3; // Between 0 and 0xffff (if missing using local scratchpad CRC if present)
+    oneof param {
+       ProcessingDelay delay = 4; // Delay parameter for action PROPAGATE_AND_PROCESS_WITH_DELAY
+       uint32 raw = 5; // Raw parameter for the action (between 0 and 255)
+    }
+}

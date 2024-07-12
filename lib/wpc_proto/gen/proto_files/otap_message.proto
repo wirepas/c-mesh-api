@@ -1,0 +1,56 @@
+syntax="proto2";
+
+package wp;
+
+import "wp_global.proto";
+import "error.proto";
+// import "nanopb.proto";
+
+/*
+ * Request/Responses definition
+ */
+message GetScratchpadStatusReq {
+    required RequestHeader header = 1;
+}
+
+message GetScratchpadStatusResp {
+    required ResponseHeader header = 1;
+
+    optional ScratchpadInfo stored_scratchpad = 2;
+    optional ScratchpadStatus stored_status = 3;
+    optional ScratchpadType stored_type = 4;
+    optional ScratchpadInfo processed_scratchpad = 5;
+    optional uint32 firmware_area_id = 6;
+
+    optional TargetScratchpadAndAction target_and_action = 7; // Unset if sink doesn't support it
+}
+
+message UploadScratchpadReq {
+    required RequestHeader header = 1;
+
+    required uint32 seq = 2;
+    // If scratchpad is not set, it clears the stored scratchpad
+    optional bytes scratchpad = 3 /*[(nanopb).max_size = 1048576]*/;  // 1MB
+}
+
+message UploadScratchpadResp {
+    required ResponseHeader header = 1;
+}
+
+message ProcessScratchpadReq {
+    required RequestHeader header = 1;
+}
+
+message ProcessScratchpadResp {
+    required ResponseHeader header = 1;
+}
+
+message SetScratchpadTargetAndActionReq {
+    required RequestHeader header = 1;
+
+    required TargetScratchpadAndAction target_and_action = 2;
+}
+
+message SetScratchpadTargetAndActionResp {
+    required ResponseHeader header = 1;
+}

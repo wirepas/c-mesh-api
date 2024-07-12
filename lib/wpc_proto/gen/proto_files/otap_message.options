@@ -1,0 +1,1 @@
+wp.UploadScratchpadReq.scratchpad max_size:1 fixed_length:false // OTAP Not supported yet
