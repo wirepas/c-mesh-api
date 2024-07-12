@@ -1,0 +1,52 @@
+name: Generate proto file
+
+on:
+  push:
+    branches:
+      - master
+      - feature/proto_api #temporary for testing
+    paths:
+      - 'lib/wpc_proto/deps/nanopb/**'
+      - 'lib/wpc_proto/deps/backend-apis/**'
+      - 'lib/wpc_proto/proto_options/**'
+      - '.github/workflows/generate_protos.yml'
+      - 'lib/wpc_proto/tools/generate_proto_code.sh'
+
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Commit message'
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: install python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: install requirements
+        run: pip install -r lib/wpc_proto/deps/nanopb/requirements.txt
+
+      - name: generate our proto files
+        run: lib/wpc_proto/tools/generate_proto_code.sh
+
+      - name: setup git config
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "<>"
+
+      - name: commit
+        run: |
+          # Stage the file, commit and push
+          git add lib/wpc_proto/gen/generated_protos/*
+          git add lib/wpc_proto/gen/proto_files/*
+          git commit --allow-empty -m "Update generated proto files ${message}"
+          git push origin ${GITHUB_REF}
