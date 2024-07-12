@@ -1,0 +1,46 @@
+syntax="proto2";
+
+package wp;
+
+enum ErrorCode {
+    option allow_alias = true;
+    // First enum code is the one returned in case error code
+    // is unknown on the other side (new added values in future)
+    // To avoid having OK as default code, better to use an explicit UNKNOWN_ERROR_CODE.
+    // It will become the default only for the one using a protobuf file that has this
+    // error code defined.
+    // This unknown error code should never be explicitly set from a gateway but used
+    // only by parser when the error code set is unknown
+    UNKNOWN_ERROR_CODE = -1;
+    OK = 0;
+    INTERNAL_ERROR = 1;
+    INVALID_SINK_ID = 2;
+    INVALID_ROLE = 3;
+    INVALID_NETWORK_ADDRESS = 4;
+    INVALID_NETWORK_CHANNEL = 5;
+    INVALID_CHANNEL_MAP = 6;
+    INVALID_NETWORK_KEYS = 7;
+    INVALID_AC_RANGE = 8;
+    INVALID_SINK_STATE = 9;
+    INVALID_DEST_ADDRESS = 10;
+    INVALID_DEST_ENDPOINT = 11;
+    INVALID_SRC_ENDPOINT = 12;
+    INVALID_QOS = 13;
+    INVALID_DATA_PAYLOAD = 14;
+    INVALID_SCRATCHPAD = 15;
+    INVALID_SCRATCHPAD_SIZE = 16;
+    // Typo in error code, here to avoid breaking
+    // backward compatibility
+    INVLAID_SEQUENCE_NUMBER = 17;
+    INVALID_SEQUENCE_NUMBER = 17;
+    INVALID_REBOOT_DELAY = 18;
+    INVALID_DIAG_INTERVAL = 19;
+    INVALID_APP_CONFIG = 20;
+    INVALID_PARAM = 21;
+    NO_SCRATCHPAD_PRESENT = 22;
+    ACCESS_DENIED = 23;
+    REQUEST_NEEDS_SINK_ID = 24;
+    INVALID_MAX_HOP_COUNT = 25;
+    SINK_OUT_OF_MEMORY = 26;
+    SINK_TIMEOUT = 27;
+}
