@@ -1,0 +1,2 @@
+wp.SendPacketReq.payload max_size:102 fixed_length:false // No support for reassembled packet
+wp.PacketReceivedEvent.payload max_size:102 fixed_length:false // No support for reassembled packet
