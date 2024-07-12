@@ -1,0 +1,6 @@
+[submodule "lib/wpc_proto/deps/backend-apis"]
+	path = lib/wpc_proto/deps/backend-apis
+	url = https://github.com/wirepas/backend-apis
+[submodule "lib/wpc_proto/deps/nanopb"]
+	path = lib/wpc_proto/deps/nanopb
+	url = https://github.com/nanopb/nanopb.git
