@@ -80,9 +80,9 @@ void Platform_print_buffer(uint8_t * buffer, int size)
     int i;
     for (i = 0; i < size; i++)
     {
+        printf("%02x ", buffer[i]);
         if ((i & 0xF) == 0xF)
             printf("\n");
-        printf("%02x ", buffer[i]);
     }
     printf("\n");
 }
