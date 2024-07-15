@@ -3,7 +3,7 @@
  * See file LICENSE for full license details.
  *
  */
- #define PRINT_BUFFERS
+//#define PRINT_BUFFERS
 #define LOG_MODULE_NAME "wpc_proto"
 #define MAX_LOG_LEVEL INFO_LOG_LEVEL
 #include "logger.h"
@@ -88,8 +88,6 @@ static bool onDataReceived(const uint8_t * bytes,
     message_PacketReceived_p->payload.size = num_bytes;
 
     // Add the header (TODO: make a function for it)
-
-
     strcpy(message_PacketReceived_p->header.gw_id, m_gateway_id);
     strcpy(message_PacketReceived_p->header.sink_id, m_sink_id);
     message_PacketReceived_p->header.has_sink_id = true;
@@ -172,7 +170,7 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
 }
 
 
-app_proto_res_e WPC_register_for_data_rx_event(onDataRxEvent_cb_f onDataRxEvent_cb)
+app_proto_res_e WPC_Proto_register_for_data_rx_event(onDataRxEvent_cb_f onDataRxEvent_cb)
 {
     // Only support one "client" for now
     if (m_rx_event_cb != NULL)
@@ -182,4 +180,129 @@ app_proto_res_e WPC_register_for_data_rx_event(onDataRxEvent_cb_f onDataRxEvent_
 
     m_rx_event_cb = onDataRxEvent_cb;
     return APP_RES_PROTO_OK;
+}
+
+static app_proto_res_e handle_send_data_request(wp_SendPacketReq *req,
+                                         uint8_t * response_p,
+                                         size_t * response_size_p)
+{
+    bool status;
+    app_res_e res;
+    wp_GenericMessage message = wp_GenericMessage_init_zero;
+    wp_WirepasMessage message_wirepas = wp_WirepasMessage_init_zero;
+    wp_SendPacketResp sendResp;
+    pb_ostream_t stream;
+    message.wirepas = &message_wirepas;
+
+    // TODO: Add some sanity checks
+    res = WPC_send_data(req->payload.bytes,
+                        req->payload.size,
+                        0,
+                        req->destination_address,
+                        req->qos,
+                        (uint8_t) req->source_endpoint,
+                        (uint8_t) req->destination_endpoint,
+                        NULL,
+                        0); // No initial delay supported
+
+    LOGI("WPC_send_data res=%d\n", res);
+
+    // Fill the response
+    sendResp.header = (wp_ResponseHeader) {
+        .req_id = req->header.req_id,
+        .has_sink_id = true,
+        .res = res, //TODO make a conversion!!!
+        .has_time_ms_epoch = true,
+        .time_ms_epoch = Platform_get_timestamp_ms_epoch(),
+    };
+
+    strcpy(sendResp.header.gw_id, m_gateway_id);
+    strcpy(sendResp.header.sink_id, m_sink_id);
+
+    message.wirepas->send_packet_resp = &sendResp;
+
+    stream = pb_ostream_from_buffer(response_p, *response_size_p);
+
+    /* Now we are ready to encode the message! */
+	status = pb_encode(&stream, wp_GenericMessage_fields, &message);
+
+	if (!status) {
+		LOGE("Encoding failed: %s\n", PB_GET_ERROR(&stream));
+        return APP_RES_CANNOT_GENERATE_RESPONSE;
+	}
+	else
+	{
+		LOGI("Response generated %d\n", stream.bytes_written);
+        *response_size_p = stream.bytes_written;
+        return APP_RES_PROTO_OK;
+    }
+}
+
+app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
+                                         size_t request_size,
+                                         uint8_t * response_p,
+                                         size_t * response_size_p)
+{
+    bool status;
+    /* All messages are generic messages */
+    wp_GenericMessage message = wp_GenericMessage_init_zero;
+    wp_WirepasMessage * wp_message_p = NULL;
+    pb_istream_t stream = pb_istream_from_buffer(request_p, request_size);
+
+    status = pb_decode(&stream, wp_GenericMessage_fields, &message);
+
+    if (!status)
+    {
+        LOGE("Decoding failed: %s\n", PB_GET_ERROR(&stream));
+        return APP_RES_PROTO_INVALID_REQUEST;
+    }
+
+    wp_message_p = message.wirepas;
+    /* Do some sanity check on request header */
+    if (!wp_message_p)
+    {
+        LOGW("Not a wirepas message\n");
+        return APP_RES_PROTO_INVALID_REQUEST;
+    }
+
+    /* Call the right request handler */
+    if (wp_message_p->get_configs_req)
+    {
+        LOGI("Get config request\n");
+    }
+    else if (wp_message_p->set_config_req)
+    {
+        LOGI("Set config request\n");
+    }
+    else if (wp_message_p->send_packet_req)
+    {
+        LOGI("Send packet request\n");
+        return handle_send_data_request(wp_message_p->send_packet_req,
+                                        response_p,
+                                        response_size_p);
+    }
+    else if (wp_message_p->get_scratchpad_status_req)
+    {
+        LOGI("Get scratchpad status request\n");
+    }
+    else if (wp_message_p->upload_scratchpad_req)
+    {
+        LOGI("Upload scratchpad request\n");
+    }
+    else if (wp_message_p->process_scratchpad_req)
+    {
+        LOGI("Process scratchpad request\n");
+    }
+    else if (wp_message_p->get_gateway_info_req)
+    {
+        LOGI("Get gateway info request\n");
+    }
+    else
+    {
+        LOGE("Not a supported request\n");
+    }
+
+    /** Set correctly the response_p and response_size */
+    return APP_RES_PROTO_OK;
+
 }
