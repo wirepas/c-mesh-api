@@ -15,6 +15,7 @@ SOURCES += $(NANO_PB_FOLDER)pb_encode.c
 
 # Add our proto generated files
 CFLAGS += -I$(GENERATED_PROTOS_FOLDER)
+CFLAGS += -DPB_ENABLE_MALLOC=1
 SOURCES += $(GENERATED_PROTOS_FOLDER)config_message.pb.c
 SOURCES += $(GENERATED_PROTOS_FOLDER)data_message.pb.c
 SOURCES += $(GENERATED_PROTOS_FOLDER)generic_message.pb.c
