@@ -75,7 +75,7 @@ int main(int argc, char * argv[])
     }
     else
     {
-        LOGE("Cannot handle request: %d", res);
+        LOGE("Cannot handle request: %d\n", res);
     }
 
 
