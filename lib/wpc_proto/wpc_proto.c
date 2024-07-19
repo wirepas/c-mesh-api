@@ -110,6 +110,41 @@ static uint8_t m_output_buffer[MAX_PROTOBUF_SIZE];
 static wp_GenericMessage message_to_encode = wp_GenericMessage_init_zero;
 static wp_WirepasMessage message_wirepas_to_encode = wp_WirepasMessage_init_zero;
 
+
+void fill_wirepas_message_header(wp_EventHeader * header_p)
+{
+    _Static_assert(member_size(wp_EventHeader, gw_id) >= GATEWAY_ID_MAX_SIZE);
+    _Static_assert(member_size(wp_EventHeader, sink_id) >= SINK_ID_MAX_SIZE);
+
+    strncpy(header_p->gw_id, m_gateway_id, GATEWAY_ID_MAX_SIZE);
+    m_gateway_id[GATEWAY_ID_MAX_SIZE] = '\0';
+    strncpy(header_p->sink_id, m_sink_id, SINK_ID_MAX_SIZE);
+    m_gateway_id[SINK_ID_MAX_SIZE] = '\0';
+    header_p->has_sink_id            = (strlen(m_sink_id) != 0);
+    header_p->has_time_ms_epoch      = true;
+    header_p->time_ms_epoch          = Platform_get_timestamp_ms_epoch();
+    header_p->event_id               = m_event_id++;
+}
+
+// encode message_to_encode in m_output_buffer in protobuf format
+// Message have to be filled before calling
+// Return the size of the encoded part, or 0 in case of failure
+size_t encode_wirepas_message(void)
+{
+    // Using the module static buffer
+    pb_ostream_t stream
+        = pb_ostream_from_buffer(m_output_buffer, sizeof(m_output_buffer));
+
+    // Now we are ready to encode the message!
+    if (!pb_encode(&stream, wp_GenericMessage_fields, &message_to_encode))
+    {
+        LOGE("Encoding failed: %s\n", PB_GET_ERROR(&stream));
+        return 0;
+    }
+
+    return stream.bytes_written;
+}
+
 static bool onDataReceived(const uint8_t * bytes,
                            size_t num_bytes,
                            app_addr_t src_addr,
@@ -122,8 +157,6 @@ static bool onDataReceived(const uint8_t * bytes,
                            unsigned long long timestamp_ms)
 {
     _Static_assert(wp_PacketReceivedEvent_size <= sizeof(m_output_buffer));
-
-    bool status;
 
     memset(&message_wirepas_to_encode, 0, sizeof(message_wirepas_to_encode));
 
@@ -165,56 +198,34 @@ static bool onDataReceived(const uint8_t * bytes,
     memcpy(message_PacketReceived_p->payload.bytes, bytes, num_bytes);
     message_PacketReceived_p->payload.size = num_bytes;
 
-    // Add the header (TODO: make a function for it)
-    wp_EventHeader * header = &message_PacketReceived_p->header;
+    fill_wirepas_message_header(&message_PacketReceived_p->header);
 
-    _Static_assert(member_size(wp_EventHeader, gw_id) >= GATEWAY_ID_MAX_SIZE);
-    _Static_assert(member_size(wp_EventHeader, sink_id) >= SINK_ID_MAX_SIZE);
+    size_t protobuf_size = encode_wirepas_message();
 
-    strncpy(header->gw_id, m_gateway_id, GATEWAY_ID_MAX_SIZE);
-    m_gateway_id[GATEWAY_ID_MAX_SIZE] = '\0';
-    strncpy(header->sink_id, m_sink_id, SINK_ID_MAX_SIZE);
-    m_gateway_id[SINK_ID_MAX_SIZE] = '\0';
-    header->has_sink_id            = (strlen(m_sink_id) != 0);
-    header->has_time_ms_epoch      = true;
-    header->time_ms_epoch          = Platform_get_timestamp_ms_epoch();
-    header->event_id               = m_event_id++;
-
-
-    // Using the module static buffer
-    pb_ostream_t stream
-        = pb_ostream_from_buffer(m_output_buffer, sizeof(m_output_buffer));
-
-    /* Now we are ready to encode the message! */
-    status = pb_encode(&stream, wp_GenericMessage_fields, &message_to_encode);
-    /* free temporary message struct */
     Platform_free(message_PacketReceived_p, sizeof(wp_PacketReceivedEvent));
 
-    if (!status)
+    if (protobuf_size != 0)
     {
-        LOGE("Encoding PacketReceived failed: %s\n", PB_GET_ERROR(&stream));
-    }
-    else
-    {
-        LOGI("Msg size %d\n", stream.bytes_written);
+        LOGI("Msg size %d\n", protobuf_size);
         if (m_onProtoDataRxEvent_cb != NULL)
         {
             m_onProtoDataRxEvent_cb(m_output_buffer,
-                                    stream.bytes_written,
+                                    protobuf_size,
                                     m_network_id,
                                     src_ep,
                                     dst_ep);
         }
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 static void onStackStatusReceived(uint8_t status)
 {
+    _Static_assert(wp_StatusEvent_size <= sizeof(m_output_buffer));
     _Static_assert(member_size(wp_StatusEvent,gw_model) >= GATEWAY_MODEL_MAX_SIZE);
     _Static_assert(member_size(wp_StatusEvent,gw_version) >= GATEWAY_VERSION_MAX_SIZE);
-    _Static_assert(wp_StatusEvent_size <= sizeof(m_output_buffer));
 
     memset(&message_wirepas_to_encode, 0, sizeof(message_wirepas_to_encode));
 
@@ -251,40 +262,18 @@ static void onStackStatusReceived(uint8_t status)
             GATEWAY_VERSION_MAX_SIZE);
     m_gateway_id[GATEWAY_VERSION_MAX_SIZE] = '\0';
 
-    // Add the header (TODO: make a function for it)
-    wp_EventHeader * header = &message_StatusEvent_p->header;
+    fill_wirepas_message_header(&message_StatusEvent_p->header);
 
-    _Static_assert(member_size(wp_EventHeader, gw_id) >= GATEWAY_ID_MAX_SIZE);
-    _Static_assert(member_size(wp_EventHeader, sink_id) >= SINK_ID_MAX_SIZE);
+    size_t protobuf_size = encode_wirepas_message();
 
-    strncpy(header->gw_id, m_gateway_id, GATEWAY_ID_MAX_SIZE);
-    m_gateway_id[GATEWAY_ID_MAX_SIZE] = '\0';
-    strncpy(header->sink_id, m_sink_id, SINK_ID_MAX_SIZE);
-    m_gateway_id[SINK_ID_MAX_SIZE] = '\0';
-    header->has_sink_id            = (strlen(m_sink_id) != 0);
-    header->has_time_ms_epoch      = true;
-    header->time_ms_epoch          = Platform_get_timestamp_ms_epoch();
-    header->event_id               = m_event_id++;
-
-    // Using the module static buffer
-    pb_ostream_t stream
-        = pb_ostream_from_buffer(m_output_buffer, sizeof(m_output_buffer));
-
-    /* Now we are ready to encode the message! */
-    status = pb_encode(&stream, wp_GenericMessage_fields, &message_to_encode);
-    /* free temporary message struct */
     Platform_free(message_StatusEvent_p, sizeof(wp_StatusEvent));
 
-    if (!status)
+    if (protobuf_size != 0)
     {
-        LOGE("Encoding StatusEvent failed: %s\n", PB_GET_ERROR(&stream));
-    }
-    else
-    {
-        LOGI("Msg size %d\n", stream.bytes_written);
+        LOGI("Msg size %d\n", protobuf_size);
         if (m_onProtoEventStatus_cb != NULL)
         {
-            m_onProtoEventStatus_cb(m_output_buffer, stream.bytes_written);
+            m_onProtoEventStatus_cb(m_output_buffer, protobuf_size);
         }
     }
 }
