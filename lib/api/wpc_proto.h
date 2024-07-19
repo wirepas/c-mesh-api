@@ -28,10 +28,21 @@ typedef enum
     APP_RES_PROTO_RESPONSE_BUFFER_TOO_SMALL,
 } app_proto_res_e;
 
-
-app_proto_res_e WPC_Proto_initialize(const char * port_name,
-                                     unsigned long bitrate,
-                                     char * gateway_id,
+/**
+ * \brief        Init protobuf interface
+ * \param[in]    gateway_id
+ *               Pointer to gateway id string
+ * \param[in]    gateway_model
+ *               Pointer to gateway model string, "" if not available
+ * \param[in]    gateway_version
+ *               Pointer to gateway version string, "" if not available
+ * \param[in]    sink_id
+ *               Pointer to the sink id string
+ * \return       Return code of the operation
+ */
+app_proto_res_e WPC_Proto_initialize(char * gateway_id,
+                                     char * gateway_model,
+                                     char * gateway_version,
                                      char * sink_id);
 
 /**
@@ -60,33 +71,46 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
 
 
 /**
- * \brief   Callback definition for event status
- * \param   ...
+ * \brief   Callback definition for data reception in protobuf format
+ * \param   event_p
+ *          pointer to the protobuf message received
+ * \param   event_size
+ *          size of message pointed by event_p
+ * \param   network_id
+ *          network id, to build topic
+ * \param   src_ep
+ *          source endpoint, to build topic
+ * \param   dst_ep
+ *          destination endoint, to build topic
+ * \note    the buffer pointed by event_p will not available anymore after callback return
  */
-typedef void (*onDataRxEvent_cb_f)(uint8_t * event_p,
-                                   size_t event_size,
-                                   uint32_t network_id,
-                                   uint16_t src_ep,
-                                   uint16_t dst_ep);
+typedef void (*onProtoDataRxEvent_cb_f)(uint8_t * event_p,
+                                        size_t    event_size,
+                                        uint32_t  network_id,
+                                        uint16_t  src_ep,
+                                        uint16_t  dst_ep);
 
 /**
- * \brief   Register for receiving event status
- * \param   onEventStatus_cb
+ * \brief   Register for receiving data in protobuf format
+ * \param   onProtoDataRxEvent_cb
  */
-app_proto_res_e WPC_Proto_register_for_data_rx_event(onDataRxEvent_cb_f onDataRxEvent_cb);
+app_proto_res_e WPC_Proto_register_for_data_rx_event(onProtoDataRxEvent_cb_f onProtoDataRxEvent_cb);
 
 /**
- * \brief   Callback definition for event status
- * \param   ...
+ * \brief   Callback definition for event status in protobuf format
+ * \param   event_p
+ *          pointer to the protobuf message received
+ * \param   event_size
+ *          size of message pointed by event_p
+ * \note    the buffer pointed by event_p will not available anymore after callback return
  */
-typedef void (*onEventStatus_cb_f)(uint8_t * event_p,
-                                   size_t event_size);
+typedef void (*onProtoEventStatus_cb_f)(uint8_t * event_p, size_t event_size);
 
 /**
- * \brief   Register for receiving event status
- * \param   onEventStatus_cb
+ * \brief   Register for receiving event status in protobuf format
+ * \param   onProtoEventStatus_cb
  */
-app_proto_res_e WPC_Proto_register_for_event_status(onEventStatus_cb_f onEventStatus_cb);
+app_proto_res_e WPC_Proto_register_for_event_status(onProtoEventStatus_cb_f onProtoEventStatus_cb);
 
 
 #endif
