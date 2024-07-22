@@ -45,6 +45,12 @@ app_proto_res_e WPC_Proto_initialize(char * gateway_id,
                                      char * gateway_version,
                                      char * sink_id);
 
+
+/**
+ * \brief   Stop protobuf interface
+ */
+void WPC_Proto_close(void);
+
 /**
  * \brief        Handle a request in protobuf format
  * \param[in]    request_p

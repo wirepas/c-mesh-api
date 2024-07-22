@@ -14,6 +14,7 @@
 #include "wpc.h"
 #include "wpc_proto.h"
 #include "platform.h"
+#include "config.h"
 
 #include "generic_message.pb.h"
 #include "data_message.pb.h"
@@ -117,9 +118,9 @@ void fill_wirepas_message_header(wp_EventHeader * header_p)
     _Static_assert(member_size(wp_EventHeader, sink_id) >= SINK_ID_MAX_SIZE);
 
     strncpy(header_p->gw_id, m_gateway_id, GATEWAY_ID_MAX_SIZE);
-    m_gateway_id[GATEWAY_ID_MAX_SIZE] = '\0';
+    header_p->gw_id[GATEWAY_ID_MAX_SIZE - 1] = '\0';
     strncpy(header_p->sink_id, m_sink_id, SINK_ID_MAX_SIZE);
-    m_gateway_id[SINK_ID_MAX_SIZE] = '\0';
+    header_p->sink_id[SINK_ID_MAX_SIZE - 1] = '\0';
     header_p->has_sink_id            = (strlen(m_sink_id) != 0);
     header_p->has_time_ms_epoch      = true;
     header_p->time_ms_epoch          = Platform_get_timestamp_ms_epoch();
@@ -223,13 +224,30 @@ static bool onDataReceived(const uint8_t * bytes,
 
 static void onStackStatusReceived(uint8_t status)
 {
-    _Static_assert(wp_StatusEvent_size <= sizeof(m_output_buffer));
-    _Static_assert(member_size(wp_StatusEvent,gw_model) >= GATEWAY_MODEL_MAX_SIZE);
-    _Static_assert(member_size(wp_StatusEvent,gw_version) >= GATEWAY_VERSION_MAX_SIZE);
+    // Status values
+    // Bit 0 = 0: Stack running
+    // Bit 0 = 1: Stack stopped
+    // Bit 1 = 0: Network address set
+    // Bit 1 = 1: Network address missing
+    // Bit 2 = 0: Node address set
+    // Bit 2 = 1: Node address missing
+    // Bit 3 = 0: Network channel set
+    // Bit 3 = 1: Network channel missing
+    // Bit 4 = 0: Role set
+    // Bit 4 = 1: Role missing
+    // Bit 5 = 0: Application configuration data valid
+    // Bit 5 = 1: Application configuration data
 
+    _Static_assert(wp_StatusEvent_size <= sizeof(m_output_buffer));
+    _Static_assert(member_size(wp_StatusEvent, gw_model) >= GATEWAY_MODEL_MAX_SIZE);
+    _Static_assert(member_size(wp_StatusEvent, gw_version) >= GATEWAY_VERSION_MAX_SIZE);
+    _Static_assert(member_size(wp_SinkReadConfig, sink_id) >= SINK_ID_MAX_SIZE);
+ 
     memset(&message_wirepas_to_encode, 0, sizeof(message_wirepas_to_encode));
 
     LOGI("Status received : %d\n", status);
+
+    Config_On_stack_boot_status(status);
 
     // Allocate the needed space for only the submessage we want to send
     wp_StatusEvent * message_StatusEvent_p
@@ -244,23 +262,83 @@ static void onStackStatusReceived(uint8_t status)
 
     *message_StatusEvent_p = (wp_StatusEvent){
         .version = GW_PROTO_MESSAGE_VERSION,
-        .state   = ((status & 0x01) ? wp_OnOffState_ON : wp_OnOffState_OFF),
+        .state   = ((status & (1<<0)) ? wp_OnOffState_OFF : wp_OnOffState_ON),
         .configs_count = 0
     };
 
-    /* TODO : fill message_StatusEvent_p->configs[0] */
-    memset(&message_StatusEvent_p->configs[0], 0, sizeof(wp_SinkReadConfig));
 
-    message_StatusEvent_p->has_gw_model   = (strlen(m_gateway_model) != 0);
-    message_StatusEvent_p->has_gw_version = (strlen(m_gateway_version) != 0);
+    message_StatusEvent_p->has_gw_model = (strlen(m_gateway_model) != 0);
     strncpy(message_StatusEvent_p->gw_model,
             m_gateway_model,
-            GATEWAY_MODEL_MAX_SIZE);
-    m_gateway_id[GATEWAY_MODEL_MAX_SIZE] = '\0';
+            member_size(wp_StatusEvent, has_gw_model));
+    message_StatusEvent_p->gw_model[member_size(wp_StatusEvent, has_gw_model) - 1] = '\0';
+
+    message_StatusEvent_p->has_gw_version = (strlen(m_gateway_version) != 0);
     strncpy(message_StatusEvent_p->gw_version,
             m_gateway_version,
-            GATEWAY_VERSION_MAX_SIZE);
-    m_gateway_id[GATEWAY_VERSION_MAX_SIZE] = '\0';
+            member_size(wp_StatusEvent, gw_version));
+    message_StatusEvent_p->gw_version[member_size(wp_StatusEvent, gw_version) - 1] = '\0';
+
+    wp_SinkReadConfig * config = &message_StatusEvent_p->configs[0];
+
+    *config = (wp_SinkReadConfig){
+        /* Sink minimal config */
+        .has_node_role = ((status & (1<<4)) ? false : true),            // bool                has_node_role;
+        .node_role = m_sink_config.node_role,                           // wp_NodeRole         node_role;
+        .has_node_address = ((status & (1<<2)) ? false : true),         // bool                has_node_address;
+        .node_address = m_sink_config.node_address,                     // uint32_t            node_address;
+        .has_network_address = ((status & (1<<1)) ? false : true),      // bool                has_network_address;
+        .network_address = m_sink_config.network_address,               // uint64_t            network_address;
+        .has_network_channel = ((status & (1<<3)) ? false : true),      // bool                has_network_channel;
+        .network_channel = m_sink_config.network_channel,               // uint32_t            network_channel;
+        .has_app_config = ((status & (1<<5)) ? false : true),           // bool                has_app_config;
+        .app_config = m_sink_config.app_config,                         // wp_AppConfigData    app_config;
+        .has_channel_map = false,                                       // bool                has_channel_map;
+        .has_are_keys_set = false,                                      // bool                has_are_keys_set;
+
+        .has_current_ac_range = (m_sink_config.ac_range_min_cur == 0
+                                     ? false
+                                     : true),                           // bool has_current_ac_range;
+        
+        .current_ac_range = {.min_ms = m_sink_config.ac_range_min_cur,
+                             .max_ms = m_sink_config.ac_range_max_cur}, // wp_AccessCycleRange current_ac_range;
+        /* Read only parameters */
+        .has_ac_limits = true,                                          // bool                has_ac_limits;
+        .ac_limits = {.min_ms = m_sink_config.ac_range_min,
+                      .max_ms = m_sink_config.ac_range_max},            // wp_AccessCycleRange ac_limits;
+        .has_max_mtu = true,                                            // bool                has_max_mtu;
+        .max_mtu = m_sink_config.max_mtu,                               // uint32_t            max_mtu;
+        .has_channel_limits = true,                                     // bool                has_channel_limits;
+        .channel_limits = {.min_channel = m_sink_config.ch_range_min,
+                           .max_channel = m_sink_config.ch_range_max},  // wp_ChannelRange     channel_limits;
+        .has_hw_magic = true,                                           // bool                has_hw_magic;
+        .hw_magic = m_sink_config.hw_magic,                             // uint32_t            hw_magic;
+        .has_stack_profile = true,                                      // bool                has_stack_profile;
+        .stack_profile = m_sink_config.stack_profile,                   // uint32_t            stack_profile;
+        .has_app_config_max_size = true,                                // bool                has_app_config_max_size;
+        .app_config_max_size = m_sink_config.app_config_max_size,       // uint32_t            app_config_max_size;
+        .has_firmware_version = true,                                   // bool                has_firmware_version;
+        .firmware_version = {.major = m_sink_config.version[0],
+                             .minor = m_sink_config.version[1],
+                             .maint = m_sink_config.version[2],
+                             .dev =   m_sink_config.version[3] },       // wp_FirmwareVersion  firmware_version,
+        /* State of sink */
+        .has_sink_state = true,                                         // bool                has_sink_state;
+        .sink_state = message_StatusEvent_p->state,                     // wp_OnOffState       sink_state;
+        /* Scratchpad info for the sink */
+        .has_stored_scratchpad = false,                                 // bool                has_stored_scratchpad;
+        .has_stored_status = false,                                     // bool                has_stored_status;
+        .has_stored_type = false,                                       // bool                has_stored_type;
+        .has_processed_scratchpad = false,                              // bool                has_processed_scratchpad;
+        .has_firmware_area_id = false,                                  // bool                has_firmware_area_id;
+        .has_target_and_action = false                                  // bool                has_target_and_action;
+    };
+
+    strncpy(config->sink_id,
+            m_sink_id,
+            member_size(wp_SinkReadConfig, sink_id));
+    config->sink_id[member_size(wp_SinkReadConfig, sink_id) - 1] = '\0';
+
 
     fill_wirepas_message_header(&message_StatusEvent_p->header);
 
@@ -283,24 +361,31 @@ app_proto_res_e WPC_Proto_initialize(char * gateway_id,
                                      char * gateway_version,
                                      char * sink_id)
 {
-
     strncpy(m_gateway_id, gateway_id, GATEWAY_ID_MAX_SIZE);
-    m_gateway_id[GATEWAY_ID_MAX_SIZE-1]='\0';
+    m_gateway_id[GATEWAY_ID_MAX_SIZE - 1] = '\0';
 
     strncpy(m_gateway_model, gateway_model, GATEWAY_MODEL_MAX_SIZE);
-    m_gateway_id[GATEWAY_MODEL_MAX_SIZE-1]='\0';
+    m_gateway_id[GATEWAY_MODEL_MAX_SIZE - 1] = '\0';
 
     strncpy(m_gateway_version, gateway_version, GATEWAY_VERSION_MAX_SIZE);
-    m_gateway_id[GATEWAY_VERSION_MAX_SIZE-1]='\0';
+    m_gateway_id[GATEWAY_VERSION_MAX_SIZE - 1] = '\0';
 
     strncpy(m_sink_id, sink_id, SINK_ID_MAX_SIZE);
-    m_sink_id[SINK_ID_MAX_SIZE-1]='\0';
+    m_sink_id[SINK_ID_MAX_SIZE - 1] = '\0';
 
     LOGI("WPC proto initialize with gw_id %s, model %s, ver %s and sink_id %s\n",
                 m_gateway_id,
                 m_gateway_model,
                 m_gateway_version,
                 m_sink_id);
+
+    if (WPC_register_for_stack_status(onStackStatusReceived) != APP_RES_OK)
+    {
+        LOGE("Stack status already registered\n");
+        return APP_RES_PROTO_ALREADY_REGISTERED;
+    }
+
+    Config_Init();
 
 
     /* Register for all data */
@@ -309,13 +394,13 @@ app_proto_res_e WPC_Proto_initialize(char * gateway_id,
 
     WPC_register_for_data(onDataReceived);
 
-    if (WPC_register_for_stack_status(onStackStatusReceived) != APP_RES_OK)
-    {
-        LOGE("Stack status already registered\n");
-        return APP_RES_PROTO_ALREADY_REGISTERED;
-    }
-
     return APP_RES_PROTO_OK;
+}
+
+void WPC_Proto_close(void)
+{
+    Config_Close();
+    WPC_close();
 }
 
 app_proto_res_e WPC_Proto_register_for_data_rx_event(onProtoDataRxEvent_cb_f onProtoDataRxEvent_cb)

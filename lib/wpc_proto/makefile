@@ -6,6 +6,7 @@ GENERATED_PROTOS_FOLDER := $(WPC_PROTO_MODULE)gen/generated_protos/
 NANO_PB_FOLDER := $(WPC_PROTO_MODULE)deps/nanopb/
 
 SOURCES += $(WPC_PROTO_MODULE)wpc_proto.c
+SOURCES += $(WPC_PROTO_MODULE)config.c
 
 # Add standard proto files
 CFLAGS += -I$(NANO_PB_FOLDER)
