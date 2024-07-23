@@ -9,7 +9,7 @@
 
 #include "config_message.pb.h"
 
-/** Structure to hold unmodifiable configs from node */
+/** Structure to hold config from node */
 typedef struct sink_config
 {
     /* Read only parameters backup-ed with a table (Read at boot up) */
@@ -19,27 +19,28 @@ typedef struct sink_config
     uint16_t ac_range_max;
     uint16_t app_config_max_size;
     uint16_t version[4];
-    uint8_t max_mtu;
-    uint8_t ch_range_min;
-    uint8_t ch_range_max;
-    uint8_t pdu_buffer_size;
+    uint8_t  max_mtu;
+    uint8_t  ch_range_min;
+    uint8_t  ch_range_max;
+    uint8_t  pdu_buffer_size;
 
     /* Read parameters with node interrogation */
-    uint16_t CurrentAC; //SD_BUS_PROPERTY("CurrentAC", "q", current_ac_read_handler, 0, 0),
-    //SD_BUS_PROPERTY("CipherKeySet", "b", cipher_key_read_handler, 0, 0),
-    //SD_BUS_PROPERTY("AuthenticationKeySet", "b", authen_key_read_handler, 0, 0),
-    //SD_BUS_PROPERTY("StackStatus", "y", stack_status_read_handler, 0, 0),
+    uint16_t CurrentAC;
+    bool     CipherKeySet;
+    bool     AuthenticationKeySet;
+    uint8_t  StackStatus;
 
     /* Read write also ? */
-    uint16_t ac_range_min_cur; // 0 means unset ?
+    uint16_t ac_range_min_cur;  // 0 means unset ?
     uint16_t ac_range_max_cur;
 
     /* Read/Write parameters with node interrogation */
-    uint32_t node_address;
+    uint32_t    node_address;
     wp_NodeRole node_role;
-    uint64_t network_address;
-    uint32_t network_channel;
-    uint32_t channel_map;
+    uint64_t    network_address;
+    uint32_t    network_channel;
+    // uint32_t channel_map; // deprecated
+    
     /* Methods related to config */
     wp_AppConfigData app_config;
 } sink_config_t;

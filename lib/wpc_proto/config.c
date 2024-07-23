@@ -603,6 +603,7 @@ static bool initialize_unmodifiable_variables()
 
 void Config_On_stack_boot_status(uint8_t status)
 {
+    m_sink_config.StackStatus = status;
     /* After a reboot, read again the variable as it can be because
      * of an otap and variables may change
      */

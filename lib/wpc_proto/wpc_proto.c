@@ -263,7 +263,7 @@ static void onStackStatusReceived(uint8_t status)
     *message_StatusEvent_p = (wp_StatusEvent){
         .version = GW_PROTO_MESSAGE_VERSION,
         .state   = ((status & (1<<0)) ? wp_OnOffState_OFF : wp_OnOffState_ON),
-        .configs_count = 0
+        .configs_count = 0,
     };
 
 
@@ -294,7 +294,9 @@ static void onStackStatusReceived(uint8_t status)
         .has_app_config = ((status & (1<<5)) ? false : true),           // bool                has_app_config;
         .app_config = m_sink_config.app_config,                         // wp_AppConfigData    app_config;
         .has_channel_map = false,                                       // bool                has_channel_map;
-        .has_are_keys_set = false,                                      // bool                has_are_keys_set;
+        .has_are_keys_set = true,                                       // bool                has_are_keys_set;
+        .are_keys_set =    m_sink_config.CipherKeySet 
+                        && m_sink_config.AuthenticationKeySet,          // bool                are_keys_set;
 
         .has_current_ac_range = (m_sink_config.ac_range_min_cur == 0
                                      ? false
