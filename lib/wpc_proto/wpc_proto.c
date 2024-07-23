@@ -277,6 +277,8 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
     wp_WirepasMessage * wp_message_req_p = NULL;
     pb_istream_t stream_in = pb_istream_from_buffer(request_p, request_size);
     pb_ostream_t stream_out;
+    void * resp_msg_p = NULL;
+    size_t resp_size  = 0;
 
 
     // Prepare response
@@ -311,11 +313,20 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
     }
     else if (wp_message_req_p->send_packet_req)
     {
-        wp_SendPacketResp sendResp;
+        resp_size  = sizeof(wp_SendPacketResp);
+        resp_msg_p = Platform_malloc(resp_size);
+        if (resp_msg_p == NULL)
+        {
+            LOGE("Not enough memory to encode StatusEvent");
+            return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
+        }
+        message_resp.wirepas->send_packet_resp
+            = (wp_SendPacketResp *) resp_msg_p;
+
         LOGI("Send packet request\n");
-        message_resp.wirepas->send_packet_resp = &sendResp;
+
         res = handle_send_data_request(wp_message_req_p->send_packet_req,
-                                &sendResp);
+                                       (wp_SendPacketResp *) resp_msg_p);
     }
     else if (wp_message_req_p->get_scratchpad_status_req)
     {
@@ -348,7 +359,7 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
 
         if (!status) {
             LOGE("Encoding failed: %s\n", PB_GET_ERROR(&stream_out));
-            return APP_RES_CANNOT_GENERATE_RESPONSE;
+            return APP_RES_PROTO_CANNOT_GENERATE_RESPONSE;
         }
         else
         {
@@ -357,6 +368,8 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
             return APP_RES_PROTO_OK;
         }
     }
+
+    Platform_free(resp_msg_p, resp_size);
 
     /** Set correctly the response_p and response_size */
     return res;
