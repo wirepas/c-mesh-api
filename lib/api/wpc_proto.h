@@ -83,7 +83,7 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
  *          pointer to the protobuf message received
  * \param   event_size
  *          size of message pointed by event_p
- * \param   network_id
+ * \param   network_address
  *          network id, to build topic
  * \param   src_ep
  *          source endpoint, to build topic
@@ -93,7 +93,7 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
  */
 typedef void (*onProtoDataRxEvent_cb_f)(uint8_t * event_p,
                                         size_t    event_size,
-                                        uint32_t  network_id,
+                                        uint32_t  network_address,
                                         uint16_t  src_ep,
                                         uint16_t  dst_ep);
 
