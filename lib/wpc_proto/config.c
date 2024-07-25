@@ -1,4 +1,4 @@
-/* Copyright 2019 Wirepas Ltd licensed under Apache License, Version 2.0
+/* Wirepas Oy licensed under Apache License, Version 2.0
  *
  * See file LICENSE for full license details.
  *
@@ -30,7 +30,6 @@
 /** Structure to hold config from node */
 typedef struct sink_config
 {
-    /* Read only parameters backup-ed with a table (Read at boot up) */
     uint16_t stack_profile;
     uint16_t hw_magic;
     uint16_t ac_limit_min;
@@ -42,25 +41,18 @@ typedef struct sink_config
     uint8_t ch_range_max;
     uint8_t pdu_buffer_size;
 
-    /* Read parameters with node interrogation */
-    //uint16_t CurrentAC;
     bool CipherKeySet;
     bool AuthenticationKeySet;
     uint8_t StackStatus;
-
-    /* Read write also ? */
     uint16_t ac_range_min_cur;  // 0 means unset ?
     uint16_t ac_range_max_cur;
 
-    /* Read/Write parameters with node interrogation */
     app_role_t node_address;
     app_role_t app_node_role;
     wp_NodeRole wp_node_role;  // same as app_node_role, different format
     net_addr_t network_address;
     net_channel_t network_channel;
-    // uint32_t channel_map; // deprecated
 
-    /* Methods related to config */
     msap_app_config_data_write_req_pl_t app_config;
 } sink_config_t;
 
@@ -71,279 +63,6 @@ sink_config_t m_sink_config;
 static char m_gateway_id[GATEWAY_ID_MAX_SIZE];
 static char m_sink_id[SINK_ID_MAX_SIZE];
 static uint32_t m_event_id = 0;
-
-#if 0 // temporary deactivate of read/write access
-
-/**
- * \brief   Global function to set a key (cipher or authen)
- * \param   value
- *          The message received on dbus containing the key
- * \param   key_set_function
- *          The WPC key function to use
- * \return  Return code of operation
- */
-static app_res_e set_key(sd_bus_message * value, set_key_f key_set_function)
-{
-    const void * key;
-    app_res_e res = APP_RES_INTERNAL_ERROR;
-    size_t n;
-    int r;
-
-    r = sd_bus_message_read_array(value, 'y', &key, &n);
-    if ((r < 0) || (n != 16))
-    {
-        LOGE("Cannot get key from request %s len=%d\n", strerror(-r), n);
-        return res;
-    }
-
-    res = (key_set_function)((uint8_t *) key);
-    return res;
-}
-
-/**
- * \brief   Set cipher key handler
- * \param   ... (from sd_bus property handler)
- */
-static int set_cipher_key(sd_bus * bus,
-                          const char * path,
-                          const char * interface,
-                          const char * property,
-                          sd_bus_message * value,
-                          void * userdata,
-                          sd_bus_error * error)
-{
-    app_res_e res;
-
-    res = set_key(value, WPC_set_cipher_key);
-    if (res != APP_RES_OK)
-    {
-        SET_WPC_ERROR(error, "WPC_set_cipher_key", res);
-        return -EINVAL;
-    }
-
-    return 0;
-}
-
-/**
- * \brief   Set authentication key handler
- * \param   ... (from sd_bus property handler)
- */
-static int set_authen_key(sd_bus * bus,
-                          const char * path,
-                          const char * interface,
-                          const char * property,
-                          sd_bus_message * value,
-                          void * userdata,
-                          sd_bus_error * error)
-{
-    app_res_e res;
-    res = set_key(value, WPC_set_authentication_key);
-    if (res != APP_RES_OK)
-    {
-        SET_WPC_ERROR(error, "WPC_set_authentication_key", res);
-        return -EINVAL;
-    }
-
-    return 0;
-}
-
-
-/**
- * \brief   Set stack state
- * \param   ... (from sd_bus function signature)
- */
-static int set_stack_state(sd_bus_message * m, void * userdata, sd_bus_error * error)
-{
-    app_res_e res;
-    bool state;
-    int r;
-
-    /* Read the parameters */
-    r = sd_bus_message_read(m, "b", &state);
-    if (r < 0)
-    {
-        LOGE("Fail to parse parameters: %s\n", strerror(-r));
-        sd_bus_error_set_errno(error, EINVAL);
-        return r;
-    }
-
-    if (state)
-    {
-        res = WPC_start_stack();
-        WPC_set_autostart(1);
-        if (res == APP_RES_OK)
-        {
-            LOGI("Stack started manually\n");
-            send_dbus_signal("StackStarted");
-        }
-    }
-    else
-    {
-        WPC_set_autostart(0);
-        res = WPC_stop_stack();
-        if (res == APP_RES_OK)
-        {
-            LOGI("Stack stopped manually\n");
-            send_dbus_signal("StackStopped");
-        }
-    }
-
-    if (res != APP_RES_OK)
-    {
-        LOGE("Set stack state (%d) res = %d\n", state, res);
-    }
-
-    /* Reply with the response */
-    return sd_bus_reply_method_return(m, "b", res == APP_RES_OK);
-}
-
-/**
- * \brief   Clear cipher key
- * \param   ... (from sd_bus function signature)
- */
-static int clear_cipher_key(sd_bus_message * m, void * userdata, sd_bus_error * error)
-{
-    app_res_e res = WPC_remove_cipher_key();
-    if (res != APP_RES_OK)
-    {
-        SET_WPC_ERROR(error, "WPC_remove_cipher_key", res);
-        return -EINVAL;
-    }
-    // No return code
-    return sd_bus_reply_method_return(m, "");
-}
-
-/**
- * \brief   Clear authentication key
- * \param   ... (from sd_bus function signature)
- */
-static int clear_authen_key(sd_bus_message * m, void * userdata, sd_bus_error * error)
-{
-    app_res_e res = WPC_remove_authentication_key();
-    if (res != APP_RES_OK)
-    {
-        SET_WPC_ERROR(error, "WPC_remove_authentication_key", res);
-        return -EINVAL;
-    }
-
-    // No return code
-    return sd_bus_reply_method_return(m, "");
-}
-
-/** \brief  Maximum reserved size for app config */
-#define MAX_APP_CONFIG_SIZE 128
-
-/**
- * \brief   Get app config handler
- * \param   ... (from sd_bus function signature)
- */
-static int get_app_config(sd_bus_message * m, void * userdata, sd_bus_error * error)
-{
-    int r;
-    app_res_e res;
-    uint8_t seq;
-    uint16_t interval;
-    uint8_t app_config[MAX_APP_CONFIG_SIZE];
-    uint8_t size;
-
-    sd_bus_message * reply = NULL;
-
-    res = WPC_get_app_config_data_size(&size);
-    if (res != APP_RES_OK)
-    {
-        LOGE("Cannot determine app config size\n");
-        SET_WPC_ERROR(error, "WPC_get_app_config_data_size", res);
-        return -EINVAL;
-    }
-
-    if (size > MAX_APP_CONFIG_SIZE)
-    {
-        LOGE("App config size too big compared to reserved buffer\n");
-        sd_bus_error_set_errno(error, ENOMEM);
-        return -ENOMEM;
-    }
-
-    res = WPC_get_app_config_data(&seq, &interval, app_config, size);
-    if (res != APP_RES_OK)
-    {
-        if (res != APP_RES_NO_CONFIG)
-        {
-            LOGE("Cannot get app config %d\n", res);
-        }
-        SET_WPC_ERROR(error, "WPC_get_app_config_data", res);
-        return -EINVAL;
-    }
-
-    /* Create the answer */
-    r = sd_bus_message_new_method_return(m, &reply);
-    if (r < 0)
-    {
-        sd_bus_error_set_errno(error, r);
-        LOGE("Cannot create new message return %s\n", strerror(-r));
-        return r;
-    }
-
-    r = sd_bus_message_append(reply, "yq", seq, interval);
-    if (r < 0)
-    {
-        sd_bus_error_set_errno(error, r);
-        LOGE("Cannot append parameters: %s\n", strerror(-r));
-        return r;
-    }
-
-    r = sd_bus_message_append_array(reply, 'y', app_config, size);
-    if (r < 0)
-    {
-        sd_bus_error_set_errno(error, r);
-        LOGE("Cannot append array: %s\n", strerror(-r));
-        return r;
-    }
-
-    return sd_bus_send(NULL, reply, NULL);
-}
-
-/**
- * \brief   Set app config handler
- * \param   ... (from sd_bus function signature)
- */
-static int set_app_config(sd_bus_message * m, void * userdata, sd_bus_error * error)
-{
-    uint8_t seq;
-    uint16_t interval;
-    const void * app_config;
-    size_t n;
-    int r;
-    app_res_e res;
-
-    /* Read the parameters */
-    r = sd_bus_message_read(m, "yq", &seq, &interval);
-    if (r < 0)
-    {
-        sd_bus_error_set_errno(error, r);
-        LOGE("Fail to parse parameters: %s\n", strerror(-r));
-        return r;
-    }
-
-    r = sd_bus_message_read_array(m, 'y', &app_config, &n);
-    if (r < 0)
-    {
-        sd_bus_error_set_errno(error, r);
-        LOGE("Fail to parse app config bytes: %s\n", strerror(-r));
-        return r;
-    }
-
-    res = WPC_set_app_config_data(seq, interval, (uint8_t *) app_config, n);
-    if (res != APP_RES_OK)
-    {
-        SET_WPC_ERROR(error, "WPC_set_app_config_data", res);
-        return -EINVAL;
-    }
-
-    /* Reply with the response */
-    return sd_bus_reply_method_return(m, "b", true);
-}
-
-#endif
 
 /**
  * \brief   Apply new config if any param has changed
@@ -361,29 +80,8 @@ app_proto_res_e Config_Handle_set_config_request(wp_SetConfigReq *req,
     bool config_has_changed = false;
 
     // TODO: Add some sanity checks
-    // res = WPC_send_data(req->payload.bytes,
-    //                     req->payload.size,
-    //                     0,
-    //                     req->destination_address,
-    //                     req->qos,
-    //                     (uint8_t) req->source_endpoint,
-    //                     (uint8_t) req->destination_endpoint,
-    //                     NULL,
-    //                     0); // No initial delay supported
 
     // check any config change and apply them
-
-    // req->header. 
-    //     /* Unique request id */
-    //     uint64_t req_id;
-    //     /* Sink id if relevant for request */
-    //     bool has_sink_id;
-    //     char sink_id[16];
-    //     /* Timestamp for the request generation */
-    //     bool has_time_ms_epoch;
-    //     uint64_t time_ms_epoch;
-
-    // check new config, and new parameters
     wp_SinkNewConfig * cfg = &req->config;
 
     //cfg->sink_id[16]; not used
