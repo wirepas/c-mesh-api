@@ -92,10 +92,10 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
  * \note    the buffer pointed by event_p will not available anymore after callback return
  */
 typedef void (*onProtoDataRxEvent_cb_f)(uint8_t * event_p,
-                                        size_t    event_size,
-                                        uint32_t  network_address,
-                                        uint16_t  src_ep,
-                                        uint16_t  dst_ep);
+                                        size_t event_size,
+                                        uint32_t network_address,
+                                        uint16_t src_ep,
+                                        uint16_t dst_ep);
 
 /**
  * \brief   Register for receiving data in protobuf format

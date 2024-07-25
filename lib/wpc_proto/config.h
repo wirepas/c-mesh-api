@@ -73,7 +73,7 @@ static const wp_ErrorCode APP_ERROR_CODE_LUT[] = {
  *              Pointer to response to fill
  * \return      APP_RES_PROTO_OK or error code
  */
-app_proto_res_e Config_Handle_set_config_request(wp_SetConfigReq *  req,
+app_proto_res_e Config_Handle_set_config_request(wp_SetConfigReq * req,
                                                  wp_SetConfigResp * resp);
 
 /**
@@ -106,8 +106,8 @@ void Config_Fill_event_header(wp_EventHeader * header_p);
  * \param   res response to request
  */
 void Config_Fill_response_header(wp_ResponseHeader * header_p,
-                                 uint64_t            req_id,
-                                 wp_ErrorCode        res);
+                                 uint64_t req_id,
+                                 wp_ErrorCode res);
 
 /**
  * \brief   Fill config stucture with stored config

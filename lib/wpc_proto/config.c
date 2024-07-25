@@ -24,8 +24,8 @@
 
 /* Set the max of strings used (including \0), matching values defined in proto
  * files */
-#define GATEWAY_ID_MAX_SIZE      16
-#define SINK_ID_MAX_SIZE         16
+#define GATEWAY_ID_MAX_SIZE 16
+#define SINK_ID_MAX_SIZE    16
 
 /** Structure to hold config from node */
 typedef struct sink_config
@@ -37,26 +37,26 @@ typedef struct sink_config
     uint16_t ac_limit_max;
     uint16_t app_config_max_size;
     uint16_t version[4];
-    uint8_t  max_mtu;
-    uint8_t  ch_range_min;
-    uint8_t  ch_range_max;
-    uint8_t  pdu_buffer_size;
+    uint8_t max_mtu;
+    uint8_t ch_range_min;
+    uint8_t ch_range_max;
+    uint8_t pdu_buffer_size;
 
     /* Read parameters with node interrogation */
     //uint16_t CurrentAC;
-    bool     CipherKeySet;
-    bool     AuthenticationKeySet;
-    uint8_t  StackStatus;
+    bool CipherKeySet;
+    bool AuthenticationKeySet;
+    uint8_t StackStatus;
 
     /* Read write also ? */
     uint16_t ac_range_min_cur;  // 0 means unset ?
     uint16_t ac_range_max_cur;
 
     /* Read/Write parameters with node interrogation */
-    app_role_t    node_address;
-    app_role_t    app_node_role;
-    wp_NodeRole   wp_node_role; // same as app_node_role, different format
-    net_addr_t    network_address;
+    app_role_t node_address;
+    app_role_t app_node_role;
+    wp_NodeRole wp_node_role;  // same as app_node_role, different format
+    net_addr_t network_address;
     net_channel_t network_channel;
     // uint32_t channel_map; // deprecated
 
@@ -68,8 +68,8 @@ typedef struct sink_config
 /** Sink values read at init time */
 sink_config_t m_sink_config;
 
-static char     m_gateway_id[GATEWAY_ID_MAX_SIZE];
-static char     m_sink_id[SINK_ID_MAX_SIZE];
+static char m_gateway_id[GATEWAY_ID_MAX_SIZE];
+static char m_sink_id[SINK_ID_MAX_SIZE];
 static uint32_t m_event_id = 0;
 
 #if 0 // temporary deactivate of read/write access
@@ -357,8 +357,8 @@ static int set_app_config(sd_bus_message * m, void * userdata, sd_bus_error * er
 app_proto_res_e Config_Handle_set_config_request(wp_SetConfigReq *req,
                                                  wp_SetConfigResp *resp)
 {
-    app_res_e res                = APP_RES_OK;
-    bool      config_has_changed = false;
+    app_res_e res = APP_RES_OK;
+    bool config_has_changed = false;
 
     // TODO: Add some sanity checks
     // res = WPC_send_data(req->payload.bytes,
@@ -437,6 +437,7 @@ exit_on_error:
     if (config_has_changed)
     {
         //send event status
+        //onIndicationReceivedLocked(wpc_frame_t * frame, unsigned long long timestamp_ms)
     }
 
     LOGI("WPC_set_config res=%d\n", res);
@@ -677,9 +678,8 @@ void Config_Fill_response_header(wp_ResponseHeader * header_p, uint64_t req_id, 
 
 void Config_Fill_config(wp_SinkReadConfig * config_p)
 {
-    _Static_assert(
-        member_size(wp_AppConfigData, app_config_data)
-        == member_size(msap_app_config_data_write_req_pl_t, app_config_data));
+    _Static_assert( member_size(wp_AppConfigData, app_config_data)
+                    == member_size(msap_app_config_data_write_req_pl_t, app_config_data));
 
     uint8_t status = m_sink_config.StackStatus;
 

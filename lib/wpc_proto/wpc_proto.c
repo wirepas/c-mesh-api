@@ -36,8 +36,8 @@
 // Max possible size of encoded message
 #define MAX_PROTOBUF_SIZE WP_CONFIG_MESSAGE_PB_H_MAX_SIZE
 
-static char     m_gateway_model[GATEWAY_MODEL_MAX_SIZE];
-static char     m_gateway_version[GATEWAY_VERSION_MAX_SIZE];
+static char m_gateway_model[GATEWAY_MODEL_MAX_SIZE];
+static char m_gateway_version[GATEWAY_VERSION_MAX_SIZE];
 
 static onProtoDataRxEvent_cb_f m_onProtoDataRxEvent_cb = NULL;
 static onProtoEventStatus_cb_f m_onProtoEventStatus_cb = NULL;

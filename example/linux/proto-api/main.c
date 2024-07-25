@@ -14,7 +14,7 @@
 
 #define PRINT_BUFFERS
 #define LOG_MODULE_NAME "Main"
-#define MAX_LOG_LEVEL   INFO_LOG_LEVEL
+#define MAX_LOG_LEVEL INFO_LOG_LEVEL
 #include "logger.h"
 
 // Default serial port
@@ -41,7 +41,7 @@ static const uint8_t DUMMY_MESSAGE[]
         0x64, 0x5f, 0x31, 0x32, 0x33, 0x34, 0x35, 0x40, 0x01, 0x48, 0x02 };
 
 static int open_and_check_connection(unsigned long baudrate,
-                                     const char *  port_name)
+                                     const char * port_name)
 {
     uint16_t mesh_version;
     if (WPC_initialize(port_name, baudrate) != APP_RES_OK)
@@ -66,10 +66,10 @@ static int open_and_check_connection(unsigned long baudrate,
 }
 
 static void onDataRxEvent_cb(uint8_t * event_p,
-                             size_t    event_size,
-                             uint32_t  network_id,
-                             uint16_t  src_ep,
-                             uint16_t  dst_ep)
+                             size_t event_size,
+                             uint32_t network_id,
+                             uint16_t src_ep,
+                             uint16_t dst_ep)
 {
     LOGI("Event to publish size = %d\n", event_size);
     LOG_PRINT_BUFFER(event_p, event_size);
