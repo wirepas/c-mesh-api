@@ -4,8 +4,13 @@ WPC_PROTO_MODULE = $(SOURCEPREFIX)wpc_proto/
 
 GENERATED_PROTOS_FOLDER := $(WPC_PROTO_MODULE)gen/generated_protos/
 NANO_PB_FOLDER := $(WPC_PROTO_MODULE)deps/nanopb/
+INTERNAL_MODULES := $(WPC_PROTO_MODULE)internal_modules/
 
 SOURCES += $(WPC_PROTO_MODULE)wpc_proto.c
+
+CFLAGS += -I$(INTERNAL_MODULES)
+SOURCES += $(INTERNAL_MODULES)common.c
+SOURCES += $(INTERNAL_MODULES)proto_data.c
 
 # Add standard proto files
 CFLAGS += -I$(NANO_PB_FOLDER)
