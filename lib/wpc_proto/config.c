@@ -12,6 +12,7 @@
 
 #include "platform.h"
 #include "wpc_types.h"
+#include "wpc_proto.h"
 #include "config.h"
 #include "config_message.pb.h"
 
@@ -52,8 +53,9 @@ typedef struct sink_config
     uint16_t ac_range_max_cur;
 
     /* Read/Write parameters with node interrogation */
-    app_addr_t    node_address;
-    wp_NodeRole   node_role;
+    app_role_t    node_address;
+    app_role_t    app_node_role;
+    wp_NodeRole   wp_node_role; // same as app_node_role, different format
     net_addr_t    network_address;
     net_channel_t network_channel;
     // uint32_t channel_map; // deprecated
@@ -343,6 +345,110 @@ static int set_app_config(sd_bus_message * m, void * userdata, sd_bus_error * er
 
 #endif
 
+/**
+ * \brief   Apply new config if any param has changed
+ * \param   req
+ *          pointer to the request received
+ * \param   resp
+ *          Pointer to the reponse to send back
+ * \return  APP_RES_PROTO_OK if answer is ready to send
+ */
+
+app_proto_res_e Config_Handle_set_config_request(wp_SetConfigReq *req,
+                                                 wp_SetConfigResp *resp)
+{
+    app_res_e res                = APP_RES_OK;
+    bool      config_has_changed = false;
+
+    // TODO: Add some sanity checks
+    // res = WPC_send_data(req->payload.bytes,
+    //                     req->payload.size,
+    //                     0,
+    //                     req->destination_address,
+    //                     req->qos,
+    //                     (uint8_t) req->source_endpoint,
+    //                     (uint8_t) req->destination_endpoint,
+    //                     NULL,
+    //                     0); // No initial delay supported
+
+    // check any config change and apply them
+
+    // req->header. 
+    //     /* Unique request id */
+    //     uint64_t req_id;
+    //     /* Sink id if relevant for request */
+    //     bool has_sink_id;
+    //     char sink_id[16];
+    //     /* Timestamp for the request generation */
+    //     bool has_time_ms_epoch;
+    //     uint64_t time_ms_epoch;
+
+    // check new config, and new parameters
+    wp_SinkNewConfig * cfg = &req->config;
+
+    //cfg->sink_id[16]; not used
+
+    if (cfg->has_node_role)
+    {
+        app_role_t options = 0;
+        if (cfg->node_role.flags_count > 0)
+        {
+            options |= (cfg->node_role.flags[0] == wp_NodeRole_RoleFlags_LOW_LATENCY)
+                       ? APP_ROLE_OPTION_LL : 0;
+            options |= (cfg->node_role.flags[0] == wp_NodeRole_RoleFlags_AUTOROLE)
+                       ? APP_ROLE_OPTION_AUTOROLE : 0;
+        }
+        if (cfg->node_role.flags_count > 1)
+        {
+            options |= (cfg->node_role.flags[1] == wp_NodeRole_RoleFlags_LOW_LATENCY)
+                       ? APP_ROLE_OPTION_LL : 0;
+            options |= (cfg->node_role.flags[1] == wp_NodeRole_RoleFlags_AUTOROLE)
+                       ? APP_ROLE_OPTION_AUTOROLE : 0;
+        }
+        app_role_t new_role = CREATE_ROLE(cfg->node_role.role, options);
+        if (   (new_role != m_sink_config.app_node_role)
+            || (m_sink_config.StackStatus & APP_STACK_ROLE_NOT_SET) )
+        {
+            res = WPC_set_role(new_role);
+            if (res != APP_RES_OK)
+            {
+                goto exit_on_error;
+            }
+            config_has_changed = true;
+        }
+    }
+
+        // bool has_node_address;
+            // uint32_t node_address;
+        // bool has_network_address;
+            // uint64_t network_address;
+        // bool has_network_channel;
+            // uint32_t network_channel;
+        // bool has_app_config;
+            // wp_AppConfigData app_config;         -> set_app_config
+        // bool has_keys;
+            // wp_NetworkKeys keys;                 -> set_key
+        // wp_AccessCycleRange current_ac_range;
+        // bool has_sink_state;
+            // wp_OnOffState sink_state;            -> set_stack_state
+
+exit_on_error:
+    // if any config changed, send status event
+    if (config_has_changed)
+    {
+        //send event status
+    }
+
+    LOGI("WPC_set_config res=%d\n", res);
+
+    Config_Fill_response_header(&resp->header,
+                                req->header.req_id,
+                                convert_error_code(APP_ERROR_CODE_LUT, res));
+    Config_Fill_config(&resp->config);
+
+    return APP_RES_PROTO_OK;
+}
+
 bool Config_Get_has_network_address()
 {
     return (m_sink_config.StackStatus & APP_STACK_NETWORK_ADDRESS_NOT_SET)
@@ -474,18 +580,19 @@ static bool initialize_variables()
                                NULL,
                                "Node role",
                                m_sink_config.StackStatus & APP_STACK_ROLE_NOT_SET);
-    m_sink_config.node_role.role = GET_BASE_ROLE(role);
+    m_sink_config.app_node_role  = role;
+    m_sink_config.wp_node_role.role = GET_BASE_ROLE(role);
     if (GET_ROLE_OPTIONS(role) & APP_ROLE_OPTION_LL)
     {
-        m_sink_config.node_role.flags[flags_count] = wp_NodeRole_RoleFlags_LOW_LATENCY;
+        m_sink_config.wp_node_role.flags[flags_count] = wp_NodeRole_RoleFlags_LOW_LATENCY;
         flags_count++;
     }
     if (GET_ROLE_OPTIONS(role) & APP_ROLE_OPTION_AUTOROLE)
     {
-        m_sink_config.node_role.flags[flags_count] = wp_NodeRole_RoleFlags_AUTOROLE;
+        m_sink_config.wp_node_role.flags[flags_count] = wp_NodeRole_RoleFlags_AUTOROLE;
         flags_count++;
     }
-    m_sink_config.node_role.flags_count = flags_count;
+    m_sink_config.wp_node_role.flags_count = flags_count;
 
     res &= get_value_from_node(WPC_get_network_address,
                                &m_sink_config.network_address,
@@ -579,7 +686,7 @@ void Config_Fill_config(wp_SinkReadConfig * config_p)
     *config_p = (wp_SinkReadConfig){
         /* Sink minimal config */
         .has_node_role = ((status & APP_STACK_ROLE_NOT_SET) ? false : true),
-        .node_role = m_sink_config.node_role,
+        .node_role = m_sink_config.wp_node_role,
         .has_node_address = ((status & APP_STACK_NODE_ADDRESS_NOT_SET) ? false : true),
         .node_address = m_sink_config.node_address,
         .has_network_address = ((status & APP_STACK_NETWORK_ADDRESS_NOT_SET) ? false : true),
