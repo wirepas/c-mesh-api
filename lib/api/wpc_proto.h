@@ -31,6 +31,10 @@ typedef enum
 
 /**
  * \brief        Init protobuf interface
+ * \param[in]    port_name
+ *               serial port to use to connect to sink
+ * \param[in]    bitrate
+ *               serial connection speed
  * \param[in]    gateway_id
  *               Pointer to gateway id string
  * \param[in]    gateway_model
@@ -41,7 +45,9 @@ typedef enum
  *               Pointer to the sink id string
  * \return       Return code of the operation
  */
-app_proto_res_e WPC_Proto_initialize(char * gateway_id,
+app_proto_res_e WPC_Proto_initialize(const char * port_name,
+                                     unsigned long bitrate,
+                                     char * gateway_id,
                                      char * gateway_model,
                                      char * gateway_version,
                                      char * sink_id);

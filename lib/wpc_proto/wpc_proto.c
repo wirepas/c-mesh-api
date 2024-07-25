@@ -143,6 +143,27 @@ static bool onDataReceived(const uint8_t * bytes,
     return false;
 }
 
+static int open_and_check_connection(unsigned long baudrate, const char * port_name)
+{
+    uint16_t mesh_version;
+    if (WPC_initialize(port_name, baudrate) != APP_RES_OK)
+    {
+        LOGE("Cannot open serial sink connection (%s)\n", port_name);
+        return -1;
+    }
+
+    /* Check the connectivity with sink by reading mesh version */
+    if (WPC_get_mesh_API_version(&mesh_version) != APP_RES_OK)
+    {
+        LOGE("Cannot establish communication with sink with baudrate %d bps\n", baudrate);
+        WPC_close();
+        return -1;
+    }
+
+    LOGI("Node is running mesh API version %d (uart baudrate is %d bps)\n", mesh_version, baudrate);
+    return 0;
+}
+
 static void onStackStatusReceived(uint8_t status)
 {
     _Static_assert(wp_StatusEvent_size <= sizeof(m_output_buffer));
@@ -202,11 +223,18 @@ static void onStackStatusReceived(uint8_t status)
     }
 }
 
-app_proto_res_e WPC_Proto_initialize(char * gateway_id,
+app_proto_res_e WPC_Proto_initialize(const char * port_name,
+                                     unsigned long bitrate,
+                                     char * gateway_id,
                                      char * gateway_model,
                                      char * gateway_version,
                                      char * sink_id)
 {
+    if (open_and_check_connection(bitrate, port_name) != 0)
+    {
+        return APP_RES_PROTO_WPC_NOT_INITIALIZED;
+    }
+
     strncpy(m_gateway_model, gateway_model, GATEWAY_MODEL_MAX_SIZE);
     m_gateway_model[GATEWAY_MODEL_MAX_SIZE - 1] = '\0';
 
