@@ -12,6 +12,7 @@
 /*
  * Maximum size of a response. It can be used as an hint
  * to give a big enough buffer to @ref WPC_Proto_handle_request
+ * or @WPC_Proto_get_current_event_status
  */
 #define WPC_PROTO_MAX_RESPONSE_SIZE 512
 
@@ -31,9 +32,27 @@ typedef enum
 } app_proto_res_e;
 
 
+/**
+ * \brief        Init protobuf interface
+ * \param[in]    port_name
+ *               Serial port to use to connect to sink
+ * \param[in]    bitrate
+ *               Serial connection speed
+ * \param[in]    gateway_id
+ *               Pointer to gateway id string
+ * \param[in]    gateway_model
+ *               Pointer to gateway model string, "" if not available
+ * \param[in]    gateway_version
+ *               Pointer to gateway version string, "" if not available
+ * \param[in]    sink_id
+ *               Pointer to the sink id string
+ * \return       Return code of the operation
+ */
 app_proto_res_e WPC_Proto_initialize(const char * port_name,
                                      unsigned long bitrate,
                                      char * gateway_id,
+                                     char * gateway_model,
+                                     char * gateway_version,
                                      char * sink_id);
 
 /**
@@ -104,6 +123,7 @@ app_proto_res_e WPC_Proto_register_for_event_status(onEventStatus_cb_f onEventSt
  *               Caller [in] must set it to the max size of buffer
  *               Callee [out] will update it to the size of the generated buffer
  *               Set to 0 in case return code is different from APP_RES_PROTO_OK
+ * \note         Buffer size should higher or equal to @WPC_PROTO_MAX_RESPONSE_SIZE
  */
 app_proto_res_e WPC_Proto_get_current_event_status(bool online,
                                                    uint8_t * event_status_p,
