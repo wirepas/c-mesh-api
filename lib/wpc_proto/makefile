@@ -11,6 +11,7 @@ SOURCES += $(WPC_PROTO_MODULE)wpc_proto.c
 CFLAGS += -I$(INTERNAL_MODULES)
 SOURCES += $(INTERNAL_MODULES)common.c
 SOURCES += $(INTERNAL_MODULES)proto_data.c
+SOURCES += $(INTERNAL_MODULES)proto_config.c
 
 # Add standard proto files
 CFLAGS += -I$(NANO_PB_FOLDER)
