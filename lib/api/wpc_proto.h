@@ -90,5 +90,23 @@ typedef void (*onEventStatus_cb_f)(uint8_t * event_p,
  */
 app_proto_res_e WPC_Proto_register_for_event_status(onEventStatus_cb_f onEventStatus_cb);
 
+/**
+ * \brief        Get current event Status. It is mainly required at boot time of gateway
+ *               to publish Gateway status (and no event status are generated yet)
+ * \param[in]    online
+ *               If true, get the "ONLINE" current status. If false, get the "OFFLINE" status
+ *               to be published as last will topic
+ * \param[out]   event_status_p
+ *               Pointer to buffer to store the event status
+ *               Not updated in case return code is different from APP_RES_PROTO_OK
+ * \param[inout] event_status_size_p
+ *               Pointer to the size of the event status
+ *               Caller [in] must set it to the max size of buffer
+ *               Callee [out] will update it to the size of the generated buffer
+ *               Set to 0 in case return code is different from APP_RES_PROTO_OK
+ */
+app_proto_res_e WPC_Proto_get_current_event_status(bool online,
+                                                   uint8_t * event_status_p,
+                                                   size_t * event_status_size_p);
 
 #endif
