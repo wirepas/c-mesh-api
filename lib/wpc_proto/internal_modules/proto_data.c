@@ -17,8 +17,6 @@
 
 static uint32_t m_network_id = 0x123456; // TODO: to be read from the sink
 
-static uint32_t m_event_id = 0;
-
 static onDataRxEvent_cb_f m_rx_event_cb = NULL;
 
 static bool onDataReceived(const uint8_t * bytes,
@@ -85,14 +83,7 @@ static bool onDataReceived(const uint8_t * bytes,
     memcpy(message_PacketReceived_p->payload.bytes, bytes, num_bytes);
     message_PacketReceived_p->payload.size = num_bytes;
 
-    // Add the header (TODO: make a function for it)
-    strcpy(message_PacketReceived_p->header.gw_id, Common_get_gateway_id());
-    strcpy(message_PacketReceived_p->header.sink_id, Common_get_sink_id());
-    message_PacketReceived_p->header.has_sink_id = true;
-    message_PacketReceived_p->header.has_time_ms_epoch = true;
-    message_PacketReceived_p->header.time_ms_epoch = Platform_get_timestamp_ms_epoch();
-    message_PacketReceived_p->header.event_id = m_event_id++;
-
+    Common_fill_event_header(&message_PacketReceived_p->header);
 
     // Using the module static buffer
     pb_ostream_t stream = pb_ostream_from_buffer(encoded_message_p, WPC_PROTO_MAX_RESPONSE_SIZE);

@@ -21,6 +21,18 @@
 #include <pb_encode.h>
 #include <pb_decode.h>
 
+// Wirepas Gateway's protobuff message definition version
+// see lib/wpc_proto/deps/backend-apis/gateway_to_backend/README.md
+#define GW_PROTO_MESSAGE_VERSION 2
+
+// API version implemented in the gateway
+// to fill implemented_api_version in GatewayInfo
+// see lib/wpc_proto/deps/backend-apis/gateway_to_backend/protocol_buffers_files/config_message.proto
+#define GW_PROTO_API_VERSION 1
+
+// Max possible size of encoded message
+#define MAX_PROTOBUF_SIZE WP_CONFIG_MESSAGE_PB_H_MAX_SIZE
+
 static int open_and_check_connection(unsigned long baudrate, const char * port_name)
 {
     uint16_t mesh_version;
@@ -45,6 +57,8 @@ static int open_and_check_connection(unsigned long baudrate, const char * port_n
 app_proto_res_e WPC_Proto_initialize(const char * port_name,
                                      unsigned long bitrate,
                                      char * gateway_id,
+                                     char * gateway_model,
+                                     char * gateway_version,
                                      char * sink_id)
 {
     if (open_and_check_connection(bitrate, port_name) != 0)
@@ -52,12 +66,14 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
         return APP_RES_PROTO_WPC_NOT_INITIALIZED;
     }
 
-    Common_init(gateway_id, sink_id);
+    Common_init(gateway_id, gateway_model, gateway_version, sink_id);
     Proto_data_init();
     Proto_config_init();
 
-    LOGI("WPC proto initialize with gw_id = %s and sink_id = %s\n",
+    LOGI("WPC proto initialize with gw_id = %s, gw_model = %s, gw_version = %s and sink_id = %s\n",
                 gateway_id,
+                gateway_model,
+                gateway_version,
                 sink_id);
 
     return APP_RES_PROTO_OK;
@@ -207,13 +223,60 @@ app_proto_res_e WPC_Proto_get_current_event_status(bool online,
                                                    uint8_t * event_status_p,
                                                    size_t * event_status_size_p)
 {
+    bool status;
+    wp_GenericMessage message = wp_GenericMessage_init_zero;
+    wp_WirepasMessage message_wirepas = wp_WirepasMessage_init_zero;
+    message.wirepas = &message_wirepas;
+
+    // Allocate the needed space for only the submessage we want to send
+    wp_StatusEvent * message_StatusEvent_p = Platform_malloc(sizeof(wp_StatusEvent));
+    if (message_StatusEvent_p == NULL)
+    {
+        LOGE("Not enough memory to encode StatusEvent\n");
+        return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
+    }
+
+    message_wirepas.status_event = message_StatusEvent_p;
+
+    *message_StatusEvent_p = (wp_StatusEvent){
+        .version = GW_PROTO_MESSAGE_VERSION,
+        .configs_count = 0,
+    };
+    
     if (online)
     {
         // Generate status event with state ONLINE
+        message_StatusEvent_p->state = wp_OnOffState_ON;
     }
     else
     {
         // Generate status event with state OFFLINE
+        message_StatusEvent_p->state = wp_OnOffState_OFF;
     }
-    return APP_RES_PROTO_NOT_IMPLEMENTED;
+
+    message_StatusEvent_p->has_gw_model = (strlen(Common_get_gateway_model()) != 0);
+    strcpy(message_StatusEvent_p->gw_model, Common_get_gateway_model());
+    message_StatusEvent_p->has_gw_version = (strlen(Common_get_gateway_version()) != 0);
+    strcpy(message_StatusEvent_p->gw_version, Common_get_gateway_version());    
+
+    Common_fill_event_header(&message_StatusEvent_p->header);
+
+    // Using the module static buffer
+    pb_ostream_t stream = pb_ostream_from_buffer(event_status_p, *event_status_size_p);
+
+    /* Now we are ready to encode the message! */
+	status = pb_encode(&stream, wp_GenericMessage_fields, &message);
+
+    /* Release buffer as we don't need it anymore */
+    Platform_free(message_StatusEvent_p, sizeof(wp_StatusEvent));
+
+	if (!status) {
+		LOGE("StatusEvent encoding failed: %s\n", PB_GET_ERROR(&stream));
+        *event_status_size_p = 0;
+        return APP_RES_PROTO_CANNOT_GENERATE_RESPONSE;
+    }
+
+    LOGI("Msg size %d\n", stream.bytes_written);
+    *event_status_size_p = stream.bytes_written;
+    return APP_RES_PROTO_OK;
 }
