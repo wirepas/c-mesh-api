@@ -86,6 +86,7 @@ app_proto_res_e Config_Handle_get_config_request(wp_GetConfigsReq * req,
  */
 app_proto_res_e Config_Handle_set_config_request(wp_SetConfigReq * req,
                                                  wp_SetConfigResp * resp);
+
 /**
  * \brief   Return network address state
  * \return  true if network address is set

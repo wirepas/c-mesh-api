@@ -76,7 +76,7 @@ app_proto_res_e Config_Handle_get_config_request(wp_GetConfigsReq *req,
     res = WPC_get_stack_status(&m_sink_config.StackStatus);
     if (res != APP_RES_OK)
     {
-        LOGE("Get stack status failed");
+        LOGE("Get stack status failed\n");
     }
 
     LOGE("WPC_get_config res=%d\n", res);
@@ -127,10 +127,10 @@ app_proto_res_e Config_Handle_set_config_request(wp_SetConfigReq *req,
             res = WPC_set_role(new_role);
             if (res != APP_RES_OK)
             {
-                LOGE("Set role failed");
+                LOGE("Set role failed\n");
                 goto exit;
             }
-            LOGI("Set role 0x%02X", new_role);
+            LOGI("Set role 0x%02X\n", new_role);
             m_sink_config.app_node_role = new_role;
             m_sink_config.wp_node_role = cfg->node_role;
             config_has_changed = true;
@@ -145,10 +145,10 @@ app_proto_res_e Config_Handle_set_config_request(wp_SetConfigReq *req,
             res = WPC_set_node_address(cfg->node_address);
             if (res != APP_RES_OK)
             {
-                LOGE("Set node address failed");
+                LOGE("Set node address failed\n");
                 goto exit;
             }
-            LOGI("Set node address %d", cfg->node_address);
+            LOGI("Set node address %d\n", cfg->node_address);
             m_sink_config.node_address = cfg->node_address;
             config_has_changed = true;
         }
@@ -162,10 +162,10 @@ app_proto_res_e Config_Handle_set_config_request(wp_SetConfigReq *req,
             res = WPC_set_network_address(cfg->network_address);
             if (res != APP_RES_OK)
             {
-                LOGE("Set network address failed");
+                LOGE("Set network address failed\n");
                 goto exit;
             }
-            LOGI("Set network address %d", cfg->network_address);
+            LOGI("Set network address %d\n", cfg->network_address);
             m_sink_config.network_address = cfg->network_address;
             config_has_changed = true;
         }
@@ -179,10 +179,10 @@ app_proto_res_e Config_Handle_set_config_request(wp_SetConfigReq *req,
             res = WPC_set_network_channel(cfg->network_channel);
             if (res != APP_RES_OK)
             {
-                LOGE("Set network channel failed");
+                LOGE("Set network channel failed\n");
                 goto exit;
             }
-            LOGI("Set network channel %d", cfg->network_channel);
+            LOGI("Set network channel %d\n", cfg->network_channel);
             m_sink_config.network_channel = cfg->network_channel;
             config_has_changed = true;
         }
@@ -197,10 +197,10 @@ app_proto_res_e Config_Handle_set_config_request(wp_SetConfigReq *req,
                                       m_sink_config.app_config_max_size);
         if (res != APP_RES_OK)
         {
-            LOGE("Set app config failed");
+            LOGE("Set app config failed\n");
             goto exit;
         }
-        LOGI("Set app config");
+        LOGI("Set app config\n");
         m_sink_config.app_config.sequence_number = cfg->app_config.seq;
         m_sink_config.app_config.diag_data_interval = cfg->app_config.diag_interval_s;
         memcpy(m_sink_config.app_config.app_config_data,
@@ -214,16 +214,16 @@ app_proto_res_e Config_Handle_set_config_request(wp_SetConfigReq *req,
         res = WPC_set_cipher_key(cfg->keys.cipher);
         if (res != APP_RES_OK)
         {
-            LOGE("Set Cipher key failed");
+            LOGE("Set Cipher key failed\n");
             goto exit;
         }
         res = WPC_set_authentication_key(cfg->keys.authentication);
         if (res != APP_RES_OK)
         {
-            LOGE("Set Authentication key failed");
+            LOGE("Set Authentication key failed\n");
             goto exit;
         }
-        LOGI("Set keys");
+        LOGI("Set keys\n");
         WPC_is_cipher_key_set(&m_sink_config.CipherKeySet);
         WPC_is_authentication_key_set(&m_sink_config.AuthenticationKeySet);
         config_has_changed = true;
@@ -238,10 +238,10 @@ app_proto_res_e Config_Handle_set_config_request(wp_SetConfigReq *req,
                                              cfg->current_ac_range.max_ms);
             if (res != APP_RES_OK)
             {
-                LOGE("Set AC range failed");
+                LOGE("Set AC range failed\n");
                 goto exit;
             }
-            LOGI("Set AC range %d-%d", cfg->current_ac_range.min_ms,
+            LOGI("Set AC range %d-%d\n", cfg->current_ac_range.min_ms,
                                        cfg->current_ac_range.max_ms);
             m_sink_config.ac_range_min_cur = cfg->current_ac_range.min_ms;
             m_sink_config.ac_range_max_cur = cfg->current_ac_range.max_ms;
@@ -258,10 +258,10 @@ app_proto_res_e Config_Handle_set_config_request(wp_SetConfigReq *req,
             res = WPC_start_stack();
             if (res != APP_RES_OK)
             {
-                LOGE("Stack start failed");
+                LOGE("Stack start failed\n");
                 goto exit;
             }
-            LOGI("Stack started");
+            LOGI("Stack started\n");
             config_has_changed = true;
         }
         else if (     (cfg->sink_state == wp_OnOffState_OFF)
@@ -272,10 +272,10 @@ app_proto_res_e Config_Handle_set_config_request(wp_SetConfigReq *req,
             res = WPC_stop_stack();
             if (res != APP_RES_OK)
             {
-                LOGE("Stack stop failed");
+                LOGE("Stack stop failed\n");
                 goto exit;
             }
-            LOGI("Stack stopped");
+            LOGI("Stack stopped\n");
             // Stack status will be updated on exit
             config_has_changed = true;
         }
@@ -298,7 +298,7 @@ exit:
     }
     else
     {
-        LOGI("WPC_set_config success");
+        LOGI("WPC_set_config success\n");
     }
 
     Config_Fill_response_header(&resp->header,
