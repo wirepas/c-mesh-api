@@ -202,3 +202,18 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
     return res;
 
 }
+
+app_proto_res_e WPC_Proto_get_current_event_status(bool online,
+                                                   uint8_t * event_status_p,
+                                                   size_t * event_status_size_p)
+{
+    if (online)
+    {
+        // Generate status event with state ONLINE
+    }
+    else
+    {
+        // Generate status event with state OFFLINE
+    }
+    return APP_RES_PROTO_NOT_IMPLEMENTED;
+}
