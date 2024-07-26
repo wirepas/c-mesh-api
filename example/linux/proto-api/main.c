@@ -20,8 +20,10 @@
 static char * port_name = "/dev/ttyACM0";
 #define DEFAULT_BITRATE 1000000
 
-#define GATEWAY_ID "GR_poto_gw"
-#define SINK_ID "sink0"
+#define GATEWAY_ID      "GR_proto_gw_001"
+#define GATEWAY_MODEL   "Proto_gw"
+#define GATEWAY_VERSION "0.1"
+#define SINK_ID         "sink0"
 
 static uint8_t m_response_buffer[WPC_PROTO_MAX_RESPONSE_SIZE];
 
@@ -59,6 +61,8 @@ int main(int argc, char * argv[])
     if (WPC_Proto_initialize(port_name,
                              bitrate,
                              GATEWAY_ID,
+                             GATEWAY_MODEL,
+                             GATEWAY_VERSION,
                              SINK_ID) != APP_RES_PROTO_OK)
 
         return -1;

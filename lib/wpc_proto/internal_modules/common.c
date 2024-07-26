@@ -4,11 +4,18 @@
  *
  */
 #include "common.h"
+#include "platform.h"
+#include "wp_global.pb.h"
 
+// Set the max of strings used, matching values defined in proto files
 #define GATEWAY_ID_MAX_SIZE 16
+#define GATEWAY_MODEL_MAX_SIZE 64
+#define GATEWAY_VERSION_MAX_SIZE 32
 #define SINK_ID_MAX_SIZE 16
 
 static char m_gateway_id[GATEWAY_ID_MAX_SIZE+1];
+static char m_gateway_model[GATEWAY_MODEL_MAX_SIZE+1];
+static char m_gateway_version[GATEWAY_VERSION_MAX_SIZE+1];
 static char m_sink_id[SINK_ID_MAX_SIZE+1];
 
 /* Error code LUT for protobuf errors from app_res_e */
@@ -43,15 +50,24 @@ static const wp_ErrorCode APP_ERROR_CODE_LUT[] = {
     wp_ErrorCode_INVALID_REBOOT_DELAY           ,   // APP_RES_INVALID_REBOOT_DELAY,         Invalid reboot delay
     wp_ErrorCode_INTERNAL_ERROR                     // APP_RES_INTERNAL_ERROR                WPC internal error
 };
+
 /**
  * \brief   Intialize the common module
  * \return  True if successful, False otherwise
  */
 bool Common_init(char * gateway_id,
+                 char * gateway_model,
+                 char * gateway_version,
                  char * sink_id)
 {
     strncpy(m_gateway_id, gateway_id, GATEWAY_ID_MAX_SIZE);
     m_gateway_id[GATEWAY_ID_MAX_SIZE]='\0';
+    
+    strncpy(m_gateway_model, gateway_model, GATEWAY_MODEL_MAX_SIZE);
+    m_gateway_model[GATEWAY_MODEL_MAX_SIZE] = '\0';
+
+    strncpy(m_gateway_version, gateway_version, GATEWAY_VERSION_MAX_SIZE);
+    m_gateway_version[GATEWAY_VERSION_MAX_SIZE] = '\0';
 
     strncpy(m_sink_id, sink_id, SINK_ID_MAX_SIZE);
     m_sink_id[SINK_ID_MAX_SIZE]='\0';
@@ -62,6 +78,16 @@ bool Common_init(char * gateway_id,
 char * Common_get_gateway_id(void)
 {
     return m_gateway_id;
+}
+
+char * Common_get_gateway_model(void)
+{
+    return m_gateway_model;
+}
+
+char * Common_get_gateway_version(void)
+{
+    return m_gateway_version;
 }
 
 char * Common_get_sink_id(void)
@@ -77,4 +103,14 @@ wp_ErrorCode Common_convert_error_code(app_res_e error)
         ret = APP_ERROR_CODE_LUT[error];
     }
     return ret;
+}
+
+void Common_fill_event_header(wp_EventHeader * header_p)
+{
+    strcpy(header_p->gw_id, Common_get_gateway_id());
+    strcpy(header_p->sink_id, Common_get_sink_id());
+    header_p->has_sink_id = (strlen(m_sink_id) != 0);
+    header_p->has_time_ms_epoch = true;
+    header_p->time_ms_epoch = Platform_get_timestamp_ms_epoch();
+    header_p->event_id = rand() + (((uint64_t) rand()) << 32);
 }
