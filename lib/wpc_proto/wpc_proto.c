@@ -292,6 +292,45 @@ app_proto_res_e WPC_Proto_register_for_event_status(onProtoEventStatus_cb_f onPr
     return APP_RES_PROTO_OK;
 }
 
+/**
+ * \brief   Handle Get gateway info
+ * \param   req
+ *          Pointer to the request received
+ * \param   resp
+ *          Pointer to the reponse to send back
+ * \return  APP_RES_PROTO_OK if answer is ready to send
+ */
+app_proto_res_e handle_get_gateway_info_request(wp_GetGwInfoReq * req,
+                                                wp_GetGwInfoResp * resp)
+{
+    app_res_e res = APP_RES_OK;
+
+    // TODO: Add some sanity checks
+
+    Config_Fill_response_header(&resp->header,
+                                req->header.req_id,
+                                convert_error_code(APP_ERROR_CODE_LUT, res));
+
+    resp->info.current_time_s_epoch = Platform_get_timestamp_ms_epoch();
+
+    resp->info.has_gw_model = (strlen(m_gateway_model) != 0);
+    strncpy(resp->info.gw_model,
+            m_gateway_model,
+            member_size(wp_StatusEvent, gw_model));
+    resp->info.gw_model[member_size(wp_StatusEvent, gw_model) - 1] = '\0';
+
+    resp->info.has_gw_version = (strlen(m_gateway_version) != 0);
+    strncpy(resp->info.gw_version,
+            m_gateway_version,
+            member_size(wp_StatusEvent, gw_version));
+    resp->info.gw_version[member_size(wp_StatusEvent, gw_version) - 1] = '\0';
+
+    resp->info.has_implemented_api_version = true;
+    resp->info.implemented_api_version = GW_PROTO_API_VERSION;
+
+    return APP_RES_PROTO_OK;
+}
+
 static app_proto_res_e handle_send_data_request(wp_SendPacketReq *req,
                                                 wp_SendPacketResp *resp)
 {
@@ -418,7 +457,20 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
     }
     else if (wp_message_req_p->get_gateway_info_req)
     {
+        resp_size = sizeof(wp_GetGwInfoResp);
+        resp_msg_p = Platform_malloc(resp_size);
+        if (resp_msg_p == NULL)
+        {
+            LOGE("Not enough memory to encode GetGatewayInfo\n");
+            return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
+        }
+        message_resp.wirepas->get_gateway_info_resp = (wp_GetGwInfoResp *) resp_msg_p;
+
         LOGI("Get gateway info request\n");
+
+        res = handle_get_gateway_info_request(wp_message_req_p->get_gateway_info_req,
+                                                     (wp_GetGwInfoResp *) resp_msg_p);        
+
     }
     else
     {
