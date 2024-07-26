@@ -64,14 +64,31 @@ static char m_gateway_id[GATEWAY_ID_MAX_SIZE];
 static char m_sink_id[SINK_ID_MAX_SIZE];
 static uint32_t m_event_id = 0;
 
-/**
- * \brief   Apply new config if any param has changed
- * \param   req
- *          pointer to the request received
- * \param   resp
- *          Pointer to the reponse to send back
- * \return  APP_RES_PROTO_OK if answer is ready to send
- */
+
+app_proto_res_e Config_Handle_get_config_request(wp_GetConfigsReq *req,
+                                                 wp_GetConfigsResp *resp)
+{
+    app_res_e res = APP_RES_OK;
+
+    // TODO: Add some sanity checks
+
+    // At least refresh stack status
+    res = WPC_get_stack_status(&m_sink_config.StackStatus);
+    if (res != APP_RES_OK)
+    {
+        LOGE("Get stack status failed");
+    }
+
+    LOGE("WPC_get_config res=%d\n", res);
+
+    Config_Fill_response_header(&resp->header,
+                                req->header.req_id,
+                                convert_error_code(APP_ERROR_CODE_LUT, res));
+    resp->configs_count = 1;
+    Config_Fill_config(&resp->configs[0]);
+
+    return APP_RES_PROTO_OK;
+}
 
 app_proto_res_e Config_Handle_set_config_request(wp_SetConfigReq *req,
                                                  wp_SetConfigResp *resp)

@@ -357,7 +357,19 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
     /* Call the right request handler */
     if (wp_message_req_p->get_configs_req)
     {
+        resp_size = sizeof(wp_GetConfigsResp);
+        resp_msg_p = Platform_malloc(resp_size);
+        if (resp_msg_p == NULL)
+        {
+            LOGE("Not enough memory to encode GetConfigResp");
+            return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
+        }
+        message_resp.wirepas->get_configs_resp = (wp_GetConfigsResp *) resp_msg_p;
+
         LOGI("Get config request\n");
+
+        res = Config_Handle_get_config_request(wp_message_req_p->get_configs_req,
+                                               (wp_GetConfigsResp *) resp_msg_p);
     }
     else if (wp_message_req_p->set_config_req)
     {

@@ -64,18 +64,28 @@ static const wp_ErrorCode APP_ERROR_CODE_LUT[] = {
     wp_ErrorCode_INTERNAL_ERROR                     // APP_RES_INTERNAL_ERROR                WPC internal error
 };
 
+/**
+ * \brief   Handle Get config request
+ * \param   req
+ *          Pointer to the request received
+ * \param   resp
+ *          Pointer to the reponse to send back
+ * \return  APP_RES_PROTO_OK if answer is ready to send
+ */
+app_proto_res_e Config_Handle_get_config_request(wp_GetConfigsReq * req,
+                                                 wp_GetConfigsResp * resp);
 
 /**
- * \brief       Handle a set config message received
- * \param[in]   req
- *              Pointer to request
- * \param[out]  resp
- *              Pointer to response to fill
- * \return      APP_RES_PROTO_OK or error code
+ * \brief   Handle Set config request
+ *          Apply new config if any param has changed
+ * \param   req
+ *          Pointer to the request received
+ * \param   resp
+ *          Pointer to the reponse to send back
+ * \return  APP_RES_PROTO_OK if answer is ready to send
  */
 app_proto_res_e Config_Handle_set_config_request(wp_SetConfigReq * req,
                                                  wp_SetConfigResp * resp);
-
 /**
  * \brief   Return network address state
  * \return  true if network address is set
