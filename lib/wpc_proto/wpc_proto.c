@@ -13,6 +13,7 @@
 #include "wpc.h"
 #include "wpc_proto.h"
 #include "proto_data.h"
+#include "proto_config.h"
 #include "common.h"
 #include "platform.h"
 
@@ -53,6 +54,7 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
 
     Common_init(gateway_id, sink_id);
     Proto_data_init();
+    Proto_config_init();
 
     LOGI("WPC proto initialize with gw_id = %s and sink_id = %s\n",
                 gateway_id,
@@ -108,24 +110,47 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
     if (wp_message_req_p->get_configs_req)
     {
         LOGI("Get config request\n");
+        resp_size  = sizeof(wp_GetConfigsResp);
+        resp_msg_p = Platform_malloc(resp_size);
+        if (resp_msg_p == NULL)
+        {
+            LOGE("Not enough memory to encode GetConfigsResp");
+            return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
+        }
+        message_resp.wirepas->get_configs_resp
+            = (wp_GetConfigsResp *) resp_msg_p;
+
+        res = Proto_config_handle_get_configs(wp_message_req_p->get_configs_req,
+                                             (wp_GetConfigsResp *) resp_msg_p);
     }
     else if (wp_message_req_p->set_config_req)
     {
         LOGI("Set config request\n");
+        resp_size  = sizeof(wp_SetConfigResp);
+        resp_msg_p = Platform_malloc(resp_size);
+        if (resp_msg_p == NULL)
+        {
+            LOGE("Not enough memory to encode SetConfigResp");
+            return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
+        }
+        message_resp.wirepas->set_config_resp
+            = (wp_SetConfigResp *) resp_msg_p;
+
+        res = Proto_config_handle_set_config(wp_message_req_p->set_config_req,
+                                            (wp_SetConfigResp *) resp_msg_p);
     }
     else if (wp_message_req_p->send_packet_req)
     {
+        LOGI("Send packet request\n");
         resp_size  = sizeof(wp_SendPacketResp);
         resp_msg_p = Platform_malloc(resp_size);
         if (resp_msg_p == NULL)
         {
-            LOGE("Not enough memory to encode StatusEvent");
+            LOGE("Not enough memory to encode SendPacketResp");
             return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
         }
         message_resp.wirepas->send_packet_resp
             = (wp_SendPacketResp *) resp_msg_p;
-
-        LOGI("Send packet request\n");
 
         res = Proto_data_handle_send_data(wp_message_req_p->send_packet_req,
                                           (wp_SendPacketResp *) resp_msg_p);
