@@ -10,6 +10,9 @@
 #include "wpc.h"
 #include "wpc_proto.h"
 
+/* Return the size of a struct member */
+#define member_size(type, member) (sizeof( ((type *)0)->member ))
+
 /**
  * \brief   Intialize the common module
  * \return  True if successful, False otherwise
