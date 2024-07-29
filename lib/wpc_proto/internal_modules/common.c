@@ -114,3 +114,16 @@ void Common_fill_event_header(wp_EventHeader * header_p)
     header_p->time_ms_epoch = Platform_get_timestamp_ms_epoch();
     header_p->event_id = rand() + (((uint64_t) rand()) << 32);
 }
+
+void Common_Fill_response_header(wp_ResponseHeader * header_p,
+                                 uint64_t req_id,
+                                 wp_ErrorCode res)
+{
+    strcpy(header_p->gw_id, Common_get_gateway_id());
+    strcpy(header_p->sink_id, Common_get_sink_id());
+    header_p->has_sink_id = (strlen(m_sink_id) != 0);
+    header_p->has_time_ms_epoch = true;
+    header_p->time_ms_epoch = Platform_get_timestamp_ms_epoch();
+    header_p->req_id = req_id;
+    header_p->res = res;
+}
