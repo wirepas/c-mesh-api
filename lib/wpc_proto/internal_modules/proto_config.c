@@ -241,10 +241,31 @@ void Proto_config_fill_config(wp_SinkReadConfig * config_p)
     }
 }
 
+
 bool Proto_config_init(void)
 {
     /* Read initial config from sink */
-    return initialize_config_variables();
+    initialize_config_variables();
+
+    return APP_RES_PROTO_OK;
+}
+
+void Proto_config_close()
+{
+}
+
+
+void Proto_config_on_stack_boot_status(uint8_t status)
+{
+    m_sink_config.StackStatus = status;
+
+    if ((status & APP_STACK_STOPPED) == 0)
+    {
+        LOGI("Stack started\n");
+    }
+    
+    // After a reboot, read again the variables
+    initialize_config_variables();
 }
 
 app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
