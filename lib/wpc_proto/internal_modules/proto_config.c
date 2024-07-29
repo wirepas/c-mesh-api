@@ -90,8 +90,26 @@ static bool get_value_from_node(void * f,
     return true;
 }
 
+static app_role_t convert_role_to_app_format(wp_NodeRole * proto_role)
+{
+    app_role_t options = 0;
+    int count = proto_role->flags_count;
+    while (count > 0)
+    {
+        count--;
+        options |= (proto_role->flags[count] == wp_NodeRole_RoleFlags_LOW_LATENCY)
+                   ? APP_ROLE_OPTION_LL : 0;
+        options |= (proto_role->flags[count] == wp_NodeRole_RoleFlags_AUTOROLE)
+                   ? APP_ROLE_OPTION_AUTOROLE : 0;
+    }
+
+    return CREATE_ROLE(proto_role->role, options);
+}
+
 static void convert_role_to_proto_format(app_role_t role, wp_NodeRole * proto_role)
 {
+    _Static_assert(member_size(wp_NodeRole, flags) >= (2 * sizeof(wp_NodeRole_RoleFlags)) );
+
     pb_size_t flags_count = 0;
     proto_role->role = GET_BASE_ROLE(role);
     if (GET_ROLE_OPTIONS(role) & APP_ROLE_OPTION_LL)
@@ -109,7 +127,6 @@ static void convert_role_to_proto_format(app_role_t role, wp_NodeRole * proto_ro
 
 static bool initialize_config_variables()
 {
-    _Static_assert(member_size(wp_NodeRole, flags) == (2 * sizeof(wp_NodeRole_RoleFlags)) );
     bool res = true;
 
     res &= get_value_from_node(WPC_get_stack_profile, &m_sink_config.stack_profile, NULL,
@@ -351,7 +368,269 @@ void Proto_config_on_stack_boot_status(uint8_t status)
 app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
                                                wp_SetConfigResp *resp)
 {
-    return APP_RES_PROTO_NOT_IMPLEMENTED;
+    app_res_e res;
+    app_res_e global_res = APP_RES_OK;
+    bool config_has_changed = false;
+    bool restart_stack = false;
+    bool stop_stack = false;
+    wp_SinkNewConfig * cfg = &req->config;
+
+    // TODO: Add some sanity checks
+
+    if (strcmp(cfg->sink_id, Common_get_sink_id()) != 0)
+    {
+        // wrong target, exit
+        LOGE("Wrong sink target\n");
+        Common_Fill_response_header(&resp->header,
+                                    req->header.req_id,
+                                    wp_ErrorCode_INVALID_SINK_ID);
+        // Config reponse not filled in this case
+        return APP_RES_PROTO_OK;
+    }
+
+    // At least refresh stack status
+    WPC_get_stack_status(&m_sink_config.StackStatus);
+
+    if (!(m_sink_config.StackStatus & APP_STACK_STOPPED))
+    {
+        // Check if stop is needed
+        if  (    cfg->has_node_role
+              || cfg->has_node_address
+              || cfg->has_network_address
+              || cfg->has_network_channel
+              || cfg->has_keys
+              || cfg->has_current_ac_range
+              || cfg->has_node_address
+              || cfg->has_node_address
+              || cfg->has_node_address )
+        {
+            restart_stack = true;
+            stop_stack = true;
+        }
+        if ( (cfg->has_sink_state) && (cfg->sink_state == wp_OnOffState_OFF))
+        {
+            restart_stack = false;
+            stop_stack = true;
+        }
+    }
+
+    if (stop_stack)
+    {
+        // stack needs to be stopped before applying config
+        WPC_set_autostart(0);
+        res = WPC_stop_stack();
+        if (res != APP_RES_OK)
+        {
+            LOGE("Stack stop failed\n");
+            global_res = APP_RES_INVALID_VALUE;
+        }
+        else
+        {
+            LOGI("Stack stopped\n");
+            // Stack status will be updated on exit
+            config_has_changed = true;
+        }
+    }
+
+    // check if any config need to be changed
+
+    // role must be changed first
+    if (cfg->has_node_role)
+    {
+        app_role_t new_role = convert_role_to_app_format(&cfg->node_role);
+        if (new_role != m_sink_config.app_node_role)
+        {
+            res = WPC_set_role(new_role);
+            if (res != APP_RES_OK)
+            {
+                LOGE("Set role failed\n");
+                global_res = APP_RES_INVALID_VALUE;
+            }
+            else
+            {
+                LOGI("Set role 0x%02X\n", new_role);
+                m_sink_config.app_node_role = new_role;
+                config_has_changed = true;
+            }
+        }
+    }
+
+    if (cfg->has_node_address)
+    {
+        if (   (cfg->node_address != m_sink_config.node_address)
+            || (m_sink_config.StackStatus & APP_STACK_NODE_ADDRESS_NOT_SET) )
+        {
+            res = WPC_set_node_address(cfg->node_address);
+            if (res != APP_RES_OK)
+            {
+                LOGE("Set node address failed\n");
+                global_res = APP_RES_INVALID_VALUE;
+            }
+            else
+            {
+                LOGI("Set node address %d\n", cfg->node_address);
+                m_sink_config.node_address = cfg->node_address;
+                config_has_changed = true;
+            }
+        }
+    }
+
+    if (cfg->has_network_address)
+    {
+        if (   (cfg->network_address != m_sink_config.network_address)
+            || (m_sink_config.StackStatus & APP_STACK_NETWORK_ADDRESS_NOT_SET) )
+        {
+            res = WPC_set_network_address(cfg->network_address);
+            if (res != APP_RES_OK)
+            {
+                LOGE("Set network address failed\n");
+                global_res = APP_RES_INVALID_VALUE;
+            }
+            else
+            {
+                LOGI("Set network address %d\n", cfg->network_address);
+                m_sink_config.network_address = cfg->network_address;
+                config_has_changed = true;
+            }
+        }
+    }
+
+    if (cfg->has_network_channel)
+    {
+        if (   (cfg->network_channel != m_sink_config.network_channel)
+            || (m_sink_config.StackStatus & APP_STACK_NETWORK_CHANNEL_NOT_SET) )
+        {
+            res = WPC_set_network_channel(cfg->network_channel);
+            if (res != APP_RES_OK)
+            {
+                LOGE("Set network channel failed\n");
+                global_res = APP_RES_INVALID_VALUE;
+            }
+            else
+            {
+                LOGI("Set network channel %d\n", cfg->network_channel);
+                m_sink_config.network_channel = cfg->network_channel;
+                config_has_changed = true;
+            }
+        }
+    }
+
+    if (cfg->has_app_config)
+    {
+        // no check, just apply it
+        res = WPC_set_app_config_data(cfg->app_config.seq,
+                                      cfg->app_config.diag_interval_s,
+                                      cfg->app_config.app_config_data,
+                                      m_sink_config.app_config_max_size);
+        if (res != APP_RES_OK)
+        {
+            LOGE("Set app config failed\n");
+            global_res = APP_RES_INVALID_VALUE;
+        }
+        else
+        {
+            LOGI("Set app config\n");
+            config_has_changed = true;
+        }
+    }
+
+    if (cfg->has_keys)
+    {
+        res = WPC_set_cipher_key(cfg->keys.cipher);
+        if (res != APP_RES_OK)
+        {
+            LOGE("Set Cipher key failed\n");
+            global_res = APP_RES_INVALID_VALUE;
+        }
+        else
+        {
+            LOGI("Set Cipher key\n");
+            WPC_is_cipher_key_set(&m_sink_config.CipherKeySet);
+            config_has_changed = true;
+        }
+
+        res = WPC_set_authentication_key(cfg->keys.authentication);
+        if (res != APP_RES_OK)
+        {
+            LOGE("Set Authentication key failed\n");
+            global_res = APP_RES_INVALID_VALUE;
+        }
+        else
+        {
+            LOGI("Set Authentication key\n");
+            WPC_is_authentication_key_set(&m_sink_config.AuthenticationKeySet);
+            config_has_changed = true;
+        }
+    }
+
+    if (cfg->has_current_ac_range)
+    {
+        if ((cfg->current_ac_range.min_ms != m_sink_config.ac_range_min_cur)
+            || (cfg->current_ac_range.max_ms != m_sink_config.ac_range_max_cur))
+        {
+            res = WPC_set_access_cycle_range(cfg->current_ac_range.min_ms,
+                                             cfg->current_ac_range.max_ms);
+            if (res != APP_RES_OK)
+            {
+                LOGE("Set AC range failed\n");
+                global_res = APP_RES_INVALID_VALUE;
+            }
+            else
+            {
+                LOGI("Set AC range %d-%d\n", cfg->current_ac_range.min_ms,
+                                             cfg->current_ac_range.max_ms);
+                m_sink_config.ac_range_min_cur = cfg->current_ac_range.min_ms;
+                m_sink_config.ac_range_max_cur = cfg->current_ac_range.max_ms;
+                config_has_changed = true;
+            }
+        }
+    }
+
+    if (   (    (cfg->has_sink_state)
+             && (cfg->sink_state == wp_OnOffState_ON)
+             && (m_sink_config.StackStatus & APP_STACK_STOPPED) )
+        || restart_stack)
+    {
+        // Start the stack
+        WPC_set_autostart(1);
+        res = WPC_start_stack();
+        if (res != APP_RES_OK)
+        {
+            LOGE("Stack start failed\n");
+            global_res = APP_RES_INVALID_VALUE;
+        }
+        else
+        {
+            LOGI("Stack started\n");
+            config_has_changed = true;
+        }
+    }
+
+    // if any config changed, send status event
+    if (config_has_changed)
+    {
+        // At least refresh stack status
+        WPC_get_stack_status(&m_sink_config.StackStatus);
+
+        // TODO : send event status
+        // onIndicationReceivedLocked(wpc_frame_t * frame, unsigned long long timestamp_ms);
+    }
+
+    if (global_res != APP_RES_OK)
+    {
+        LOGE("WPC_set_config failed, res=%d\n", global_res);
+    }
+    else
+    {
+        LOGI("WPC_set_config success\n");
+    }
+
+    Common_Fill_response_header(&resp->header,
+                                req->header.req_id,
+                                Common_convert_error_code(global_res));
+    fill_sink_read_config(&resp->config);
+
+    return APP_RES_PROTO_OK;
 }
 
 app_proto_res_e Proto_config_handle_get_configs(wp_GetConfigsReq *req,
