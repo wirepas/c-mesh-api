@@ -11,10 +11,26 @@
 #include "wpc_proto.h"
 
 /**
+ * \brief   Fill config stucture with stored config
+ * \param   config_p pointer to config to fill
+ */
+void Proto_config_fill_config(wp_SinkReadConfig * config_p);
+
+/**
  * \brief   Intialize the module in charge of data handling config
  * \return  True if successful, False otherwise
  */
 bool Proto_config_init(void);
+
+/**
+ * \brief   Close the module in charge of config
+ */
+void Proto_config_close();
+
+/**
+ * \brief   Handle config cache when status changed
+ */
+void Proto_config_on_stack_boot_status(uint8_t status);
 
 app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
                                                wp_SetConfigResp *resp);

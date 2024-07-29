@@ -16,6 +16,11 @@
  */
 bool Proto_data_init(void);
 
+/**
+ * \brief   Close the module in charge of data
+ */
+void Proto_data_close(void);
+
 app_proto_res_e Proto_data_handle_send_data(wp_SendPacketReq *req,
                                             wp_SendPacketResp *resp);
 

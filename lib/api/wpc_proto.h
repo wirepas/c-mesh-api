@@ -56,6 +56,11 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
                                      char * sink_id);
 
 /**
+ * \brief        close protobuf interface
+ */
+void WPC_Proto_close();
+
+/**
  * \brief        Handle a request in protobuf format
  * \param[in]    request_p
  *               Pointer to the protobuf message
