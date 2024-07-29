@@ -38,4 +38,17 @@ wp_ErrorCode Common_convert_error_code(app_res_e error);
  */
 void Common_fill_event_header(wp_EventHeader * header_p);
 
+/**
+ * \brief   Fill response header
+ * \param   header_p
+ *          pointer to header to fill
+ * \param   req_id
+ *          id of the request
+ * \param   res
+ *          result of the request
+ */
+void Common_Fill_response_header(wp_ResponseHeader * header_p,
+                                 uint64_t req_id,
+                                 wp_ErrorCode res);
+
 #endif
