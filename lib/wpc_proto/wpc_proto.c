@@ -33,6 +33,80 @@
 // Max possible size of encoded message
 #define MAX_PROTOBUF_SIZE WP_CONFIG_MESSAGE_PB_H_MAX_SIZE
 
+static onEventStatus_cb_f m_onProtoEventStatus_cb = NULL;
+
+
+static void onStackStatusReceived(uint8_t status)
+{
+    bool res;
+    wp_StatusEvent * message_StatusEvent_p;
+    uint8_t * encoded_message_p;
+    wp_GenericMessage message = wp_GenericMessage_init_zero;
+    wp_WirepasMessage message_wirepas = wp_WirepasMessage_init_zero;
+    message.wirepas = &message_wirepas;
+
+    LOGI("Status received : %d\n", status);
+
+    Proto_config_on_stack_boot_status(status);
+
+    // Allocate the needed space for only the submessage we want to send
+    message_StatusEvent_p = Platform_malloc(sizeof(wp_StatusEvent));
+    if (message_StatusEvent_p == NULL)
+    {
+        LOGE("Not enough memory to encode StatusEvent\n");
+        return;
+    }
+
+    // Allocate needed buffer for encoded message
+    encoded_message_p = Platform_malloc(WPC_PROTO_MAX_RESPONSE_SIZE);
+    if (encoded_message_p == NULL)
+    {
+        LOGE("Not enough memory for output buffer");
+        Platform_free(message_StatusEvent_p, sizeof(wp_StatusEvent));
+        return;
+    }
+
+    message_wirepas.status_event = message_StatusEvent_p;
+
+    *message_StatusEvent_p = (wp_StatusEvent){
+        .version = GW_PROTO_MESSAGE_VERSION,
+        .state = wp_OnOffState_ON, // gateway state, always ONLINE
+        .configs_count = 1,
+    };
+
+    message_StatusEvent_p->has_gw_model = (strlen(Common_get_gateway_model()) != 0);
+    strcpy(message_StatusEvent_p->gw_model, Common_get_gateway_model());
+    message_StatusEvent_p->has_gw_version = (strlen(Common_get_gateway_version()) != 0);
+    strcpy(message_StatusEvent_p->gw_version, Common_get_gateway_version());
+
+    Proto_config_fill_config(&message_StatusEvent_p->configs[0]);
+    
+    Common_fill_event_header(&message_StatusEvent_p->header);
+
+    // Using the module static buffer
+    pb_ostream_t stream = pb_ostream_from_buffer(encoded_message_p, WPC_PROTO_MAX_RESPONSE_SIZE);
+
+    /* Now we are ready to encode the message! */
+    res = pb_encode(&stream, wp_GenericMessage_fields, &message);
+
+    /* Release buffer as we don't need it anymore */
+    Platform_free(message_StatusEvent_p, sizeof(wp_StatusEvent));
+
+	if (!res) {
+		LOGE("Encoding failed: %s\n", PB_GET_ERROR(&stream));
+	}
+	else
+	{
+        LOGI("Msg size %d\n", stream.bytes_written);
+        if (m_onProtoEventStatus_cb != NULL)
+        {
+            m_onProtoEventStatus_cb(encoded_message_p, stream.bytes_written);
+        }
+    }
+
+    Platform_free(encoded_message_p, WPC_PROTO_MAX_RESPONSE_SIZE);
+}
+
 static int open_and_check_connection(unsigned long baudrate, const char * port_name)
 {
     uint16_t mesh_version;
@@ -69,6 +143,12 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
     Common_init(gateway_id, gateway_model, gateway_version, sink_id);
     Proto_data_init();
     Proto_config_init();
+    
+    if (WPC_register_for_stack_status(onStackStatusReceived) != APP_RES_OK)
+    {
+        LOGE("Stack status already registered\n");
+        return APP_RES_PROTO_ALREADY_REGISTERED;
+    }
 
     LOGI("WPC proto initialized with gw_id = %s, gw_model = %s, gw_version = %s and sink_id = %s\n",
                 gateway_id,
@@ -79,10 +159,29 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
     return APP_RES_PROTO_OK;
 }
 
+void WPC_Proto_close()
+{
+    WPC_unregister_from_stack_status();
+    Proto_config_close();
+    Proto_data_close();
+    WPC_close();
+}
 
 app_proto_res_e WPC_Proto_register_for_data_rx_event(onDataRxEvent_cb_f onDataRxEvent_cb)
 {
     return Proto_data_register_for_data(onDataRxEvent_cb);
+}
+
+app_proto_res_e WPC_Proto_register_for_event_status(onEventStatus_cb_f onProtoEventStatus_cb)
+{
+    // Only support one "client" for now
+    if (m_onProtoEventStatus_cb != NULL)
+    {
+        return APP_RES_PROTO_ALREADY_REGISTERED;
+    }
+
+    m_onProtoEventStatus_cb = onProtoEventStatus_cb;
+    return APP_RES_PROTO_OK;
 }
 
 app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,

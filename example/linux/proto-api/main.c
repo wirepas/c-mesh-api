@@ -38,7 +38,13 @@ static void onDataRxEvent_cb(uint8_t * event_p,
                             uint16_t src_ep,
                             uint16_t dst_ep)
 {
-    LOGI("Event to publish size = %d\n", event_size);
+    LOGI("RxEvent to publish size = %d\n", event_size);
+    LOG_PRINT_BUFFER(event_p, event_size);
+}
+
+static void onEventStatus_cb(uint8_t * event_p, size_t event_size)
+{
+    LOGI("EventStatus to publish size = %d\n", event_size);
     LOG_PRINT_BUFFER(event_p, event_size);
 }
 
@@ -68,6 +74,7 @@ int main(int argc, char * argv[])
         return -1;
 
     WPC_Proto_register_for_data_rx_event(onDataRxEvent_cb);
+    WPC_Proto_register_for_event_status(onEventStatus_cb);
 
     response_size = sizeof(m_response_buffer);
 
@@ -84,4 +91,6 @@ int main(int argc, char * argv[])
 
 
     pause();
+
+    WPC_Proto_close();
 }

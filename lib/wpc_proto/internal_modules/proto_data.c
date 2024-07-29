@@ -120,6 +120,11 @@ bool Proto_data_init(void)
     return WPC_register_for_data(onDataReceived) == APP_RES_OK;
 }
 
+void Proto_data_close(void)
+{
+    WPC_unregister_for_data();
+}
+
 app_proto_res_e Proto_data_handle_send_data(wp_SendPacketReq *req,
                                             wp_SendPacketResp *resp)
 {
