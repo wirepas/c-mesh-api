@@ -70,7 +70,7 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
     Proto_data_init();
     Proto_config_init();
 
-    LOGI("WPC proto initialize with gw_id = %s, gw_model = %s, gw_version = %s and sink_id = %s\n",
+    LOGI("WPC proto initialized with gw_id = %s, gw_model = %s, gw_version = %s and sink_id = %s\n",
                 gateway_id,
                 gateway_model,
                 gateway_version,

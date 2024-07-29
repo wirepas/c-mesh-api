@@ -11,7 +11,7 @@
 #include "wpc_proto.h"
 
 /**
- * \brief   Intialize the module in charge of data handling congig
+ * \brief   Intialize the module in charge of data handling config
  * \return  True if successful, False otherwise
  */
 bool Proto_config_init(void);
