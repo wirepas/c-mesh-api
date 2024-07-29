@@ -23,7 +23,7 @@
 
 // Wirepas Gateway's protobuff message definition version
 // see lib/wpc_proto/deps/backend-apis/gateway_to_backend/README.md
-#define GW_PROTO_MESSAGE_VERSION 2
+#define GW_PROTO_MESSAGE_VERSION 1
 
 // API version implemented in the gateway
 // to fill implemented_api_version in GatewayInfo
