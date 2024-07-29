@@ -27,9 +27,27 @@ void Proto_config_close();
  */
 void Proto_config_on_stack_boot_status(uint8_t status);
 
+/**
+ * \brief   Handle Set config request
+ *          Apply new configs if any param has changed.
+ *          Try to apply all of them, even if one fails.
+ * \param   req
+ *          Pointer to the request received
+ * \param   resp
+ *          Pointer to the reponse to send back
+ * \return  APP_RES_PROTO_OK if answer is ready to send
+ */
 app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
                                                wp_SetConfigResp *resp);
 
+/**
+ * \brief   Handle Get config request
+ * \param   req
+ *          Pointer to the request received
+ * \param   resp
+ *          Pointer to the reponse to send back
+ * \return  APP_RES_PROTO_OK if answer is ready to send
+ */
 app_proto_res_e Proto_config_handle_get_configs(wp_GetConfigsReq *req,
                                                 wp_GetConfigsResp *resp);
 
