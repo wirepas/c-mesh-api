@@ -198,6 +198,73 @@ static bool initialize_variables()
     return res;
 }
 
+
+void Proto_config_fill_config(wp_SinkReadConfig * config_p)
+{
+    _Static_assert( member_size(wp_AppConfigData, app_config_data)
+                    == member_size(msap_app_config_data_write_req_pl_t, app_config_data));
+
+    uint8_t status = m_sink_config.StackStatus;
+
+    *config_p = (wp_SinkReadConfig){
+        /* Sink minimal config */
+        .has_node_role = ((status & APP_STACK_ROLE_NOT_SET) ? false : true),
+        .node_role = m_sink_config.wp_node_role,
+        .has_node_address = ((status & APP_STACK_NODE_ADDRESS_NOT_SET) ? false : true),
+        .node_address = m_sink_config.node_address,
+        .has_network_address = ((status & APP_STACK_NETWORK_ADDRESS_NOT_SET) ? false : true),
+        .network_address = m_sink_config.network_address,
+        .has_network_channel = ((status & APP_STACK_NETWORK_CHANNEL_NOT_SET) ? false : true),
+        .network_channel = m_sink_config.network_channel,
+        .has_app_config = ((status & APP_STACK_APP_DATA_NOT_SET) ? false : true),
+        .app_config = { .diag_interval_s = m_sink_config.app_config.diag_data_interval,
+                        .seq = m_sink_config.app_config.sequence_number},                         
+        .has_channel_map = false,                                       
+        .has_are_keys_set = true,                                       
+        .are_keys_set =    m_sink_config.CipherKeySet 
+                        && m_sink_config.AuthenticationKeySet,          
+
+        .has_current_ac_range = (m_sink_config.ac_range_min_cur == 0 ? false : true),                           
+        
+        .current_ac_range = {.min_ms = m_sink_config.ac_range_min_cur,
+                             .max_ms = m_sink_config.ac_range_max_cur}, 
+        /* Read only parameters */
+        .has_ac_limits = true,                                          
+        .ac_limits = {.min_ms = m_sink_config.ac_limit_min,
+                      .max_ms = m_sink_config.ac_limit_max},            
+        .has_max_mtu = true,                                            
+        .max_mtu = m_sink_config.max_mtu,                               
+        .has_channel_limits = true,                                     
+        .channel_limits = {.min_channel = m_sink_config.ch_range_min,
+                           .max_channel = m_sink_config.ch_range_max},  
+        .has_hw_magic = true,                                           
+        .hw_magic = m_sink_config.hw_magic,                             
+        .has_stack_profile = true,                                      
+        .stack_profile = m_sink_config.stack_profile,                   
+        .has_app_config_max_size = true,                                
+        .app_config_max_size = m_sink_config.app_config_max_size,       
+        .has_firmware_version = true,                                   
+        .firmware_version = {.major = m_sink_config.version[0],
+                             .minor = m_sink_config.version[1],
+                             .maint = m_sink_config.version[2],
+                             .dev = m_sink_config.version[3] },       
+        /* State of sink */
+        .has_sink_state = true,                                         
+        .sink_state = ((status & APP_STACK_STOPPED) ? wp_OnOffState_OFF : wp_OnOffState_ON),      
+        /* Scratchpad info for the sink */
+        .has_stored_scratchpad = false,                                 
+        .has_stored_status = false,                                     
+        .has_stored_type = false,                                       
+        .has_processed_scratchpad = false,                              
+        .has_firmware_area_id = false,                                  
+        .has_target_and_action = false                                  
+    };
+    memcpy(config_p->app_config.app_config_data,
+           m_sink_config.app_config.app_config_data, MAXIMUM_APP_CONFIG_SIZE);
+
+    strcpy(config_p->sink_id, Common_get_sink_id());
+}
+
 bool Proto_config_init(void)
 {
     /* Read initial config from sink */
@@ -215,5 +282,24 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
 app_proto_res_e Proto_config_handle_get_configs(wp_GetConfigsReq *req,
                                                 wp_GetConfigsResp *resp)
 {
-    return APP_RES_PROTO_NOT_IMPLEMENTED;
+    app_res_e res = APP_RES_OK;
+
+    // TODO: Add some sanity checks
+
+    // At least refresh stack status
+    res = WPC_get_stack_status(&m_sink_config.StackStatus);
+    if (res != APP_RES_OK)
+    {
+        LOGE("Get stack status failed\n");
+    }
+
+    LOGE("WPC_get_config res=%d\n", res);
+
+    Common_Fill_response_header(&resp->header,
+                                req->header.req_id,
+                                Common_convert_error_code(res));
+    resp->configs_count = 1;
+    Proto_config_fill_config(&resp->configs[0]);
+
+    return APP_RES_PROTO_OK;
 }
