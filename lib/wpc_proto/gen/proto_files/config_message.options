@@ -1,5 +1,5 @@
 wp.NodeRole.flags max_count:2
-wp.AppConfigData.app_config_data max_size:80 fixed_length:true
+wp.AppConfigData.app_config_data max_size:80
 wp.NetworkKeys.cipher max_size:16 fixed_length:true
 wp.NetworkKeys.authentication max_size:16 fixed_length:true
 wp.SinkReadConfig.sink_id max_size:16
