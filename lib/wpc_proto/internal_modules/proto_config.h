@@ -10,11 +10,6 @@
 #include "wpc.h"
 #include "wpc_proto.h"
 
-/**
- * \brief   Fill config stucture with stored config
- * \param   config_p pointer to config to fill
- */
-void Proto_config_fill_config(wp_SinkReadConfig * config_p);
 
 /**
  * \brief   Intialize the module in charge of data handling config
@@ -37,5 +32,11 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
 
 app_proto_res_e Proto_config_handle_get_configs(wp_GetConfigsReq *req,
                                                 wp_GetConfigsResp *resp);
+
+app_proto_res_e Proto_config_get_current_event_status(bool online,
+                                                      uint8_t * event_status_p,
+                                                      size_t * event_status_size_p);
+
+app_proto_res_e Proto_config_register_for_event_status(onEventStatus_cb_f onProtoEventStatus_cb);
 
 #endif

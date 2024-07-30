@@ -21,10 +21,6 @@
 #include <pb_encode.h>
 #include <pb_decode.h>
 
-// Wirepas Gateway's protobuff message definition version
-// see lib/wpc_proto/deps/backend-apis/gateway_to_backend/README.md
-#define GW_PROTO_MESSAGE_VERSION 1
-
 // API version implemented in the gateway
 // to fill implemented_api_version in GatewayInfo
 // see lib/wpc_proto/deps/backend-apis/gateway_to_backend/protocol_buffers_files/config_message.proto
@@ -33,79 +29,6 @@
 // Max possible size of encoded message
 #define MAX_PROTOBUF_SIZE WP_CONFIG_MESSAGE_PB_H_MAX_SIZE
 
-static onEventStatus_cb_f m_onProtoEventStatus_cb = NULL;
-
-
-static void onStackStatusReceived(uint8_t status)
-{
-    bool res;
-    wp_StatusEvent * message_StatusEvent_p;
-    uint8_t * encoded_message_p;
-    wp_GenericMessage message = wp_GenericMessage_init_zero;
-    wp_WirepasMessage message_wirepas = wp_WirepasMessage_init_zero;
-    message.wirepas = &message_wirepas;
-
-    LOGI("Status received : %d\n", status);
-
-    Proto_config_on_stack_boot_status(status);
-
-    // Allocate the needed space for only the submessage we want to send
-    message_StatusEvent_p = Platform_malloc(sizeof(wp_StatusEvent));
-    if (message_StatusEvent_p == NULL)
-    {
-        LOGE("Not enough memory to encode StatusEvent\n");
-        return;
-    }
-
-    // Allocate needed buffer for encoded message
-    encoded_message_p = Platform_malloc(WPC_PROTO_MAX_RESPONSE_SIZE);
-    if (encoded_message_p == NULL)
-    {
-        LOGE("Not enough memory for output buffer");
-        Platform_free(message_StatusEvent_p, sizeof(wp_StatusEvent));
-        return;
-    }
-
-    message_wirepas.status_event = message_StatusEvent_p;
-
-    *message_StatusEvent_p = (wp_StatusEvent){
-        .version = GW_PROTO_MESSAGE_VERSION,
-        .state = wp_OnOffState_ON, // gateway state, always ONLINE
-        .configs_count = 1,
-    };
-
-    message_StatusEvent_p->has_gw_model = (strlen(Common_get_gateway_model()) != 0);
-    strcpy(message_StatusEvent_p->gw_model, Common_get_gateway_model());
-    message_StatusEvent_p->has_gw_version = (strlen(Common_get_gateway_version()) != 0);
-    strcpy(message_StatusEvent_p->gw_version, Common_get_gateway_version());
-
-    Proto_config_fill_config(&message_StatusEvent_p->configs[0]);
-    
-    Common_fill_event_header(&message_StatusEvent_p->header);
-
-    // Using the module static buffer
-    pb_ostream_t stream = pb_ostream_from_buffer(encoded_message_p, WPC_PROTO_MAX_RESPONSE_SIZE);
-
-    /* Now we are ready to encode the message! */
-    res = pb_encode(&stream, wp_GenericMessage_fields, &message);
-
-    /* Release buffer as we don't need it anymore */
-    Platform_free(message_StatusEvent_p, sizeof(wp_StatusEvent));
-
-	if (!res) {
-		LOGE("Encoding failed: %s\n", PB_GET_ERROR(&stream));
-	}
-	else
-	{
-        LOGI("Msg size %d\n", stream.bytes_written);
-        if (m_onProtoEventStatus_cb != NULL)
-        {
-            m_onProtoEventStatus_cb(encoded_message_p, stream.bytes_written);
-        }
-    }
-
-    Platform_free(encoded_message_p, WPC_PROTO_MAX_RESPONSE_SIZE);
-}
 
 static int open_and_check_connection(unsigned long baudrate, const char * port_name)
 {
@@ -143,12 +66,6 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
     Common_init(gateway_id, gateway_model, gateway_version, sink_id);
     Proto_data_init();
     Proto_config_init();
-    
-    if (WPC_register_for_stack_status(onStackStatusReceived) != APP_RES_OK)
-    {
-        LOGE("Stack status already registered\n");
-        return APP_RES_PROTO_ALREADY_REGISTERED;
-    }
 
     LOGI("WPC proto initialized with gw_id = %s, gw_model = %s, gw_version = %s and sink_id = %s\n",
                 gateway_id,
@@ -174,14 +91,7 @@ app_proto_res_e WPC_Proto_register_for_data_rx_event(onDataRxEvent_cb_f onDataRx
 
 app_proto_res_e WPC_Proto_register_for_event_status(onEventStatus_cb_f onProtoEventStatus_cb)
 {
-    // Only support one "client" for now
-    if (m_onProtoEventStatus_cb != NULL)
-    {
-        return APP_RES_PROTO_ALREADY_REGISTERED;
-    }
-
-    m_onProtoEventStatus_cb = onProtoEventStatus_cb;
-    return APP_RES_PROTO_OK;
+    return Proto_config_register_for_event_status(onProtoEventStatus_cb);
 }
 
 app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
@@ -322,60 +232,7 @@ app_proto_res_e WPC_Proto_get_current_event_status(bool online,
                                                    uint8_t * event_status_p,
                                                    size_t * event_status_size_p)
 {
-    bool status;
-    wp_GenericMessage message = wp_GenericMessage_init_zero;
-    wp_WirepasMessage message_wirepas = wp_WirepasMessage_init_zero;
-    message.wirepas = &message_wirepas;
-
-    // Allocate the needed space for only the submessage we want to send
-    wp_StatusEvent * message_StatusEvent_p = Platform_malloc(sizeof(wp_StatusEvent));
-    if (message_StatusEvent_p == NULL)
-    {
-        LOGE("Not enough memory to encode StatusEvent\n");
-        return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
-    }
-
-    message_wirepas.status_event = message_StatusEvent_p;
-
-    *message_StatusEvent_p = (wp_StatusEvent){
-        .version = GW_PROTO_MESSAGE_VERSION,
-        .configs_count = 0,
-    };
-    
-    if (online)
-    {
-        // Generate status event with state ONLINE
-        message_StatusEvent_p->state = wp_OnOffState_ON;
-    }
-    else
-    {
-        // Generate status event with state OFFLINE
-        message_StatusEvent_p->state = wp_OnOffState_OFF;
-    }
-
-    message_StatusEvent_p->has_gw_model = (strlen(Common_get_gateway_model()) != 0);
-    strcpy(message_StatusEvent_p->gw_model, Common_get_gateway_model());
-    message_StatusEvent_p->has_gw_version = (strlen(Common_get_gateway_version()) != 0);
-    strcpy(message_StatusEvent_p->gw_version, Common_get_gateway_version());    
-
-    Common_fill_event_header(&message_StatusEvent_p->header);
-
-    // Using the module static buffer
-    pb_ostream_t stream = pb_ostream_from_buffer(event_status_p, *event_status_size_p);
-
-    /* Now we are ready to encode the message! */
-	status = pb_encode(&stream, wp_GenericMessage_fields, &message);
-
-    /* Release buffer as we don't need it anymore */
-    Platform_free(message_StatusEvent_p, sizeof(wp_StatusEvent));
-
-	if (!status) {
-		LOGE("StatusEvent encoding failed: %s\n", PB_GET_ERROR(&stream));
-        *event_status_size_p = 0;
-        return APP_RES_PROTO_CANNOT_GENERATE_RESPONSE;
-    }
-
-    LOGI("Msg size %d\n", stream.bytes_written);
-    *event_status_size_p = stream.bytes_written;
-    return APP_RES_PROTO_OK;
+    return Proto_config_get_current_event_status(online,
+                                                 event_status_p,
+                                                 event_status_size_p);
 }
