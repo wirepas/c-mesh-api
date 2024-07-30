@@ -39,9 +39,10 @@ typedef struct _wp_ChannelRange {
     uint32_t max_channel;
 } wp_ChannelRange;
 
+typedef PB_BYTES_ARRAY_T(80) wp_AppConfigData_app_config_data_t;
 typedef struct _wp_AppConfigData {
     uint32_t diag_interval_s; /* Diagnostics interval in seconds */
-    pb_byte_t app_config_data[80]; /* App config data */
+    wp_AppConfigData_app_config_data_t app_config_data; /* App config data */
     uint32_t seq;
 } wp_AppConfigData;
 
@@ -242,7 +243,7 @@ extern "C" {
 #define wp_NodeRole_init_default                 {_wp_NodeRole_BaseRole_MIN, 0, {_wp_NodeRole_RoleFlags_MIN, _wp_NodeRole_RoleFlags_MIN}}
 #define wp_AccessCycleRange_init_default         {0, 0}
 #define wp_ChannelRange_init_default             {0, 0}
-#define wp_AppConfigData_init_default            {0, {0}, 0}
+#define wp_AppConfigData_init_default            {0, {0, {0}}, 0}
 #define wp_NetworkKeys_init_default              {{0}, {0}}
 #define wp_SinkReadConfig_init_default           {"", false, wp_NodeRole_init_default, false, 0, false, 0, false, 0, false, wp_AppConfigData_init_default, false, 0, false, 0, false, wp_AccessCycleRange_init_default, false, wp_AccessCycleRange_init_default, false, 0, false, wp_ChannelRange_init_default, false, 0, false, 0, false, 0, false, wp_FirmwareVersion_init_default, false, _wp_OnOffState_MIN, false, wp_ScratchpadInfo_init_default, false, _wp_ScratchpadStatus_MIN, false, _wp_ScratchpadType_MIN, false, wp_ScratchpadInfo_init_default, false, 0, false, wp_TargetScratchpadAndAction_init_default}
 #define wp_SinkNewConfig_init_default            {"", false, wp_NodeRole_init_default, false, 0, false, 0, false, 0, false, wp_AppConfigData_init_default, false, 0, false, wp_NetworkKeys_init_default, false, wp_AccessCycleRange_init_default, false, _wp_OnOffState_MIN}
@@ -257,7 +258,7 @@ extern "C" {
 #define wp_NodeRole_init_zero                    {_wp_NodeRole_BaseRole_MIN, 0, {_wp_NodeRole_RoleFlags_MIN, _wp_NodeRole_RoleFlags_MIN}}
 #define wp_AccessCycleRange_init_zero            {0, 0}
 #define wp_ChannelRange_init_zero                {0, 0}
-#define wp_AppConfigData_init_zero               {0, {0}, 0}
+#define wp_AppConfigData_init_zero               {0, {0, {0}}, 0}
 #define wp_NetworkKeys_init_zero                 {{0}, {0}}
 #define wp_SinkReadConfig_init_zero              {"", false, wp_NodeRole_init_zero, false, 0, false, 0, false, 0, false, wp_AppConfigData_init_zero, false, 0, false, 0, false, wp_AccessCycleRange_init_zero, false, wp_AccessCycleRange_init_zero, false, 0, false, wp_ChannelRange_init_zero, false, 0, false, 0, false, 0, false, wp_FirmwareVersion_init_zero, false, _wp_OnOffState_MIN, false, wp_ScratchpadInfo_init_zero, false, _wp_ScratchpadStatus_MIN, false, _wp_ScratchpadType_MIN, false, wp_ScratchpadInfo_init_zero, false, 0, false, wp_TargetScratchpadAndAction_init_zero}
 #define wp_SinkNewConfig_init_zero               {"", false, wp_NodeRole_init_zero, false, 0, false, 0, false, 0, false, wp_AppConfigData_init_zero, false, 0, false, wp_NetworkKeys_init_zero, false, wp_AccessCycleRange_init_zero, false, _wp_OnOffState_MIN}
@@ -357,7 +358,7 @@ X(a, STATIC,   REQUIRED, UINT32,   max_channel,       2)
 
 #define wp_AppConfigData_FIELDLIST(X, a) \
 X(a, STATIC,   REQUIRED, UINT32,   diag_interval_s,   1) \
-X(a, STATIC,   REQUIRED, FIXED_LENGTH_BYTES, app_config_data,   2) \
+X(a, STATIC,   REQUIRED, BYTES,    app_config_data,   2) \
 X(a, STATIC,   REQUIRED, UINT32,   seq,               3)
 #define wp_AppConfigData_CALLBACK NULL
 #define wp_AppConfigData_DEFAULT NULL
