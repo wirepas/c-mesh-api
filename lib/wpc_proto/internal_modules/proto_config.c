@@ -183,7 +183,7 @@ static bool initialize_config_variables()
 
 static void fill_sink_read_config(wp_SinkReadConfig * config_p)
 {
-    _Static_assert( member_size(wp_AppConfigData, app_config_data)
+    _Static_assert( member_size(wp_AppConfigData_app_config_data_t, bytes)
                     == member_size(msap_app_config_data_write_req_pl_t, app_config_data));
 
     uint8_t status = m_sink_config.StackStatus;
@@ -247,15 +247,16 @@ static void fill_sink_read_config(wp_SinkReadConfig * config_p)
     {
         uint16_t diag_data_interval = 0;  // needed to avoid trouble with pointer alignement
         uint8_t seq = 0;
-
+        config_p->app_config.app_config_data.size = m_sink_config.app_config_max_size;
         if (WPC_get_app_config_data(&seq,
                                     &diag_data_interval,
-                                    config_p->app_config.app_config_data,
-                                    m_sink_config.app_config_max_size)
+                                    config_p->app_config.app_config_data.bytes,
+                                    member_size(wp_AppConfigData_app_config_data_t, bytes))
             != APP_RES_OK)
         {
             LOGE("Cannot get App config data from node\n");
             config_p->has_app_config = false;
+            config_p->app_config.app_config_data.size = 0;
         }
         config_p->app_config.seq = seq;
         config_p->app_config.diag_interval_s = diag_data_interval;
@@ -519,8 +520,8 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
         // no check, just apply it
         res = WPC_set_app_config_data(cfg->app_config.seq,
                                       cfg->app_config.diag_interval_s,
-                                      cfg->app_config.app_config_data,
-                                      m_sink_config.app_config_max_size);
+                                      cfg->app_config.app_config_data.bytes,
+                                      cfg->app_config.app_config_data.size);
         if (res != APP_RES_OK)
         {
             LOGE("Set app config failed\n");
