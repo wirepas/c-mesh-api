@@ -23,11 +23,6 @@ bool Proto_config_init(void);
 void Proto_config_close();
 
 /**
- * \brief   Handle config cache when status changed
- */
-void Proto_config_on_stack_boot_status(uint8_t status);
-
-/**
  * \brief   Handle Set config request
  *          Apply new configs if any param has changed.
  *          Try to apply all of them, even if one fails.
@@ -56,5 +51,10 @@ app_proto_res_e Proto_config_get_current_event_status(bool online,
                                                       size_t * event_status_size_p);
 
 app_proto_res_e Proto_config_register_for_event_status(onEventStatus_cb_f onProtoEventStatus_cb);
+
+/**
+ * \brief   Get current sink address
+ */
+net_addr_t Proto_config_get_network_address(void);
 
 #endif

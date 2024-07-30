@@ -5,6 +5,7 @@
  */
 
 #include "proto_data.h"
+#include "proto_config.h"
 #include <pb_encode.h>
 #include <pb_decode.h>
 #include "platform.h"
@@ -13,9 +14,6 @@
 #define LOG_MODULE_NAME "data_proto"
 #define MAX_LOG_LEVEL INFO_LOG_LEVEL
 #include "logger.h"
-
-
-static uint32_t m_network_id = 0x123456; // TODO: to be read from the sink
 
 static onDataRxEvent_cb_f m_rx_event_cb = NULL;
 
@@ -36,6 +34,8 @@ static bool onDataReceived(const uint8_t * bytes,
     wp_GenericMessage message = wp_GenericMessage_init_zero;
     wp_WirepasMessage message_wirepas = wp_WirepasMessage_init_zero;
     message.wirepas = &message_wirepas;
+
+    uint32_t network_address = Proto_config_get_network_address();
 
     LOGI("%llu -> Data received on EP %d of len %d from 0x%x to 0x%x\n",
          timestamp_ms,
@@ -76,7 +76,7 @@ static bool onDataReceived(const uint8_t * bytes,
         .has_hop_count = true,
         .hop_count = hop_count,
         .has_network_address = true,
-        .network_address = m_network_id
+        .network_address = network_address
     };
 
     // Add payload
@@ -103,7 +103,7 @@ static bool onDataReceived(const uint8_t * bytes,
         if (m_rx_event_cb != NULL)
         {
             m_rx_event_cb(encoded_message_p, stream.bytes_written,
-                          m_network_id,
+                          network_address,
                           src_ep,
                           dst_ep);
         }

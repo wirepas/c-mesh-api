@@ -262,6 +262,19 @@ static void fill_sink_read_config(wp_SinkReadConfig * config_p)
     }
 }
 
+static void on_stack_boot_status(uint8_t status)
+{
+    m_sink_config.StackStatus = status;
+
+    if ((status & APP_STACK_STOPPED) == 0)
+    {
+        LOGI("Stack started\n");
+    }
+
+    // After a reboot, read again the variables
+    initialize_config_variables();
+}
+
 static void onStackStatusReceived(uint8_t status)
 {
     bool res;
@@ -273,7 +286,7 @@ static void onStackStatusReceived(uint8_t status)
 
     LOGI("Status received : %d\n", status);
 
-    Proto_config_on_stack_boot_status(status);
+    on_stack_boot_status(status);
 
     // Allocate the needed space for only the submessage we want to send
     message_StatusEvent_p = Platform_malloc(sizeof(wp_StatusEvent));
@@ -349,20 +362,6 @@ bool Proto_config_init(void)
 
 void Proto_config_close()
 {
-}
-
-
-void Proto_config_on_stack_boot_status(uint8_t status)
-{
-    m_sink_config.StackStatus = status;
-
-    if ((status & APP_STACK_STOPPED) == 0)
-    {
-        LOGI("Stack started\n");
-    }
-
-    // After a reboot, read again the variables
-    initialize_config_variables();
 }
 
 app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
@@ -737,4 +736,11 @@ app_proto_res_e Proto_config_register_for_event_status(onEventStatus_cb_f onProt
 
     m_onProtoEventStatus_cb = onProtoEventStatus_cb;
     return APP_RES_PROTO_OK;
+}
+
+net_addr_t Proto_config_get_network_address(void)
+{
+    // Take it from the cache. It will be called
+    // for every rx message so cannot be read from node
+    return m_sink_config.network_address;
 }
