@@ -46,6 +46,18 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
 app_proto_res_e Proto_config_handle_get_configs(wp_GetConfigsReq *req,
                                                 wp_GetConfigsResp *resp);
 
+/**
+ * \brief   Handle Get gateway info
+ * \param   req
+ *          Pointer to the request received
+ * \param   resp
+ *          Pointer to the reponse to send back
+ * \return  APP_RES_PROTO_OK if answer is ready to send
+ */
+app_proto_res_e Proto_config_handle_get_gateway_info_request(wp_GetGwInfoReq * req,
+                                                             wp_GetGwInfoResp * resp);
+
+
 app_proto_res_e Proto_config_get_current_event_status(bool online,
                                                       uint8_t * event_status_p,
                                                       size_t * event_status_size_p);

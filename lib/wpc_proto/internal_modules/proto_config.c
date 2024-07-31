@@ -18,6 +18,11 @@
 // see lib/wpc_proto/deps/backend-apis/gateway_to_backend/README.md
 #define GW_PROTO_MESSAGE_VERSION 1
 
+// API version implemented in the gateway
+// to fill implemented_api_version in GatewayInfo
+// see lib/wpc_proto/deps/backend-apis/gateway_to_backend/protocol_buffers_files/config_message.proto
+#define GW_PROTO_API_VERSION 1
+
 /** Structure to hold config from node */
 typedef struct sink_config
 {
@@ -399,10 +404,7 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
               || cfg->has_network_address
               || cfg->has_network_channel
               || cfg->has_keys
-              || cfg->has_current_ac_range
-              || cfg->has_node_address
-              || cfg->has_node_address
-              || cfg->has_node_address )
+              || cfg->has_current_ac_range )
         {
             restart_stack = true;
             stop_stack = true;
@@ -660,6 +662,29 @@ app_proto_res_e Proto_config_handle_get_configs(wp_GetConfigsReq *req,
 
     return APP_RES_PROTO_OK;
 }
+
+app_proto_res_e Proto_config_handle_get_gateway_info_request(wp_GetGwInfoReq * req,
+                                                             wp_GetGwInfoResp * resp)
+{
+    // TODO: Add some sanity checks
+
+    Common_Fill_response_header(&resp->header,
+                                req->header.req_id,
+                                Common_convert_error_code(APP_RES_OK));
+
+    resp->info.current_time_s_epoch = Platform_get_timestamp_ms_epoch();
+
+    resp->info.has_gw_model = (Common_get_gateway_model() != 0);
+    strcpy(resp->info.gw_model, Common_get_gateway_model());
+    resp->info.has_gw_version = (Common_get_gateway_version() != 0);
+    strcpy(resp->info.gw_version, Common_get_gateway_version());
+
+    resp->info.has_implemented_api_version = true;
+    resp->info.implemented_api_version = GW_PROTO_API_VERSION;
+
+    return APP_RES_PROTO_OK;
+}
+
 
 app_proto_res_e Proto_config_get_current_event_status(bool online,
                                                       uint8_t * event_status_p,
