@@ -21,11 +21,6 @@
 #include <pb_encode.h>
 #include <pb_decode.h>
 
-// API version implemented in the gateway
-// to fill implemented_api_version in GatewayInfo
-// see lib/wpc_proto/deps/backend-apis/gateway_to_backend/protocol_buffers_files/config_message.proto
-#define GW_PROTO_API_VERSION 1
-
 // Max possible size of encoded message
 #define MAX_PROTOBUF_SIZE WP_CONFIG_MESSAGE_PB_H_MAX_SIZE
 
@@ -195,6 +190,17 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
     else if (wp_message_req_p->get_gateway_info_req)
     {
         LOGI("Get gateway info request\n");
+        resp_size = sizeof(wp_GetGwInfoResp);
+        resp_msg_p = Platform_malloc(resp_size);
+        if (resp_msg_p == NULL)
+        {
+            LOGE("Not enough memory to encode GetGatewayInfo\n");
+            return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
+        }
+        message_resp.wirepas->get_gateway_info_resp = (wp_GetGwInfoResp *) resp_msg_p;
+
+        res = Proto_config_handle_get_gateway_info_request(
+            wp_message_req_p->get_gateway_info_req, (wp_GetGwInfoResp *) resp_msg_p);
     }
     else
     {
