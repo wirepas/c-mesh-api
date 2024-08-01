@@ -396,10 +396,25 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
     // At least refresh stack status
     WPC_get_stack_status(&m_sink_config.StackStatus);
 
-    if (!(m_sink_config.StackStatus & APP_STACK_STOPPED))
+    LOGD("Config received : %d, %d, %d, %d, %d, %d, %d/%d\n",
+            cfg->has_node_role, cfg->has_node_address, cfg->has_network_address,
+            cfg->has_network_channel, cfg->has_keys, cfg->has_current_ac_range,
+            cfg->has_sink_state, cfg->sink_state);
+            
+    if ((m_sink_config.StackStatus & APP_STACK_STOPPED))
     {
-        // Check if stop is needed
-        if  (    cfg->has_node_role
+        // stack already stopped, check if start will be needed
+        if (cfg->has_sink_state && (cfg->sink_state == wp_OnOffState_ON) )
+        {
+            restart_stack = true;
+            config_has_changed = true;
+        }
+    }
+    else
+    {
+        // stack running, check if stop is needed to apply config
+        if  (    (   cfg->has_node_role
+                  && (convert_role_to_app_format(&cfg->node_role) != m_sink_config.app_node_role))
               || cfg->has_node_address
               || cfg->has_network_address
               || cfg->has_network_channel
@@ -409,12 +424,16 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
             restart_stack = true;
             stop_stack = true;
         }
-        if ( (cfg->has_sink_state) && (cfg->sink_state == wp_OnOffState_OFF))
+        // check if stop is requested
+        if (cfg->has_sink_state && (cfg->sink_state == wp_OnOffState_OFF) )
         {
             restart_stack = false;
             stop_stack = true;
+            config_has_changed = true;
         }
     }
+
+    LOGD("Stack actions : stop %d, restart %d, \n", stop_stack, restart_stack);
 
     if (stop_stack)
     {
@@ -429,12 +448,10 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
         else
         {
             LOGI("Stack stopped\n");
-            // Stack status will be updated on exit
+            cfg->sink_state = wp_OnOffState_OFF;
             config_has_changed = true;
         }
     }
-
-    // check if any config need to be changed
 
     // role must be changed first
     if (cfg->has_node_role)
@@ -588,10 +605,7 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
         }
     }
 
-    if (   (    (cfg->has_sink_state)
-             && (cfg->sink_state == wp_OnOffState_ON)
-             && (m_sink_config.StackStatus & APP_STACK_STOPPED) )
-        || restart_stack)
+    if (restart_stack)
     {
         // Start the stack
         WPC_set_autostart(1);
@@ -604,7 +618,6 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
         else
         {
             LOGI("Stack started\n");
-            config_has_changed = true;
         }
     }
 
