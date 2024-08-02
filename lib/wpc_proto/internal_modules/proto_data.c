@@ -143,17 +143,9 @@ app_proto_res_e Proto_data_handle_send_data(wp_SendPacketReq *req,
 
     LOGI("WPC_send_data res=%d\n", res);
 
-    // Fill the response
-    resp->header = (wp_ResponseHeader) {
-        .req_id = req->header.req_id,
-        .has_sink_id = true,
-        .res = Common_convert_error_code(res),
-        .has_time_ms_epoch = true,
-        .time_ms_epoch = Platform_get_timestamp_ms_epoch(),
-    };
-
-    strcpy(resp->header.gw_id, Common_get_gateway_id());
-    strcpy(resp->header.sink_id, Common_get_sink_id());
+    Common_Fill_response_header(&resp->header,
+                                req->header.req_id,
+                                Common_convert_error_code(res));
 
     return APP_RES_PROTO_OK;
 }
