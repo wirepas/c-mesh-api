@@ -14,6 +14,7 @@
 #include "wpc_proto.h"
 #include "proto_data.h"
 #include "proto_config.h"
+#include "proto_otap.h"
 #include "common.h"
 #include "platform.h"
 
@@ -61,6 +62,7 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
     Common_init(gateway_id, gateway_model, gateway_version, sink_id);
     Proto_data_init();
     Proto_config_init();
+    Proto_otap_init();
 
     LOGI("WPC proto initialized with gw_id = %s, gw_model = %s, gw_version = %s and sink_id = %s\n",
                 gateway_id,
@@ -74,6 +76,7 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
 void WPC_Proto_close()
 {
     WPC_unregister_from_stack_status();
+    Proto_otap_close();
     Proto_config_close();
     Proto_data_close();
     WPC_close();
@@ -178,6 +181,18 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
     else if (wp_message_req_p->get_scratchpad_status_req)
     {
         LOGI("Get scratchpad status request\n");
+        resp_size  = sizeof(wp_GetScratchpadStatusResp);
+        resp_msg_p = Platform_malloc(resp_size);
+        if (resp_msg_p == NULL)
+        {
+            LOGE("Not enough memory to encode GetScratchpadStatusResp");
+            return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
+        }
+        message_resp.wirepas->get_scratchpad_status_resp
+            = (wp_GetScratchpadStatusResp *) resp_msg_p;
+
+        res = Proto_otap_handle_get_scratchpad_status(wp_message_req_p->get_scratchpad_status_req,
+                                                      (wp_GetScratchpadStatusResp *) resp_msg_p);
     }
     else if (wp_message_req_p->upload_scratchpad_req)
     {
