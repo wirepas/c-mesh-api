@@ -31,5 +31,16 @@ void Proto_otap_close(void);
  */
 app_proto_res_e Proto_otap_handle_get_scratchpad_status(wp_GetScratchpadStatusReq *req,
                                                         wp_GetScratchpadStatusResp *resp);
-
+                                                        
+/**
+ * \brief   Handle Upload scratchpad
+ * \param   req
+ *          Pointer to the request received
+ * \param   resp
+ *          Pointer to the reponse to send back
+ * \return  APP_RES_PROTO_OK if answer is ready to send
+ */
+app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
+                                                    wp_UploadScratchpadResp *resp);
+ 
 #endif

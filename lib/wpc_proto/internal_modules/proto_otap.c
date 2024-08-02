@@ -113,3 +113,53 @@ app_proto_res_e Proto_otap_handle_get_scratchpad_status(wp_GetScratchpadStatusRe
     return APP_RES_PROTO_OK;
 }
 
+app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
+                                                    wp_UploadScratchpadResp *resp)
+{
+    app_res_e res = APP_RES_OK;
+
+    // TODO: Add some sanity checks
+
+    if(req->has_scratchpad)
+    {
+        LOGI("Upload scratchpad: with seq %d of size %d\n", req->seq, req->scratchpad.size);
+        res = APP_RES_INVALID_SCRATCHPAD;
+        /* Send the file to the sink */
+        res = WPC_upload_local_scratchpad(req->scratchpad.size,
+                                          req->scratchpad.bytes,
+                                          req->seq);
+        if (res == APP_RES_OK)
+        {
+            /* Update parameters */
+            initialize_otap_variables();
+
+            /* Do some sanity check: Do not generate error for that */
+            if (otap_status.scrat_len != req->scratchpad.size)
+            {
+                LOGE("Scratchpad is not loaded correctly (wrong size) %d vs %d\n",
+                        otap_status.scrat_len,
+                        req->scratchpad.size);
+            }
+
+            if (otap_status.scrat_seq_number != req->seq)
+            {
+                LOGE("Wrong seq number after loading a scratchpad image \n");
+            }
+        }
+        else
+        {
+            LOGE("Cannot upload local scratchpad\n");
+        }
+    }
+    else
+    {
+        // No scratchpad, do we erase the existing one ?
+        LOGE("Upload scratchpad: no scratchpad\n");
+    }
+
+    Common_Fill_response_header(&resp->header,
+                                req->header.req_id,
+                                Common_convert_error_code(res));
+
+    return APP_RES_PROTO_OK;
+}

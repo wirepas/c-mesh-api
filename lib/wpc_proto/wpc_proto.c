@@ -197,6 +197,18 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
     else if (wp_message_req_p->upload_scratchpad_req)
     {
         LOGI("Upload scratchpad request\n");
+        resp_size  = sizeof(wp_UploadScratchpadResp);
+        resp_msg_p = Platform_malloc(resp_size);
+        if (resp_msg_p == NULL)
+        {
+            LOGE("Not enough memory to encode UploadScratchpadResp");
+            return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
+        }
+        message_resp.wirepas->upload_scratchpad_resp
+            = (wp_UploadScratchpadResp *) resp_msg_p;
+
+        res = Proto_otap_handle_upload_scratchpad(wp_message_req_p->upload_scratchpad_req,
+                                                  (wp_UploadScratchpadResp *) resp_msg_p);
     }
     else if (wp_message_req_p->process_scratchpad_req)
     {
