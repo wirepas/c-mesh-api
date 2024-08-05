@@ -178,18 +178,14 @@ static bool initialize_config_variables()
         res = false;
     }
 
-    if (!res)
-    {
-        LOGE("All the settings cannot be read\n");
-    }
-
     return res;
 }
 
 static void fill_sink_read_config(wp_SinkReadConfig * config_p)
 {
     _Static_assert( member_size(wp_AppConfigData_app_config_data_t, bytes)
-                    == member_size(msap_app_config_data_write_req_pl_t, app_config_data));
+                    >= member_size(msap_app_config_data_write_req_pl_t, app_config_data));
+    _Static_assert(member_size(wp_SinkReadConfig, sink_id) >= SINK_ID_MAX_SIZE);
 
     uint8_t status = m_sink_config.StackStatus;
 
@@ -244,7 +240,7 @@ static void fill_sink_read_config(wp_SinkReadConfig * config_p)
         .has_target_and_action = false
     };
 
-    strcpy(config_p->sink_id, Common_get_sink_id());
+    strncpy(config_p->sink_id, Common_get_sink_id(), SINK_ID_MAX_SIZE);
 
     convert_role_to_proto_format(m_sink_config.app_node_role, &config_p->node_role);
 
@@ -266,6 +262,33 @@ static void fill_sink_read_config(wp_SinkReadConfig * config_p)
         config_p->app_config.seq = seq;
         config_p->app_config.diag_interval_s = diag_data_interval;
     }
+}
+
+void fill_status_event(wp_StatusEvent * status_event_p,
+                                 wp_OnOffState state,
+                                 pb_size_t config_count)
+{
+    _Static_assert(member_size(wp_StatusEvent, gw_model) >= GATEWAY_MODEL_MAX_SIZE);
+    _Static_assert(member_size(wp_StatusEvent, gw_version) >= GATEWAY_VERSION_MAX_SIZE);
+
+    *status_event_p = (wp_StatusEvent){
+        .version = GW_PROTO_MESSAGE_VERSION,
+        .state = state,
+        .configs_count = config_count,
+        .has_gw_model = (strlen(Common_get_gateway_model()) != 0),
+        .has_gw_version = (strlen(Common_get_gateway_version()) != 0),
+    };
+
+    // Add current config for online node
+    if (config_count == 1)
+    {
+        fill_sink_read_config(&status_event_p->configs[0]);
+    }
+
+    strncpy(status_event_p->gw_model, Common_get_gateway_model(), GATEWAY_MODEL_MAX_SIZE);
+    strncpy(status_event_p->gw_version, Common_get_gateway_version(), GATEWAY_VERSION_MAX_SIZE);
+
+    Common_fill_event_header(&status_event_p->header);
 }
 
 static void on_stack_boot_status(uint8_t status)
@@ -313,20 +336,7 @@ static void onStackStatusReceived(uint8_t status)
 
     message_wirepas.status_event = message_StatusEvent_p;
 
-    *message_StatusEvent_p = (wp_StatusEvent){
-        .version = GW_PROTO_MESSAGE_VERSION,
-        .state = wp_OnOffState_ON, // gateway state, always ONLINE
-        .configs_count = 1,
-    };
-
-    message_StatusEvent_p->has_gw_model = (strlen(Common_get_gateway_model()) != 0);
-    strcpy(message_StatusEvent_p->gw_model, Common_get_gateway_model());
-    message_StatusEvent_p->has_gw_version = (strlen(Common_get_gateway_version()) != 0);
-    strcpy(message_StatusEvent_p->gw_version, Common_get_gateway_version());
-
-    fill_sink_read_config(&message_StatusEvent_p->configs[0]);
-
-    Common_fill_event_header(&message_StatusEvent_p->header);
+    fill_status_event(message_StatusEvent_p, wp_OnOffState_ON, 1);
 
     // Using the module static buffer
     pb_ostream_t stream = pb_ostream_from_buffer(encoded_message_p, WPC_PROTO_MAX_RESPONSE_SIZE);
@@ -355,7 +365,10 @@ static void onStackStatusReceived(uint8_t status)
 bool Proto_config_init(void)
 {
     /* Read initial config from sink */
-    initialize_config_variables();
+    if (!initialize_config_variables())
+    {
+        LOGE("All the settings cannot be read\n");
+    }
 
     if (WPC_register_for_stack_status(onStackStatusReceived) != APP_RES_OK)
     {
@@ -717,32 +730,9 @@ app_proto_res_e Proto_config_get_current_event_status(bool online,
 
     message_wirepas.status_event = message_StatusEvent_p;
 
-    *message_StatusEvent_p = (wp_StatusEvent){
-        .version = GW_PROTO_MESSAGE_VERSION,
-        .configs_count = 0,
-    };
-
-    if (online)
-    {
-        // Generate status event with state ONLINE
-        message_StatusEvent_p->state = wp_OnOffState_ON;
-
-        // Add current config for online node
-        message_StatusEvent_p->configs_count = 1;
-        fill_sink_read_config(&message_StatusEvent_p->configs[0]);
-    }
-    else
-    {
-        // Generate status event with state OFFLINE
-        message_StatusEvent_p->state = wp_OnOffState_OFF;
-    }
-
-    message_StatusEvent_p->has_gw_model = (strlen(Common_get_gateway_model()) != 0);
-    strcpy(message_StatusEvent_p->gw_model, Common_get_gateway_model());
-    message_StatusEvent_p->has_gw_version = (strlen(Common_get_gateway_version()) != 0);
-    strcpy(message_StatusEvent_p->gw_version, Common_get_gateway_version());
-
-    Common_fill_event_header(&message_StatusEvent_p->header);
+    fill_status_event(message_StatusEvent_p,
+                      online ? wp_OnOffState_ON : wp_OnOffState_OFF,
+                      online ? 1 : 0);
 
     // Using the module static buffer
     pb_ostream_t stream = pb_ostream_from_buffer(event_status_p, *event_status_size_p);
