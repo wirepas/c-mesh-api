@@ -6,8 +6,7 @@
 #ifndef PROTO_OTAP_H_
 #define PROTO_OTAP_H_
 
-#include "generic_message.pb.h"
-#include "wpc.h"
+#include "otap_message.pb.h"
 #include "wpc_proto.h"
 
 /**

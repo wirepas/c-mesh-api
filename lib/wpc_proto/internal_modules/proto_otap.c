@@ -107,7 +107,6 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
     if(req->has_scratchpad)
     {
         LOGI("Upload scratchpad: with seq %d of size %d\n", req->seq, req->scratchpad.size);
-        res = APP_RES_INVALID_SCRATCHPAD;
         /* Send the file to the sink */
         res = WPC_upload_local_scratchpad(req->scratchpad.size,
                                           req->scratchpad.bytes,
@@ -138,8 +137,14 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
     }
     else
     {
-        // No scratchpad, do we erase the existing one ?
-        LOGE("Upload scratchpad: no scratchpad\n");
+        // No scratchpad provided, clear existing one
+        LOGI("Clear scratchpad\n");
+        res = WPC_clear_local_scratchpad();
+        if (res == APP_RES_OK)
+        {
+            /* Update parameters */
+            Proto_config_initialize_otap_variables();
+        }
     }
 
     Common_Fill_response_header(&resp->header,
