@@ -163,3 +163,36 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
 
     return APP_RES_PROTO_OK;
 }
+
+
+app_proto_res_e Proto_otap_handle_process_scratchpad(wp_ProcessScratchpadReq *req,
+                                                     wp_ProcessScratchpadResp *resp)
+{
+    app_res_e res = APP_RES_OK;
+
+    // TODO: Add some sanity checks
+
+    res = WPC_update_local_scratchpad();
+    if (res != APP_RES_OK)
+    {
+        LOGE("WPC_update_local_scratchpad failed %d\n", res);
+    }
+    else
+    {
+        /* Node must be rebooted to process the scratchpad */
+        res = WPC_stop_stack();
+        if (res != APP_RES_OK)
+        {
+            LOGE("WPC_stop_stack failed %d", res);
+        }
+
+        /* Read back the variables after the restart */
+        initialize_otap_variables();
+    }
+
+    Common_Fill_response_header(&resp->header,
+                                req->header.req_id,
+                                Common_convert_error_code(res));
+
+    return APP_RES_PROTO_OK;
+}
