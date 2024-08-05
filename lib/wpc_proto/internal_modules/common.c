@@ -7,16 +7,11 @@
 #include "platform.h"
 #include "wp_global.pb.h"
 
-// Set the max of strings used, matching values defined in proto files
-#define GATEWAY_ID_MAX_SIZE 16
-#define GATEWAY_MODEL_MAX_SIZE 64
-#define GATEWAY_VERSION_MAX_SIZE 32
-#define SINK_ID_MAX_SIZE 16
-
-static char m_gateway_id[GATEWAY_ID_MAX_SIZE+1];
-static char m_gateway_model[GATEWAY_MODEL_MAX_SIZE+1];
-static char m_gateway_version[GATEWAY_VERSION_MAX_SIZE+1];
-static char m_sink_id[SINK_ID_MAX_SIZE+1];
+// String filled during init, ensuring that there're null terminated
+static char m_gateway_id[GATEWAY_ID_MAX_SIZE];
+static char m_gateway_model[GATEWAY_MODEL_MAX_SIZE];
+static char m_gateway_version[GATEWAY_VERSION_MAX_SIZE];
+static char m_sink_id[SINK_ID_MAX_SIZE];
 
 /* Error code LUT for protobuf errors from app_res_e */
 static const wp_ErrorCode APP_ERROR_CODE_LUT[] = {
@@ -53,6 +48,7 @@ static const wp_ErrorCode APP_ERROR_CODE_LUT[] = {
 
 /**
  * \brief   Intialize the common module
+ *          Enforce null termination for strings stored
  * \return  True if successful, False otherwise
  */
 bool Common_init(char * gateway_id,
@@ -61,16 +57,16 @@ bool Common_init(char * gateway_id,
                  char * sink_id)
 {
     strncpy(m_gateway_id, gateway_id, GATEWAY_ID_MAX_SIZE);
-    m_gateway_id[GATEWAY_ID_MAX_SIZE]='\0';
+    m_gateway_id[GATEWAY_ID_MAX_SIZE - 1]='\0';
     
     strncpy(m_gateway_model, gateway_model, GATEWAY_MODEL_MAX_SIZE);
-    m_gateway_model[GATEWAY_MODEL_MAX_SIZE] = '\0';
+    m_gateway_model[GATEWAY_MODEL_MAX_SIZE - 1] = '\0';
 
     strncpy(m_gateway_version, gateway_version, GATEWAY_VERSION_MAX_SIZE);
-    m_gateway_version[GATEWAY_VERSION_MAX_SIZE] = '\0';
+    m_gateway_version[GATEWAY_VERSION_MAX_SIZE - 1] = '\0';
 
     strncpy(m_sink_id, sink_id, SINK_ID_MAX_SIZE);
-    m_sink_id[SINK_ID_MAX_SIZE]='\0';
+    m_sink_id[SINK_ID_MAX_SIZE - 1]='\0';
 
     return true;
 }
@@ -107,23 +103,36 @@ wp_ErrorCode Common_convert_error_code(app_res_e error)
 
 void Common_fill_event_header(wp_EventHeader * header_p)
 {
-    strcpy(header_p->gw_id, Common_get_gateway_id());
-    strcpy(header_p->sink_id, Common_get_sink_id());
-    header_p->has_sink_id = (strlen(m_sink_id) != 0);
-    header_p->has_time_ms_epoch = true;
-    header_p->time_ms_epoch = Platform_get_timestamp_ms_epoch();
-    header_p->event_id = rand() + (((uint64_t) rand()) << 32);
+    _Static_assert(member_size(wp_EventHeader, gw_id) >= GATEWAY_ID_MAX_SIZE);
+    _Static_assert(member_size(wp_EventHeader, sink_id) >= SINK_ID_MAX_SIZE);
+
+    *header_p = (wp_EventHeader){
+        .has_sink_id = (strlen(m_sink_id) != 0),
+        .has_time_ms_epoch = true,
+        .time_ms_epoch = Platform_get_timestamp_ms_epoch(),
+        .event_id = rand() + (((uint64_t) rand()) << 32),
+    };
+
+    strncpy(header_p->gw_id, Common_get_gateway_id(), GATEWAY_ID_MAX_SIZE);
+    strncpy(header_p->sink_id, Common_get_sink_id(), SINK_ID_MAX_SIZE);
 }
 
 void Common_Fill_response_header(wp_ResponseHeader * header_p,
                                  uint64_t req_id,
                                  wp_ErrorCode res)
 {
-    strcpy(header_p->gw_id, Common_get_gateway_id());
-    strcpy(header_p->sink_id, Common_get_sink_id());
-    header_p->has_sink_id = (strlen(m_sink_id) != 0);
-    header_p->has_time_ms_epoch = true;
-    header_p->time_ms_epoch = Platform_get_timestamp_ms_epoch();
-    header_p->req_id = req_id;
-    header_p->res = res;
+    _Static_assert(member_size(wp_ResponseHeader, gw_id) >= GATEWAY_ID_MAX_SIZE);
+    _Static_assert(member_size(wp_ResponseHeader, sink_id) >= SINK_ID_MAX_SIZE);
+
+    *header_p = (wp_ResponseHeader) {
+        .req_id = req_id,
+        .has_sink_id = (strlen(m_sink_id) != 0),
+        .res = Common_convert_error_code(res),
+        .has_time_ms_epoch = true,
+        .time_ms_epoch = Platform_get_timestamp_ms_epoch(),
+    };
+
+    strncpy(header_p->gw_id, Common_get_gateway_id(), GATEWAY_ID_MAX_SIZE);
+    strncpy(header_p->sink_id, Common_get_sink_id(), SINK_ID_MAX_SIZE);
 }
+
