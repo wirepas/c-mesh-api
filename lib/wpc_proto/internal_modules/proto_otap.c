@@ -20,25 +20,8 @@
 #define MAX_LOG_LEVEL INFO_LOG_LEVEL
 #include "logger.h"
 
-static app_scratchpad_status_t otap_status = {0};
-
-static bool initialize_otap_variables()
-{
-    if (WPC_get_local_scratchpad_status(&otap_status) != APP_RES_OK)
-    {
-        LOGE("Cannot get local scratchpad status\n");
-        return false;
-    }
-    return true;
-}
-
 bool Proto_otap_init(void)
 {
-    /* Read initial config from sink */
-    if (!initialize_otap_variables())
-    {
-        LOGE("All the otap settings cannot be read\n");
-    }
     return true;
 }
 
@@ -47,7 +30,7 @@ void Proto_otap_close(void)
 
 }
 
-wp_ScratchpadType otap_convert_type(uint8_t scrat_type)
+wp_ScratchpadType Proto_otap_convert_type(uint8_t scrat_type)
 {
     switch (scrat_type)
     {
@@ -61,7 +44,7 @@ wp_ScratchpadType otap_convert_type(uint8_t scrat_type)
     }
 }
 
-wp_ScratchpadStatus otap_convert_status(uint8_t scrat_status)
+wp_ScratchpadStatus Proto_otap_convert_status(uint8_t scrat_status)
 {
     switch (scrat_status)
     {
@@ -82,11 +65,12 @@ app_proto_res_e Proto_otap_handle_get_scratchpad_status(wp_GetScratchpadStatusRe
     // TODO: Add some sanity checks
 
     // Do we need to refresh otap status ?
-    if (!initialize_otap_variables())
-    {
-        LOGE("All the otap settings cannot be read\n");
-        res = APP_RES_INTERNAL_ERROR;
-    }
+    // if (!Proto_config_initialize_otap_variables())
+    // {
+    //     LOGE("All the otap settings cannot be read\n");
+    //     res = APP_RES_INTERNAL_ERROR;
+    // }
+    app_scratchpad_status_t otap_status = Proto_config_get_otap_status();
 
     *resp = (wp_GetScratchpadStatusResp){
         .has_stored_scratchpad = true,
@@ -94,9 +78,9 @@ app_proto_res_e Proto_otap_handle_get_scratchpad_status(wp_GetScratchpadStatusRe
                                .crc = otap_status.scrat_crc,
                                .seq = otap_status.scrat_seq_number, },
         .has_stored_status = true,
-        .stored_status = otap_convert_status(otap_status.scrat_status),
+        .stored_status = Proto_otap_convert_status(otap_status.scrat_status),
         .has_stored_type = true,
-        .stored_type = otap_convert_type(otap_status.scrat_type),
+        .stored_type = Proto_otap_convert_type(otap_status.scrat_type),
         .has_processed_scratchpad = true,
         .processed_scratchpad = { .len = otap_status.processed_scrat_len,
                                   .crc = otap_status.processed_scrat_crc,
@@ -131,9 +115,10 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
         if (res == APP_RES_OK)
         {
             /* Update parameters */
-            initialize_otap_variables();
+            Proto_config_initialize_otap_variables();
 
             /* Do some sanity check: Do not generate error for that */
+            app_scratchpad_status_t otap_status = Proto_config_get_otap_status();
             if (otap_status.scrat_len != req->scratchpad.size)
             {
                 LOGE("Scratchpad is not loaded correctly (wrong size) %d vs %d\n",
@@ -187,7 +172,8 @@ app_proto_res_e Proto_otap_handle_process_scratchpad(wp_ProcessScratchpadReq *re
         }
 
         /* Read back the variables after the restart */
-        initialize_otap_variables();
+        // Maybe not needed, as it will be done on event status receive at reboot, no ?
+        //Proto_config_initialize_otap_variables();
     }
 
     Common_Fill_response_header(&resp->header,

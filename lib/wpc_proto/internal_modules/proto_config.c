@@ -5,6 +5,7 @@
  */
 
 #include "proto_config.h"
+#include "proto_otap.h"
 #include <pb_encode.h>
 #include <pb_decode.h>
 #include "platform.h"
@@ -45,6 +46,7 @@ typedef struct sink_config
     uint8_t StackStatus;
     net_channel_t network_channel;
     app_role_t app_node_role;
+    app_scratchpad_status_t otap_status;
 } sink_config_t;
 
 /* TODO : Protect config access */
@@ -128,6 +130,16 @@ static void convert_role_to_proto_format(app_role_t role, wp_NodeRole * proto_ro
         flags_count++;
     }
     proto_role->flags_count = flags_count;
+}
+
+bool Proto_config_initialize_otap_variables()
+{
+    if (WPC_get_local_scratchpad_status(&m_sink_config.otap_status) != APP_RES_OK)
+    {
+        LOGE("Cannot get local scratchpad status\n");
+        return false;
+    }
+    return true;
 }
 
 static bool initialize_config_variables()
@@ -232,12 +244,21 @@ static void fill_sink_read_config(wp_SinkReadConfig * config_p)
         .has_sink_state = true,
         .sink_state = ((status & APP_STACK_STOPPED) ? wp_OnOffState_OFF : wp_OnOffState_ON),
         /* Scratchpad info for the sink */
-        .has_stored_scratchpad = false,
-        .has_stored_status = false,
-        .has_stored_type = false,
-        .has_processed_scratchpad = false,
-        .has_firmware_area_id = false,
-        .has_target_and_action = false
+        .has_stored_scratchpad = true,
+        .stored_scratchpad = { .len = m_sink_config.otap_status.scrat_len,
+                               .crc = m_sink_config.otap_status.scrat_crc,
+                               .seq = m_sink_config.otap_status.scrat_seq_number, },
+        .has_stored_status = true,
+        .stored_status = Proto_otap_convert_status(m_sink_config.otap_status.scrat_status),
+        .has_stored_type = true,
+        .stored_type = Proto_otap_convert_type(m_sink_config.otap_status.scrat_type),
+        .has_processed_scratchpad = true,
+        .processed_scratchpad = { .len = m_sink_config.otap_status.processed_scrat_len,
+                                  .crc = m_sink_config.otap_status.processed_scrat_crc,
+                                  .seq = m_sink_config.otap_status.processed_scrat_seq_number, },
+        .has_firmware_area_id = true,
+        .firmware_area_id = m_sink_config.otap_status.firmware_memory_area_id,
+        .has_target_and_action = false,
     };
 
     strncpy(config_p->sink_id, Common_get_sink_id(), SINK_ID_MAX_SIZE);
@@ -302,6 +323,7 @@ static void on_stack_boot_status(uint8_t status)
 
     // After a reboot, read again the variables
     initialize_config_variables();
+    Proto_config_initialize_otap_variables();
 }
 
 static void onStackStatusReceived(uint8_t status)
@@ -368,6 +390,12 @@ bool Proto_config_init(void)
     if (!initialize_config_variables())
     {
         LOGE("All the settings cannot be read\n");
+    }
+
+    /* Read initial otap config from sink */
+    if (!Proto_config_initialize_otap_variables())
+    {
+        LOGE("All the otap settings cannot be read\n");
     }
 
     if (WPC_register_for_stack_status(onStackStatusReceived) != APP_RES_OK)
@@ -701,6 +729,10 @@ app_proto_res_e Proto_config_handle_get_gateway_info_request(wp_GetGwInfoReq * r
     return APP_RES_PROTO_OK;
 }
 
+app_scratchpad_status_t Proto_config_get_otap_status()
+{
+    return m_sink_config.otap_status;
+}
 
 app_proto_res_e Proto_config_get_current_event_status(bool online,
                                                       uint8_t * event_status_p,
