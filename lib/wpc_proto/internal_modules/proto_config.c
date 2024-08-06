@@ -409,11 +409,11 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
     // At least refresh stack status
     WPC_get_stack_status(&m_sink_config.StackStatus);
 
-    LOGD("Config received : %d, %d, %d, %d, %d, %d, %d/%d\n",
+    LOGI("Config received : %d, %d, %d, %d, %d, %d, %d/%d\n",
             cfg->has_node_role, cfg->has_node_address, cfg->has_network_address,
             cfg->has_network_channel, cfg->has_keys, cfg->has_current_ac_range,
             cfg->has_sink_state, cfg->sink_state);
-            
+
     if ((m_sink_config.StackStatus & APP_STACK_STOPPED))
     {
         // stack already stopped, check if start will be needed
@@ -445,7 +445,7 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
         }
     }
 
-    LOGD("Stack actions : stop %d, restart %d, \n", stop_stack, restart_stack);
+    LOGI("Stack actions : stop %d, restart %d, \n", stop_stack, restart_stack);
 
     if (stop_stack)
     {
@@ -486,63 +486,54 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
         }
     }
 
-    if (cfg->has_node_address)
+    if ( cfg->has_node_address &&
+        (cfg->node_address != m_sink_config.node_address))
     {
-        if (   (cfg->node_address != m_sink_config.node_address)
-            || (m_sink_config.StackStatus & APP_STACK_NODE_ADDRESS_NOT_SET) )
+        res = WPC_set_node_address(cfg->node_address);
+        if (res != APP_RES_OK)
         {
-            res = WPC_set_node_address(cfg->node_address);
-            if (res != APP_RES_OK)
-            {
-                LOGE("Set node address failed\n");
-                global_res = APP_RES_INVALID_VALUE;
-            }
-            else
-            {
-                LOGI("Set node address %d\n", cfg->node_address);
-                m_sink_config.node_address = cfg->node_address;
-                config_has_changed = true;
-            }
+            LOGE("Set node address failed\n");
+            global_res = APP_RES_INVALID_VALUE;
+        }
+        else
+        {
+            LOGI("Set node address %d\n", cfg->node_address);
+            m_sink_config.node_address = cfg->node_address;
+            config_has_changed = true;
         }
     }
 
-    if (cfg->has_network_address)
+    if ( cfg->has_network_address &&
+        (cfg->network_address != m_sink_config.network_address))
     {
-        if (   (cfg->network_address != m_sink_config.network_address)
-            || (m_sink_config.StackStatus & APP_STACK_NETWORK_ADDRESS_NOT_SET) )
+        res = WPC_set_network_address(cfg->network_address);
+        if (res != APP_RES_OK)
         {
-            res = WPC_set_network_address(cfg->network_address);
-            if (res != APP_RES_OK)
-            {
-                LOGE("Set network address failed\n");
-                global_res = APP_RES_INVALID_VALUE;
-            }
-            else
-            {
-                LOGI("Set network address %d\n", cfg->network_address);
-                m_sink_config.network_address = cfg->network_address;
-                config_has_changed = true;
-            }
+            LOGE("Set network address failed\n");
+            global_res = APP_RES_INVALID_VALUE;
+        }
+        else
+        {
+            LOGI("Set network address %d\n", cfg->network_address);
+            m_sink_config.network_address = cfg->network_address;
+            config_has_changed = true;
         }
     }
 
-    if (cfg->has_network_channel)
+    if ( cfg->has_network_channel &&
+        (cfg->network_channel != m_sink_config.network_channel))
     {
-        if (   (cfg->network_channel != m_sink_config.network_channel)
-            || (m_sink_config.StackStatus & APP_STACK_NETWORK_CHANNEL_NOT_SET) )
+        res = WPC_set_network_channel(cfg->network_channel);
+        if (res != APP_RES_OK)
         {
-            res = WPC_set_network_channel(cfg->network_channel);
-            if (res != APP_RES_OK)
-            {
-                LOGE("Set network channel failed\n");
-                global_res = APP_RES_INVALID_VALUE;
-            }
-            else
-            {
-                LOGI("Set network channel %d\n", cfg->network_channel);
-                m_sink_config.network_channel = cfg->network_channel;
-                config_has_changed = true;
-            }
+            LOGE("Set network channel failed\n");
+            global_res = APP_RES_INVALID_VALUE;
+        }
+        else
+        {
+            LOGI("Set network channel %d\n", cfg->network_channel);
+            m_sink_config.network_channel = cfg->network_channel;
+            config_has_changed = true;
         }
     }
 
