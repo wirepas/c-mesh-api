@@ -191,8 +191,8 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
         message_resp.wirepas->get_scratchpad_status_resp
             = (wp_GetScratchpadStatusResp *) resp_msg_p;
 
-        res = Proto_otap_handle_get_scratchpad_status(wp_message_req_p->get_scratchpad_status_req,
-                                                      (wp_GetScratchpadStatusResp *) resp_msg_p);
+        res = Proto_config_handle_get_scratchpad_status(wp_message_req_p->get_scratchpad_status_req,
+                                                        (wp_GetScratchpadStatusResp *) resp_msg_p);
     }
     else if (wp_message_req_p->upload_scratchpad_req)
     {
@@ -204,11 +204,37 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
             LOGE("Not enough memory to encode UploadScratchpadResp");
             return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
         }
-        message_resp.wirepas->upload_scratchpad_resp
-            = (wp_UploadScratchpadResp *) resp_msg_p;
+        wp_UploadScratchpadResp * upload_scratchpad_resp_p = resp_msg_p;
+        message_resp.wirepas->upload_scratchpad_resp = upload_scratchpad_resp_p;
+
 
         res = Proto_otap_handle_upload_scratchpad(wp_message_req_p->upload_scratchpad_req,
-                                                  (wp_UploadScratchpadResp *) resp_msg_p);
+                                                  upload_scratchpad_resp_p);
+
+        /* Update parameters */
+        Proto_config_initialize_otap_variables();
+
+        if (upload_scratchpad_resp_p->header.res == wp_ErrorCode_OK)
+        {
+            if(wp_message_req_p->upload_scratchpad_req->has_scratchpad)
+            {
+                /* Do some sanity check */
+                app_scratchpad_status_t otap_status = Proto_config_get_otap_status();
+                if (otap_status.scrat_len != wp_message_req_p->upload_scratchpad_req->scratchpad.size)
+                {
+                    LOGE("Scratchpad is not loaded correctly (wrong size) %d vs %d\n",
+                            otap_status.scrat_len,
+                            wp_message_req_p->upload_scratchpad_req->scratchpad.size);
+                    upload_scratchpad_resp_p->header.res = wp_ErrorCode_INVALID_SCRATCHPAD_SIZE;
+                }
+
+                if (otap_status.scrat_seq_number != wp_message_req_p->upload_scratchpad_req->seq)
+                {
+                    LOGE("Wrong seq number after loading a scratchpad image \n");
+                    upload_scratchpad_resp_p->header.res = wp_ErrorCode_INVALID_SEQUENCE_NUMBER;
+                }
+            }
+        }
     }
     else if (wp_message_req_p->process_scratchpad_req)
     {

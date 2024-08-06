@@ -132,6 +132,33 @@ static void convert_role_to_proto_format(app_role_t role, wp_NodeRole * proto_ro
     proto_role->flags_count = flags_count;
 }
 
+wp_ScratchpadType convert_scrat_type_to_proto_format(uint8_t scrat_type)
+{
+    switch (scrat_type)
+    {
+        case 1:
+            return wp_ScratchpadType_PRESENT;
+        case 2:
+            return wp_ScratchpadType_PROCESS;
+        case 0:
+        default:
+            return wp_ScratchpadType_BLANK;
+    }
+}
+
+wp_ScratchpadStatus convert_scrat_status_to_proto_format(uint8_t scrat_status)
+{
+    switch (scrat_status)
+    {
+        case 0:
+            return wp_ScratchpadStatus_SUCCESS;
+        case 255:
+            return wp_ScratchpadStatus_NEW;
+        default:
+            return wp_ScratchpadStatus_ERROR;
+    }
+}
+
 bool Proto_config_initialize_otap_variables()
 {
     if (WPC_get_local_scratchpad_status(&m_sink_config.otap_status) != APP_RES_OK)
@@ -249,9 +276,9 @@ static void fill_sink_read_config(wp_SinkReadConfig * config_p)
                                .crc = m_sink_config.otap_status.scrat_crc,
                                .seq = m_sink_config.otap_status.scrat_seq_number, },
         .has_stored_status = true,
-        .stored_status = Proto_otap_convert_status(m_sink_config.otap_status.scrat_status),
+        .stored_status = convert_scrat_status_to_proto_format(m_sink_config.otap_status.scrat_status),
         .has_stored_type = true,
-        .stored_type = Proto_otap_convert_type(m_sink_config.otap_status.scrat_type),
+        .stored_type = convert_scrat_type_to_proto_format(m_sink_config.otap_status.scrat_type),
         .has_processed_scratchpad = true,
         .processed_scratchpad = { .len = m_sink_config.otap_status.processed_scrat_len,
                                   .crc = m_sink_config.otap_status.processed_scrat_crc,
@@ -410,6 +437,47 @@ bool Proto_config_init(void)
 void Proto_config_close()
 {
 }
+
+app_proto_res_e Proto_config_handle_get_scratchpad_status(wp_GetScratchpadStatusReq *req,
+                                                          wp_GetScratchpadStatusResp *resp)
+{
+    app_res_e res = APP_RES_OK;
+
+    // TODO: Add some sanity checks
+
+    // Do we need to refresh otap status ?
+    // if (!Proto_config_initialize_otap_variables())
+    // {
+    //     LOGE("All the otap settings cannot be read\n");
+    //     res = APP_RES_INTERNAL_ERROR;
+    // }
+    app_scratchpad_status_t otap_status = Proto_config_get_otap_status();
+
+    *resp = (wp_GetScratchpadStatusResp){
+        .has_stored_scratchpad = true,
+        .stored_scratchpad = { .len = otap_status.scrat_len,
+                               .crc = otap_status.scrat_crc,
+                               .seq = otap_status.scrat_seq_number, },
+        .has_stored_status = true,
+        .stored_status = convert_scrat_status_to_proto_format(otap_status.scrat_status),
+        .has_stored_type = true,
+        .stored_type = convert_scrat_type_to_proto_format(otap_status.scrat_type),
+        .has_processed_scratchpad = true,
+        .processed_scratchpad = { .len = otap_status.processed_scrat_len,
+                                  .crc = otap_status.processed_scrat_crc,
+                                  .seq = otap_status.processed_scrat_seq_number, },
+        .has_firmware_area_id = true,
+        .firmware_area_id = otap_status.firmware_memory_area_id,
+        .has_target_and_action = false,
+    };
+
+    Common_Fill_response_header(&resp->header,
+                                req->header.req_id,
+                                Common_convert_error_code(res));
+
+    return APP_RES_PROTO_OK;
+}
+
 
 app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
                                                wp_SetConfigResp *resp)

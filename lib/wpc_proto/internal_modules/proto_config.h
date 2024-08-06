@@ -24,6 +24,17 @@ bool Proto_config_init(void);
 void Proto_config_close();
 
 /**
+ * \brief   Handle Get scratchpad status
+ * \param   req
+ *          Pointer to the request received
+ * \param   resp
+ *          Pointer to the reponse to send back
+ * \return  APP_RES_PROTO_OK if answer is ready to send
+ */
+app_proto_res_e Proto_config_handle_get_scratchpad_status(wp_GetScratchpadStatusReq * req,
+                                                          wp_GetScratchpadStatusResp * resp);
+
+/**
  * \brief   Handle Set config request
  *          Apply new configs if any param has changed.
  *          Try to apply all of them, even if one fails.
