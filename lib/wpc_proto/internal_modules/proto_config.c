@@ -22,7 +22,7 @@
 // API version implemented in the gateway
 // to fill implemented_api_version in GatewayInfo
 // see lib/wpc_proto/deps/backend-apis/gateway_to_backend/protocol_buffers_files/config_message.proto
-#define GW_PROTO_API_VERSION 1
+#define GW_PROTO_API_VERSION 2
 
 /** Structure to hold config from node */
 typedef struct sink_config
@@ -47,12 +47,27 @@ typedef struct sink_config
     net_channel_t network_channel;
     app_role_t app_node_role;
     app_scratchpad_status_t otap_status;
+    uint8_t target_sequence;
+    uint16_t target_crc;
+    uint8_t target_action;
+    uint8_t target_param;
 } sink_config_t;
 
 /* TODO : Protect config access */
 
 /** Sink config storage */
 static sink_config_t m_sink_config;
+
+/* values for delay unit in MSAP scratchpad action */
+typedef enum 
+{
+    delay_minute = 0b1,
+    delay_hour = 0b10,
+    delay_day = 0b11,
+} delay_unit;
+
+/** return the value of the delay param used in MSAP for scratchpad action (see @delay_unit) */
+#define GET_DELAY(unit, amount) (((unit) << 6) + (amount))
 
 static onEventStatus_cb_f m_onProtoEventStatus_cb = NULL;
 
@@ -159,14 +174,49 @@ static wp_ScratchpadStatus convert_scrat_status_to_proto_format(uint8_t scrat_st
     }
 }
 
+static wp_ProcessingDelay convert_delay_to_proto_format(uint8_t delay)
+{
+    switch (delay) {
+        case GET_DELAY(delay_minute, 10):
+            return wp_ProcessingDelay_TEN_MINUTES;
+        case GET_DELAY(delay_minute, 30):
+            return wp_ProcessingDelay_THIRTY_MINUTES;
+        case GET_DELAY(delay_hour, 1):
+            return wp_ProcessingDelay_ONE_HOUR;
+        case GET_DELAY(delay_hour, 6):
+            return wp_ProcessingDelay_SIX_HOURS;
+        case GET_DELAY(delay_day, 1):
+            return wp_ProcessingDelay_ONE_DAY;
+        case GET_DELAY(delay_day, 2):
+            return wp_ProcessingDelay_TWO_DAYS;
+        case GET_DELAY(delay_day, 5):
+            return wp_ProcessingDelay_FIVE_DAYS;
+        default:
+            return wp_ProcessingDelay_UNKNOWN_DELAY;
+    }
+}
+
 static bool initialize_otap_variables()
 {
-    if (WPC_get_local_scratchpad_status(&m_sink_config.otap_status) != APP_RES_OK)
+    bool res = true;
+
+    if (WPC_get_local_scratchpad_status(&m_sink_config.otap_status)
+        != APP_RES_OK)
     {
         LOGE("Cannot get local scratchpad status\n");
-        return false;
+        res = false;
     }
-    return true;
+
+    if (WPC_read_target_scratchpad(&m_sink_config.target_sequence,
+                                   &m_sink_config.target_crc,
+                                   &m_sink_config.target_action,
+                                   &m_sink_config.target_param) != APP_RES_OK)
+    {
+        LOGE("Cannot get target scratchpad status\n");
+        res = false;
+    }
+
+    return res;
 }
 
 static bool initialize_config_variables()
@@ -218,6 +268,20 @@ static bool initialize_config_variables()
     }
 
     return res;
+}
+
+static void fill_target_and_action(wp_TargetScratchpadAndAction * target_and_action_p)
+{
+    *target_and_action_p = (wp_TargetScratchpadAndAction){
+        .action = m_sink_config.target_action + wp_ScratchpadAction_NO_OTAP, // NO_OTAP = 0 on CMeshAPI
+        .has_target_sequence = true, // do we need to check action to set it true/false ?
+        .target_sequence = m_sink_config.target_sequence,
+        .has_target_crc = true, // do we need to check action to set it true/false ?
+        .target_crc = m_sink_config.target_crc,
+        .which_param = wp_TargetScratchpadAndAction_delay_tag, // only if action == wp_ScratchpadAction_PROPAGATE_AND_PROCESS_WITH_DELAY, possible to get empty union ?
+        .param.delay = convert_delay_to_proto_format(m_sink_config.target_param),
+    };
+
 }
 
 static void fill_sink_read_config(wp_SinkReadConfig * config_p)
@@ -285,12 +349,14 @@ static void fill_sink_read_config(wp_SinkReadConfig * config_p)
                                   .seq = m_sink_config.otap_status.processed_scrat_seq_number, },
         .has_firmware_area_id = true,
         .firmware_area_id = m_sink_config.otap_status.firmware_memory_area_id,
-        .has_target_and_action = false,
+        .has_target_and_action = true,
     };
-
+    
     strncpy(config_p->sink_id, Common_get_sink_id(), SINK_ID_MAX_SIZE);
 
     convert_role_to_proto_format(m_sink_config.app_node_role, &config_p->node_role);
+
+    fill_target_and_action(&config_p->target_and_action);
 
     if (MAXIMUM_APP_CONFIG_SIZE >= m_sink_config.app_config_max_size)
     {
@@ -460,8 +526,10 @@ app_proto_res_e Proto_config_handle_get_scratchpad_status(wp_GetScratchpadStatus
                                   .seq = m_sink_config.otap_status.processed_scrat_seq_number, },
         .has_firmware_area_id = true,
         .firmware_area_id = m_sink_config.otap_status.firmware_memory_area_id,
-        .has_target_and_action = false,
+        .has_target_and_action = true,
     };
+
+    fill_target_and_action(&resp->target_and_action);
 
     Common_Fill_response_header(&resp->header,
                                 req->header.req_id,
