@@ -196,6 +196,28 @@ static wp_ProcessingDelay convert_delay_to_proto_format(uint8_t delay)
     }
 }
 
+uint8_t convert_delay_to_app_format(wp_ProcessingDelay delay)
+{
+    switch (delay) {
+    case wp_ProcessingDelay_TEN_MINUTES:
+        return GET_DELAY(delay_minute, 10);
+    case wp_ProcessingDelay_THIRTY_MINUTES:
+        return GET_DELAY(delay_minute, 30);
+    case wp_ProcessingDelay_ONE_HOUR:
+        return GET_DELAY(delay_hour, 1);
+    case wp_ProcessingDelay_SIX_HOURS:
+        return GET_DELAY(delay_hour, 6);
+    case wp_ProcessingDelay_ONE_DAY:
+        return GET_DELAY(delay_day, 1);
+    case wp_ProcessingDelay_TWO_DAYS:
+        return GET_DELAY(delay_day, 2);
+    case wp_ProcessingDelay_FIVE_DAYS:
+        return GET_DELAY(delay_day, 5);
+    default:
+        return 0;
+    }
+}
+
 static bool initialize_otap_variables()
 {
     bool res = true;
@@ -853,6 +875,85 @@ app_proto_res_e Proto_config_handle_get_gateway_info_request(wp_GetGwInfoReq * r
 
     resp->info.has_implemented_api_version = true;
     resp->info.implemented_api_version = GW_PROTO_API_VERSION;
+
+    return APP_RES_PROTO_OK;
+}
+
+app_proto_res_e Proto_config_handle_set_scratchpad_target_and_action_request(
+                                            wp_SetScratchpadTargetAndActionReq *req,
+                                            wp_SetScratchpadTargetAndActionResp *resp)
+{
+    app_res_e res = APP_RES_OK;
+    uint8_t param;
+    uint8_t seq;
+    uint16_t crc;
+
+    // TODO: Add some sanity checks
+
+    switch (req->target_and_action.action) {
+
+        case wp_ScratchpadAction_NO_OTAP :
+            res = WPC_write_target_scratchpad(0, 0, 0, 0);
+            LOGI("Target and action pushed NoOtap\n", res);
+            break;
+
+        case wp_ScratchpadAction_PROPAGATE_AND_PROCESS_WITH_DELAY :
+            if (req->target_and_action.which_param != wp_TargetScratchpadAndAction_delay_tag)
+            {
+                res = APP_RES_INVALID_VALUE;
+                break;                
+            }
+
+            param = convert_delay_to_app_format(req->target_and_action.param.delay);
+            if (param == 0)
+            {
+                res = APP_RES_INVALID_VALUE;
+                break;
+            }
+
+        case wp_ScratchpadAction_PROPAGATE_ONLY :
+        case wp_ScratchpadAction_PROPAGATE_AND_PROCESS :
+            if (req->target_and_action.has_target_sequence)
+            {
+                seq = req->target_and_action.target_sequence;
+            }
+            else if (m_sink_config.otap_status.scrat_seq_number != 0)
+            {
+                seq = m_sink_config.otap_status.scrat_seq_number;
+            }
+            else            
+            {
+                res = APP_RES_INVALID_VALUE;
+                break;                
+            }
+
+            if (req->target_and_action.has_target_crc)
+            {
+                crc = req->target_and_action.target_crc;
+            }
+            else // could we suppose that if we have seq for local, we have CRC (no invalid value for CRC)
+            {
+                crc = m_sink_config.otap_status.scrat_crc;
+            }
+
+            res = WPC_write_target_scratchpad(seq,
+                                              crc,
+                                              req->target_and_action.action - wp_ScratchpadAction_NO_OTAP,
+                                              param);
+            break;
+
+        default:
+            res = APP_RES_INVALID_VALUE;
+    }
+
+    if (res != APP_RES_OK)
+    {
+        LOGE("Target and action failed %d\n", res);
+    }
+
+    Common_Fill_response_header(&resp->header,
+                                req->header.req_id,
+                                Common_convert_error_code(res));
 
     return APP_RES_PROTO_OK;
 }
