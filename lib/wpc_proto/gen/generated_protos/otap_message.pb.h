@@ -5,7 +5,6 @@
 #define PB_WP_OTAP_MESSAGE_PB_H_INCLUDED
 #include <pb.h>
 #include "wp_global.pb.h"
-#include "error.pb.h"
 
 #if PB_PROTO_HEADER_VERSION != 40
 #error Regenerate this file with the current version of nanopb generator.
@@ -33,13 +32,26 @@ typedef struct _wp_GetScratchpadStatusResp {
     wp_TargetScratchpadAndAction target_and_action; /* Unset if sink doesn't support it */
 } wp_GetScratchpadStatusResp;
 
-typedef PB_BYTES_ARRAY_T(1) wp_UploadScratchpadReq_scratchpad_t;
+typedef struct _wp_UploadScratchpadReq_ChunkInfo {
+    /* Id of the scratchpad this chunk belongs to */
+    uint32_t scratchpad_unique_id;
+    /* Full size of the scratchpad this chunk belongs to */
+    uint32_t scratchpad_full_size;
+    /* Offset in bytes of the chunk in the full scratchpad
+ NB: Chunk must be sent in order */
+    uint32_t start_offset;
+} wp_UploadScratchpadReq_ChunkInfo;
+
+typedef PB_BYTES_ARRAY_T(1024) wp_UploadScratchpadReq_scratchpad_t;
 typedef struct _wp_UploadScratchpadReq {
     wp_RequestHeader header;
     uint32_t seq;
     /* If scratchpad is not set, it clears the stored scratchpad */
     bool has_scratchpad;
-    wp_UploadScratchpadReq_scratchpad_t scratchpad; /* 1MB */
+    wp_UploadScratchpadReq_scratchpad_t scratchpad;
+    /* If ChunkInfo is present, then above scratchpad is a chunk */
+    bool has_chunk_info;
+    wp_UploadScratchpadReq_ChunkInfo chunk_info;
 } wp_UploadScratchpadReq;
 
 typedef struct _wp_UploadScratchpadResp {
@@ -71,7 +83,8 @@ extern "C" {
 /* Initializer values for message structs */
 #define wp_GetScratchpadStatusReq_init_default   {wp_RequestHeader_init_default}
 #define wp_GetScratchpadStatusResp_init_default  {wp_ResponseHeader_init_default, false, wp_ScratchpadInfo_init_default, false, _wp_ScratchpadStatus_MIN, false, _wp_ScratchpadType_MIN, false, wp_ScratchpadInfo_init_default, false, 0, false, wp_TargetScratchpadAndAction_init_default}
-#define wp_UploadScratchpadReq_init_default      {wp_RequestHeader_init_default, 0, false, {0, {0}}}
+#define wp_UploadScratchpadReq_init_default      {wp_RequestHeader_init_default, 0, false, {0, {0}}, false, wp_UploadScratchpadReq_ChunkInfo_init_default}
+#define wp_UploadScratchpadReq_ChunkInfo_init_default {0, 0, 0}
 #define wp_UploadScratchpadResp_init_default     {wp_ResponseHeader_init_default}
 #define wp_ProcessScratchpadReq_init_default     {wp_RequestHeader_init_default}
 #define wp_ProcessScratchpadResp_init_default    {wp_ResponseHeader_init_default}
@@ -79,7 +92,8 @@ extern "C" {
 #define wp_SetScratchpadTargetAndActionResp_init_default {wp_ResponseHeader_init_default}
 #define wp_GetScratchpadStatusReq_init_zero      {wp_RequestHeader_init_zero}
 #define wp_GetScratchpadStatusResp_init_zero     {wp_ResponseHeader_init_zero, false, wp_ScratchpadInfo_init_zero, false, _wp_ScratchpadStatus_MIN, false, _wp_ScratchpadType_MIN, false, wp_ScratchpadInfo_init_zero, false, 0, false, wp_TargetScratchpadAndAction_init_zero}
-#define wp_UploadScratchpadReq_init_zero         {wp_RequestHeader_init_zero, 0, false, {0, {0}}}
+#define wp_UploadScratchpadReq_init_zero         {wp_RequestHeader_init_zero, 0, false, {0, {0}}, false, wp_UploadScratchpadReq_ChunkInfo_init_zero}
+#define wp_UploadScratchpadReq_ChunkInfo_init_zero {0, 0, 0}
 #define wp_UploadScratchpadResp_init_zero        {wp_ResponseHeader_init_zero}
 #define wp_ProcessScratchpadReq_init_zero        {wp_RequestHeader_init_zero}
 #define wp_ProcessScratchpadResp_init_zero       {wp_ResponseHeader_init_zero}
@@ -95,9 +109,13 @@ extern "C" {
 #define wp_GetScratchpadStatusResp_processed_scratchpad_tag 5
 #define wp_GetScratchpadStatusResp_firmware_area_id_tag 6
 #define wp_GetScratchpadStatusResp_target_and_action_tag 7
+#define wp_UploadScratchpadReq_ChunkInfo_scratchpad_unique_id_tag 1
+#define wp_UploadScratchpadReq_ChunkInfo_scratchpad_full_size_tag 2
+#define wp_UploadScratchpadReq_ChunkInfo_start_offset_tag 3
 #define wp_UploadScratchpadReq_header_tag        1
 #define wp_UploadScratchpadReq_seq_tag           2
 #define wp_UploadScratchpadReq_scratchpad_tag    3
+#define wp_UploadScratchpadReq_chunk_info_tag    4
 #define wp_UploadScratchpadResp_header_tag       1
 #define wp_ProcessScratchpadReq_header_tag       1
 #define wp_ProcessScratchpadResp_header_tag      1
@@ -130,10 +148,19 @@ X(a, STATIC,   OPTIONAL, MESSAGE,  target_and_action,   7)
 #define wp_UploadScratchpadReq_FIELDLIST(X, a) \
 X(a, STATIC,   REQUIRED, MESSAGE,  header,            1) \
 X(a, STATIC,   REQUIRED, UINT32,   seq,               2) \
-X(a, STATIC,   OPTIONAL, BYTES,    scratchpad,        3)
+X(a, STATIC,   OPTIONAL, BYTES,    scratchpad,        3) \
+X(a, STATIC,   OPTIONAL, MESSAGE,  chunk_info,        4)
 #define wp_UploadScratchpadReq_CALLBACK NULL
 #define wp_UploadScratchpadReq_DEFAULT NULL
 #define wp_UploadScratchpadReq_header_MSGTYPE wp_RequestHeader
+#define wp_UploadScratchpadReq_chunk_info_MSGTYPE wp_UploadScratchpadReq_ChunkInfo
+
+#define wp_UploadScratchpadReq_ChunkInfo_FIELDLIST(X, a) \
+X(a, STATIC,   REQUIRED, UINT32,   scratchpad_unique_id,   1) \
+X(a, STATIC,   REQUIRED, UINT32,   scratchpad_full_size,   2) \
+X(a, STATIC,   REQUIRED, UINT32,   start_offset,      3)
+#define wp_UploadScratchpadReq_ChunkInfo_CALLBACK NULL
+#define wp_UploadScratchpadReq_ChunkInfo_DEFAULT NULL
 
 #define wp_UploadScratchpadResp_FIELDLIST(X, a) \
 X(a, STATIC,   REQUIRED, MESSAGE,  header,            1)
@@ -170,6 +197,7 @@ X(a, STATIC,   REQUIRED, MESSAGE,  header,            1)
 extern const pb_msgdesc_t wp_GetScratchpadStatusReq_msg;
 extern const pb_msgdesc_t wp_GetScratchpadStatusResp_msg;
 extern const pb_msgdesc_t wp_UploadScratchpadReq_msg;
+extern const pb_msgdesc_t wp_UploadScratchpadReq_ChunkInfo_msg;
 extern const pb_msgdesc_t wp_UploadScratchpadResp_msg;
 extern const pb_msgdesc_t wp_ProcessScratchpadReq_msg;
 extern const pb_msgdesc_t wp_ProcessScratchpadResp_msg;
@@ -180,6 +208,7 @@ extern const pb_msgdesc_t wp_SetScratchpadTargetAndActionResp_msg;
 #define wp_GetScratchpadStatusReq_fields &wp_GetScratchpadStatusReq_msg
 #define wp_GetScratchpadStatusResp_fields &wp_GetScratchpadStatusResp_msg
 #define wp_UploadScratchpadReq_fields &wp_UploadScratchpadReq_msg
+#define wp_UploadScratchpadReq_ChunkInfo_fields &wp_UploadScratchpadReq_ChunkInfo_msg
 #define wp_UploadScratchpadResp_fields &wp_UploadScratchpadResp_msg
 #define wp_ProcessScratchpadReq_fields &wp_ProcessScratchpadReq_msg
 #define wp_ProcessScratchpadResp_fields &wp_ProcessScratchpadResp_msg
@@ -187,14 +216,15 @@ extern const pb_msgdesc_t wp_SetScratchpadTargetAndActionResp_msg;
 #define wp_SetScratchpadTargetAndActionResp_fields &wp_SetScratchpadTargetAndActionResp_msg
 
 /* Maximum encoded size of messages (where known) */
-#define WP_OTAP_MESSAGE_PB_H_MAX_SIZE            wp_GetScratchpadStatusResp_size
+#define WP_OTAP_MESSAGE_PB_H_MAX_SIZE            wp_UploadScratchpadReq_size
 #define wp_GetScratchpadStatusReq_size           41
 #define wp_GetScratchpadStatusResp_size          141
 #define wp_ProcessScratchpadReq_size             41
 #define wp_ProcessScratchpadResp_size            69
 #define wp_SetScratchpadTargetAndActionReq_size  63
 #define wp_SetScratchpadTargetAndActionResp_size 69
-#define wp_UploadScratchpadReq_size              50
+#define wp_UploadScratchpadReq_ChunkInfo_size    18
+#define wp_UploadScratchpadReq_size              1094
 #define wp_UploadScratchpadResp_size             69
 
 #ifdef __cplusplus
