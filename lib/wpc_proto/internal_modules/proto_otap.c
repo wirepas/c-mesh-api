@@ -20,8 +20,15 @@
 #define MAX_LOG_LEVEL INFO_LOG_LEVEL
 #include "logger.h"
 
+// Used to stored the current scratchpad id being used
+// for uploading chunks of scratchpad
+static uint32_t m_scratchpad_load_current_id = 0;
+
+static bool m_restart_after_load = false;
+
 bool Proto_otap_init(void)
 {
+
     return true;
 }
 
@@ -30,27 +37,116 @@ void Proto_otap_close(void)
 
 }
 
+static app_res_e handle_scratchpad_chunk(uint8_t * chunk,
+                                         size_t chunk_size,
+                                         uint32_t offset,
+                                         size_t full_size,
+                                         uint32_t id,
+                                         uint32_t seq)
+{
+    app_res_e res;
+    uint8_t status;
+    LOGD("Uploading scratchpad chunk: size %u, offset %u, full_size %u, id %u, seq %u\n",
+                            chunk_size,
+                            offset,
+                            full_size,
+                            id,
+                            seq);
+
+    /* Check if it is first chunk and no other load ongoing */
+    if (offset == 0)
+    {
+        if (m_scratchpad_load_current_id != 0)
+        {
+            LOGW("Previous upload with ongoing: old %u, new %u\n",
+                                m_scratchpad_load_current_id,
+                                id);
+
+            /* Only a log, keep going with it */
+        }
+
+        if (WPC_get_stack_status(&status) == APP_RES_OK && status == 0)
+        {
+            /* Stack must be stoped */
+            /* No check required as next step will anyway fail */
+            WPC_stop_stack();
+            m_restart_after_load = true;
+        }
+
+        m_scratchpad_load_current_id = id;
+        res = WPC_start_local_scratchpad_update(full_size, seq);
+        if (res != APP_RES_OK)
+        {
+            return res;
+        }
+    }
+
+    /* Check chunk is from valid scratchpad */
+    if (id != m_scratchpad_load_current_id)
+    {
+        LOGE("Invalid scratcpad id %u vs %u expected\n",
+                        id,
+                        m_scratchpad_load_current_id);
+        return APP_RES_INVALID_SEQ; // Not exactly the right code
+    }
+
+    /* Load the chunk */
+    res = WPC_upload_local_block_scratchpad(chunk_size, chunk, offset);
+    if (res != APP_RES_OK)
+    {
+        return res;
+    }
+
+    /* Check if it is the last one */
+    if ((offset + chunk_size) == full_size)
+    {
+        /* Yes it is */
+        m_scratchpad_load_current_id = 0;
+        if (m_restart_after_load)
+        {
+            if (WPC_start_stack() != APP_RES_OK)
+            {
+                LOGE("Cannot restart stack after loading last chunk\n");
+            }
+            m_restart_after_load = false;
+        }
+    }
+
+    return APP_RES_OK;
+}
+
 app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
                                                     wp_UploadScratchpadResp *resp)
 {
     app_res_e res = APP_RES_OK;
 
-    // TODO: Add some sanity checks
-
     if(req->has_scratchpad)
     {
 
-        /* Send the file to the sink */
-        res = WPC_upload_local_scratchpad(req->scratchpad.size,
-                                          req->scratchpad.bytes,
-                                          req->seq);
-        if (res == APP_RES_OK)
+        if (req->has_chunk_info)
         {
-            LOGI("Scratchpad uploaded : with seq %d of size %d\n", req->seq, req->scratchpad.size);
+            /* This scratchpad is a chunk */
+            res = handle_scratchpad_chunk(req->scratchpad.bytes,
+                                          req->scratchpad.size,
+                                          req->chunk_info.start_offset,
+                                          req->chunk_info.scratchpad_full_size,
+                                          req->chunk_info.scratchpad_unique_id,
+                                          req->seq);
         }
         else
         {
-            LOGE("Upload scratchpad failed %d: with seq %d of size %d\n", res, req->seq, req->scratchpad.size);
+            /* Send the full file to the sink */
+            res = WPC_upload_local_scratchpad(req->scratchpad.size,
+                                            req->scratchpad.bytes,
+                                            req->seq);
+            if (res == APP_RES_OK)
+            {
+                LOGI("Scratchpad uploaded : with seq %d of size %d\n", req->seq, req->scratchpad.size);
+            }
+            else
+            {
+                LOGE("Upload scratchpad failed %d: with seq %d of size %d\n", res, req->seq, req->scratchpad.size);
+            }
         }
     }
     else
@@ -60,6 +156,7 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
         if (res == APP_RES_OK)
         {
             LOGI("Scratchpad cleared\n");
+            m_scratchpad_load_current_id = 0;
         }
         else
         {

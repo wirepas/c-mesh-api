@@ -59,7 +59,7 @@ typedef struct sink_config
 static sink_config_t m_sink_config;
 
 /* values for delay unit in MSAP scratchpad action */
-typedef enum 
+typedef enum
 {
     delay_minute = 0b1,
     delay_hour = 0b10,
@@ -373,7 +373,7 @@ static void fill_sink_read_config(wp_SinkReadConfig * config_p)
         .firmware_area_id = m_sink_config.otap_status.firmware_memory_area_id,
         .has_target_and_action = true,
     };
-    
+
     strncpy(config_p->sink_id, Common_get_sink_id(), SINK_ID_MAX_SIZE);
 
     convert_role_to_proto_format(m_sink_config.app_node_role, &config_p->node_role);
@@ -413,6 +413,8 @@ static void fill_status_event(wp_StatusEvent * status_event_p,
         .configs_count = config_count,
         .has_gw_model = (strlen(Common_get_gateway_model()) != 0),
         .has_gw_version = (strlen(Common_get_gateway_version()) != 0),
+        .has_max_scratchpad_size = true,
+        .max_scratchpad_size = member_size(wp_UploadScratchpadReq_scratchpad_t, bytes)
     };
 
     // Add current config for online node
@@ -876,6 +878,9 @@ app_proto_res_e Proto_config_handle_get_gateway_info_request(wp_GetGwInfoReq * r
     resp->info.has_implemented_api_version = true;
     resp->info.implemented_api_version = GW_PROTO_API_VERSION;
 
+    resp->info.has_max_scratchpad_size = true,
+    resp->info.max_scratchpad_size = member_size(wp_UploadScratchpadReq_scratchpad_t, bytes);
+
     return APP_RES_PROTO_OK;
 }
 
@@ -901,7 +906,7 @@ app_proto_res_e Proto_config_handle_set_scratchpad_target_and_action_request(
             if (req->target_and_action.which_param != wp_TargetScratchpadAndAction_delay_tag)
             {
                 res = APP_RES_INVALID_VALUE;
-                break;                
+                break;
             }
 
             param = convert_delay_to_app_format(req->target_and_action.param.delay);
@@ -921,10 +926,10 @@ app_proto_res_e Proto_config_handle_set_scratchpad_target_and_action_request(
             {
                 seq = m_sink_config.otap_status.scrat_seq_number;
             }
-            else            
+            else
             {
                 res = APP_RES_INVALID_VALUE;
-                break;                
+                break;
             }
 
             if (req->target_and_action.has_target_crc)
