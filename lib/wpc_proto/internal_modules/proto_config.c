@@ -132,7 +132,7 @@ static void convert_role_to_proto_format(app_role_t role, wp_NodeRole * proto_ro
     proto_role->flags_count = flags_count;
 }
 
-wp_ScratchpadType convert_scrat_type_to_proto_format(uint8_t scrat_type)
+static wp_ScratchpadType convert_scrat_type_to_proto_format(uint8_t scrat_type)
 {
     switch (scrat_type)
     {
@@ -146,7 +146,7 @@ wp_ScratchpadType convert_scrat_type_to_proto_format(uint8_t scrat_type)
     }
 }
 
-wp_ScratchpadStatus convert_scrat_status_to_proto_format(uint8_t scrat_status)
+static wp_ScratchpadStatus convert_scrat_status_to_proto_format(uint8_t scrat_status)
 {
     switch (scrat_status)
     {
@@ -159,7 +159,7 @@ wp_ScratchpadStatus convert_scrat_status_to_proto_format(uint8_t scrat_status)
     }
 }
 
-bool Proto_config_initialize_otap_variables()
+static bool initialize_otap_variables()
 {
     if (WPC_get_local_scratchpad_status(&m_sink_config.otap_status) != APP_RES_OK)
     {
@@ -312,7 +312,7 @@ static void fill_sink_read_config(wp_SinkReadConfig * config_p)
     }
 }
 
-void fill_status_event(wp_StatusEvent * status_event_p,
+static void fill_status_event(wp_StatusEvent * status_event_p,
                                  wp_OnOffState state,
                                  pb_size_t config_count)
 {
@@ -350,7 +350,7 @@ static void on_stack_boot_status(uint8_t status)
 
     // After a reboot, read again the variables
     initialize_config_variables();
-    Proto_config_initialize_otap_variables();
+    initialize_otap_variables();
 }
 
 static void onStackStatusReceived(uint8_t status)
@@ -420,7 +420,7 @@ bool Proto_config_init(void)
     }
 
     /* Read initial otap config from sink */
-    if (!Proto_config_initialize_otap_variables())
+    if (!initialize_otap_variables())
     {
         LOGE("All the otap settings cannot be read\n");
     }
@@ -445,29 +445,21 @@ app_proto_res_e Proto_config_handle_get_scratchpad_status(wp_GetScratchpadStatus
 
     // TODO: Add some sanity checks
 
-    // Do we need to refresh otap status ?
-    // if (!Proto_config_initialize_otap_variables())
-    // {
-    //     LOGE("All the otap settings cannot be read\n");
-    //     res = APP_RES_INTERNAL_ERROR;
-    // }
-    app_scratchpad_status_t otap_status = Proto_config_get_otap_status();
-
     *resp = (wp_GetScratchpadStatusResp){
         .has_stored_scratchpad = true,
-        .stored_scratchpad = { .len = otap_status.scrat_len,
-                               .crc = otap_status.scrat_crc,
-                               .seq = otap_status.scrat_seq_number, },
+        .stored_scratchpad = { .len = m_sink_config.otap_status.scrat_len,
+                               .crc = m_sink_config.otap_status.scrat_crc,
+                               .seq = m_sink_config.otap_status.scrat_seq_number, },
         .has_stored_status = true,
-        .stored_status = convert_scrat_status_to_proto_format(otap_status.scrat_status),
+        .stored_status = convert_scrat_status_to_proto_format(m_sink_config.otap_status.scrat_status),
         .has_stored_type = true,
-        .stored_type = convert_scrat_type_to_proto_format(otap_status.scrat_type),
+        .stored_type = convert_scrat_type_to_proto_format(m_sink_config.otap_status.scrat_type),
         .has_processed_scratchpad = true,
-        .processed_scratchpad = { .len = otap_status.processed_scrat_len,
-                                  .crc = otap_status.processed_scrat_crc,
-                                  .seq = otap_status.processed_scrat_seq_number, },
+        .processed_scratchpad = { .len = m_sink_config.otap_status.processed_scrat_len,
+                                  .crc = m_sink_config.otap_status.processed_scrat_crc,
+                                  .seq = m_sink_config.otap_status.processed_scrat_seq_number, },
         .has_firmware_area_id = true,
-        .firmware_area_id = otap_status.firmware_memory_area_id,
+        .firmware_area_id = m_sink_config.otap_status.firmware_memory_area_id,
         .has_target_and_action = false,
     };
 
@@ -797,11 +789,6 @@ app_proto_res_e Proto_config_handle_get_gateway_info_request(wp_GetGwInfoReq * r
     return APP_RES_PROTO_OK;
 }
 
-app_scratchpad_status_t Proto_config_get_otap_status()
-{
-    return m_sink_config.otap_status;
-}
-
 app_proto_res_e Proto_config_get_current_event_status(bool online,
                                                       uint8_t * event_status_p,
                                                       size_t * event_status_size_p)
@@ -862,4 +849,9 @@ net_addr_t Proto_config_get_network_address(void)
     // Take it from the cache. It will be called
     // for every rx message so cannot be read from node
     return m_sink_config.network_address;
+}
+
+void Proto_config_refresh_otap_infos()
+{
+    initialize_otap_variables();
 }

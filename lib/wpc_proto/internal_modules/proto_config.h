@@ -10,7 +10,10 @@
 #include "wpc.h"
 #include "wpc_proto.h"
 
-bool Proto_config_initialize_otap_variables();
+/**
+ * \brief   Force a refresh of the otap variables
+ */
+void Proto_config_refresh_otap_infos();
 
 /**
  * \brief   Intialize the module in charge of data handling config
@@ -69,7 +72,6 @@ app_proto_res_e Proto_config_handle_get_configs(wp_GetConfigsReq *req,
 app_proto_res_e Proto_config_handle_get_gateway_info_request(wp_GetGwInfoReq * req,
                                                              wp_GetGwInfoResp * resp);
 
-app_scratchpad_status_t Proto_config_get_otap_status();
 
 app_proto_res_e Proto_config_get_current_event_status(bool online,
                                                       uint8_t * event_status_p,

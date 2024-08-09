@@ -212,29 +212,7 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
                                                   upload_scratchpad_resp_p);
 
         /* Update parameters */
-        Proto_config_initialize_otap_variables();
-
-        if (upload_scratchpad_resp_p->header.res == wp_ErrorCode_OK)
-        {
-            if(wp_message_req_p->upload_scratchpad_req->has_scratchpad)
-            {
-                /* Do some sanity check */
-                app_scratchpad_status_t otap_status = Proto_config_get_otap_status();
-                if (otap_status.scrat_len != wp_message_req_p->upload_scratchpad_req->scratchpad.size)
-                {
-                    LOGE("Scratchpad is not loaded correctly (wrong size) %d vs %d\n",
-                            otap_status.scrat_len,
-                            wp_message_req_p->upload_scratchpad_req->scratchpad.size);
-                    upload_scratchpad_resp_p->header.res = wp_ErrorCode_INVALID_SCRATCHPAD_SIZE;
-                }
-
-                if (otap_status.scrat_seq_number != wp_message_req_p->upload_scratchpad_req->seq)
-                {
-                    LOGE("Wrong seq number after loading a scratchpad image \n");
-                    upload_scratchpad_resp_p->header.res = wp_ErrorCode_INVALID_SEQUENCE_NUMBER;
-                }
-            }
-        }
+        Proto_config_refresh_otap_infos();
     }
     else if (wp_message_req_p->process_scratchpad_req)
     {
