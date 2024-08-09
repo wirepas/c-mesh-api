@@ -59,7 +59,7 @@ typedef struct sink_config
 static sink_config_t m_sink_config;
 
 /* values for delay unit in MSAP scratchpad action */
-typedef enum 
+typedef enum
 {
     delay_minute = 0b1,
     delay_hour = 0b10,
@@ -299,10 +299,24 @@ static void fill_target_and_action(wp_TargetScratchpadAndAction * target_and_act
         .has_target_sequence = true, // do we need to check action to set it true/false ?
         .target_sequence = m_sink_config.target_sequence,
         .has_target_crc = true, // do we need to check action to set it true/false ?
-        .target_crc = m_sink_config.target_crc,
-        .which_param = wp_TargetScratchpadAndAction_delay_tag, // only if action == wp_ScratchpadAction_PROPAGATE_AND_PROCESS_WITH_DELAY, possible to get empty union ?
-        .param.delay = convert_delay_to_proto_format(m_sink_config.target_param),
+        .target_crc = m_sink_config.target_crc
     };
+
+    // Set param if target is PROPAGATE_AND_PROCESS_WITH_DELAY
+    if (m_sink_config.target_action == 3)
+    {
+        wp_ProcessingDelay delay = convert_delay_to_proto_format(m_sink_config.target_param);
+        if (delay != wp_ProcessingDelay_UNKNOWN_DELAY)
+        {
+            target_and_action_p->which_param = wp_TargetScratchpadAndAction_delay_tag;
+            target_and_action_p->param.delay = delay;
+        }
+        else
+        {
+            target_and_action_p->which_param = wp_TargetScratchpadAndAction_raw_tag;
+            target_and_action_p->param.raw = m_sink_config.target_param;
+        }
+    }
 
 }
 
@@ -373,7 +387,7 @@ static void fill_sink_read_config(wp_SinkReadConfig * config_p)
         .firmware_area_id = m_sink_config.otap_status.firmware_memory_area_id,
         .has_target_and_action = true,
     };
-    
+
     strncpy(config_p->sink_id, Common_get_sink_id(), SINK_ID_MAX_SIZE);
 
     convert_role_to_proto_format(m_sink_config.app_node_role, &config_p->node_role);
@@ -884,8 +898,8 @@ app_proto_res_e Proto_config_handle_set_scratchpad_target_and_action_request(
                                             wp_SetScratchpadTargetAndActionResp *resp)
 {
     app_res_e res = APP_RES_OK;
-    uint8_t param;
     uint8_t seq;
+    uint8_t param;
     uint16_t crc;
 
     // TODO: Add some sanity checks
@@ -898,14 +912,20 @@ app_proto_res_e Proto_config_handle_set_scratchpad_target_and_action_request(
             break;
 
         case wp_ScratchpadAction_PROPAGATE_AND_PROCESS_WITH_DELAY :
-            if (req->target_and_action.which_param != wp_TargetScratchpadAndAction_delay_tag)
+            if (req->target_and_action.which_param == wp_TargetScratchpadAndAction_delay_tag)
             {
-                res = APP_RES_INVALID_VALUE;
-                break;                
+                param = convert_delay_to_app_format(req->target_and_action.param.delay);
+                if (param == 0)
+                {
+                    res = APP_RES_INVALID_VALUE;
+                    break;
+                }
             }
-
-            param = convert_delay_to_app_format(req->target_and_action.param.delay);
-            if (param == 0)
+            else if (req->target_and_action.which_param == wp_TargetScratchpadAndAction_raw_tag)
+            {
+                param = req->target_and_action.param.raw;
+            }
+            else
             {
                 res = APP_RES_INVALID_VALUE;
                 break;
@@ -920,20 +940,23 @@ app_proto_res_e Proto_config_handle_set_scratchpad_target_and_action_request(
             else if (m_sink_config.otap_status.scrat_seq_number != 0)
             {
                 seq = m_sink_config.otap_status.scrat_seq_number;
+                LOGI("Adding seq from node: %u\n", seq);
             }
-            else            
+            else
             {
                 res = APP_RES_INVALID_VALUE;
-                break;                
+                break;
             }
 
             if (req->target_and_action.has_target_crc)
             {
                 crc = req->target_and_action.target_crc;
             }
-            else // could we suppose that if we have seq for local, we have CRC (no invalid value for CRC)
+            else
             {
+                // No check on CRC as invalid scratchpad is already handled with seq
                 crc = m_sink_config.otap_status.scrat_crc;
+                LOGI("Adding CRC from node: %u\n", crc);
             }
 
             res = WPC_write_target_scratchpad(seq,
