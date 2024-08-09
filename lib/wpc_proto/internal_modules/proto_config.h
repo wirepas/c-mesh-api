@@ -10,6 +10,10 @@
 #include "wpc.h"
 #include "wpc_proto.h"
 
+/**
+ * \brief   Force a refresh of the otap variables
+ */
+void Proto_config_refresh_otap_infos();
 
 /**
  * \brief   Intialize the module in charge of data handling config
@@ -21,6 +25,17 @@ bool Proto_config_init(void);
  * \brief   Close the module in charge of config
  */
 void Proto_config_close();
+
+/**
+ * \brief   Handle Get scratchpad status
+ * \param   req
+ *          Pointer to the request received
+ * \param   resp
+ *          Pointer to the reponse to send back
+ * \return  APP_RES_PROTO_OK if answer is ready to send
+ */
+app_proto_res_e Proto_config_handle_get_scratchpad_status(wp_GetScratchpadStatusReq * req,
+                                                          wp_GetScratchpadStatusResp * resp);
 
 /**
  * \brief   Handle Set config request
