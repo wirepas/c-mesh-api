@@ -427,6 +427,8 @@ static void fill_status_event(wp_StatusEvent * status_event_p,
         .configs_count = config_count,
         .has_gw_model = (strlen(Common_get_gateway_model()) != 0),
         .has_gw_version = (strlen(Common_get_gateway_version()) != 0),
+        .has_max_scratchpad_size = true,
+        .max_scratchpad_size = member_size(wp_UploadScratchpadReq_scratchpad_t, bytes)
     };
 
     // Add current config for online node
@@ -889,6 +891,9 @@ app_proto_res_e Proto_config_handle_get_gateway_info_request(wp_GetGwInfoReq * r
 
     resp->info.has_implemented_api_version = true;
     resp->info.implemented_api_version = GW_PROTO_API_VERSION;
+
+    resp->info.has_max_scratchpad_size = true,
+    resp->info.max_scratchpad_size = member_size(wp_UploadScratchpadReq_scratchpad_t, bytes);
 
     return APP_RES_PROTO_OK;
 }

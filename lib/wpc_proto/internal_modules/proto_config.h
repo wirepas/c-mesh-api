@@ -82,7 +82,7 @@ app_proto_res_e Proto_config_handle_get_gateway_info_request(wp_GetGwInfoReq * r
  */
 app_proto_res_e Proto_config_handle_set_scratchpad_target_and_action_request(
                                             wp_SetScratchpadTargetAndActionReq *req,
-                                            wp_SetScratchpadTargetAndActionResp *resp);                                                             
+                                            wp_SetScratchpadTargetAndActionResp *resp);
 
 
 app_proto_res_e Proto_config_get_current_event_status(bool online,
