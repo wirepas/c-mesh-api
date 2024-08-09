@@ -69,6 +69,10 @@ typedef enum
 /** return the value of the delay param used in MSAP for scratchpad action (see @delay_unit) */
 #define GET_DELAY(unit, amount) (((unit) << 6) + (amount))
 
+/** Special event status value
+ * to use when generating internally a status event with @onStackStatusReceived */
+#define IGNORE_STATUS 0xFF
+
 static onEventStatus_cb_f m_onProtoEventStatus_cb = NULL;
 
 /* Typedef used to avoid warning at compile time */
@@ -444,18 +448,41 @@ static void fill_status_event(wp_StatusEvent * status_event_p,
     Common_fill_event_header(&status_event_p->header);
 }
 
-static void on_stack_boot_status(uint8_t status)
+static bool refresh_full_stack_state()
 {
-    m_sink_config.StackStatus = status;
+    bool res = true;
 
-    if ((status & APP_STACK_STOPPED) == 0)
+    uint8_t previous_status = m_sink_config.StackStatus;
+
+    /* Read config from sink */
+    if (!initialize_config_variables())
     {
-        LOGI("Stack started\n");
+        LOGE("All the settings cannot be read\n");
+        res = false;
     }
 
-    // After a reboot, read again the variables
-    initialize_config_variables();
-    initialize_otap_variables();
+    /* Read otap config from sink */
+    if (!initialize_otap_variables())
+    {
+        LOGE("All the otap settings cannot be read\n");
+        res = false;
+    }
+
+    if(   (previous_status & APP_STACK_STOPPED)
+       != (m_sink_config.StackStatus & APP_STACK_STOPPED) )
+    {
+        // Stack state changed
+        if ((m_sink_config.StackStatus & APP_STACK_STOPPED) == 0)
+        {
+            LOGI("Refresh : Stack started %d\n", m_sink_config.StackStatus);
+        }
+        else
+        {
+            LOGI("Refresh : Stack stopped %d\n", m_sink_config.StackStatus);
+        }
+    }
+
+    return res;
 }
 
 static void onStackStatusReceived(uint8_t status)
@@ -467,9 +494,18 @@ static void onStackStatusReceived(uint8_t status)
     wp_WirepasMessage message_wirepas = wp_WirepasMessage_init_zero;
     message.wirepas = &message_wirepas;
 
-    LOGI("Status received : %d\n", status);
+    if (status == IGNORE_STATUS)
+    {
+        LOGI("Evt : Stack status event generated %d\n", m_sink_config.StackStatus);
+    }
+    else
+    {
+        LOGI("Evt : Stack status received : %d %d\n", status, m_sink_config.StackStatus);
+    }
 
-    on_stack_boot_status(status);
+    (void) refresh_full_stack_state();
+
+    LOGI("Evt : Stack status updated : %d\n", m_sink_config.StackStatus);
 
     // Allocate the needed space for only the submessage we want to send
     message_StatusEvent_p = Platform_malloc(sizeof(wp_StatusEvent));
@@ -519,15 +555,9 @@ static void onStackStatusReceived(uint8_t status)
 bool Proto_config_init(void)
 {
     /* Read initial config from sink */
-    if (!initialize_config_variables())
+    if (!refresh_full_stack_state())
     {
-        LOGE("All the settings cannot be read\n");
-    }
-
-    /* Read initial otap config from sink */
-    if (!initialize_otap_variables())
-    {
-        LOGE("All the otap settings cannot be read\n");
+        // do not return false, just continue init
     }
 
     if (WPC_register_for_stack_status(onStackStatusReceived) != APP_RES_OK)
@@ -654,8 +684,8 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
         }
         else
         {
-            LOGI("Stack stopped\n");
-            cfg->sink_state = wp_OnOffState_OFF;
+            m_sink_config.StackStatus |= APP_STACK_STOPPED;
+            LOGI("SetConf : Stack stopped %d\n", m_sink_config.StackStatus);
             config_has_changed = true;
         }
     }
@@ -815,18 +845,15 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
         else
         {
             WPC_set_autostart(1);
-            LOGI("Stack started\n");
+            m_sink_config.StackStatus &= ~(uint8_t) APP_STACK_STOPPED;
+            LOGI("SetConf : Stack started %d\n", m_sink_config.StackStatus);
         }
     }
 
-    // if any config changed, send status event
     if (config_has_changed)
     {
-        // At least refresh stack status
-        WPC_get_stack_status(&m_sink_config.StackStatus);
-
-        // TODO : send event status
-        // onIndicationReceivedLocked(wpc_frame_t * frame, unsigned long long timestamp_ms);
+        // Force config refresh and send event status
+        onStackStatusReceived(IGNORE_STATUS);
     }
 
     if (global_res != APP_RES_OK)
@@ -1055,5 +1082,6 @@ net_addr_t Proto_config_get_network_address(void)
 
 void Proto_config_refresh_otap_infos()
 {
-    initialize_otap_variables();
+    // Force config refresh and send event status
+    onStackStatusReceived(IGNORE_STATUS);
 }
