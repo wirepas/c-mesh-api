@@ -245,6 +245,23 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
         res = Proto_config_handle_get_gateway_info_request(
             wp_message_req_p->get_gateway_info_req, (wp_GetGwInfoResp *) resp_msg_p);
     }
+    else if (wp_message_req_p->set_scratchpad_target_and_action_req)
+    {
+        LOGI("Set scratchpad target and action request\n");
+        resp_size = sizeof(wp_SetScratchpadTargetAndActionResp);
+        resp_msg_p = Platform_malloc(resp_size);
+        if (resp_msg_p == NULL)
+        {
+            LOGE("Not enough memory to encode SetScratchpadTargetAndAction\n");
+            return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
+        }
+        message_resp.wirepas->set_scratchpad_target_and_action_resp
+            = (wp_SetScratchpadTargetAndActionResp *) resp_msg_p;
+
+        res = Proto_config_handle_set_scratchpad_target_and_action_request(
+            wp_message_req_p->set_scratchpad_target_and_action_req,
+            (wp_SetScratchpadTargetAndActionResp *) resp_msg_p);
+    }
     else
     {
         LOGE("Not a supported request\n");
