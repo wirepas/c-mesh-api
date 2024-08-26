@@ -3,7 +3,6 @@ syntax="proto2";
 package wp;
 
 import "wp_global.proto";
-// import "nanopb.proto";
 
 message NodeRole {
     enum BaseRole {
@@ -16,7 +15,7 @@ message NodeRole {
         LOW_LATENCY = 1;
         AUTOROLE = 2;
     }
-    repeated RoleFlags flags = 2 /*[(nanopb).max_count = 16]*/;
+    repeated RoleFlags flags = 2;
 }
 
 message AccessCycleRange {
@@ -31,18 +30,18 @@ message ChannelRange {
 
 message AppConfigData {
     required uint32 diag_interval_s = 1; // Diagnostics interval in seconds
-    required bytes app_config_data = 2 /*[(nanopb).max_size = 1024]*/; // App config data
+    required bytes app_config_data = 2; // App config data
     required uint32 seq = 3;
 }
 
 message NetworkKeys {
-    required bytes cipher = 1 /*[(nanopb).max_size = 1024]*/;
-    required bytes authentication = 2 /*[(nanopb).max_size = 1024]*/;
+    required bytes cipher = 1;
+    required bytes authentication = 2;
 }
 
 message SinkReadConfig {
     // Local id to uniquely identify a sink on gateway
-    required string sink_id = 1 /*[(nanopb).max_size = 128]*/;
+    required string sink_id = 1;
 
     // Sink minimal config
     optional NodeRole node_role = 2;
@@ -77,7 +76,7 @@ message SinkReadConfig {
 
 message SinkNewConfig {
     // Local id to uniquely identify a sink on gateway
-    required string sink_id = 1 /*[(nanopb).max_size = 128]*/;
+    required string sink_id = 1;
 
     // Node minimal config
     optional NodeRole node_role = 2;
@@ -100,10 +99,10 @@ message GatewayInfo {
     required uint64 current_time_s_epoch = 1;
 
     // Optional gateway name (gateway manufacturer specific)
-    optional string gw_model = 2 /*[(nanopb).max_size = 256]*/;
+    optional string gw_model = 2;
 
     // Optional gateway version (gateway manufacturer specific)
-    optional string gw_version = 3 /*[(nanopb).max_size = 128]*/;
+    optional string gw_version = 3;
 
     // API version implemented in the gateway
     // This field must be explicitly set from code and must be
@@ -113,6 +112,12 @@ message GatewayInfo {
     // Version 2: Addition of setScratchpadTargetAndAction
     // It should be replaced by a feature list
     optional uint32 implemented_api_version = 4;
+
+    // Maximun scratchpad size supported by gateway
+    // If scratchpad is bigger than the size specified,
+    // it must be sent as chunk. If not set, it means that
+    // scratchpad can be sent in a single request
+    optional uint32 max_scratchpad_size = 5;
 }
 
 /*
@@ -122,9 +127,9 @@ message GatewayInfo {
     required EventHeader header = 1;
 
     // Wirepas Gateway's protobuff message definition version
-    // This field is used to represent the version of the 
-    // protobuff messages as a whole implemented by the 
-    // gateway. Any breaking change in the message definition 
+    // This field is used to represent the version of the
+    // protobuff messages as a whole implemented by the
+    // gateway. Any breaking change in the message definition
     // must lead to an increment of the version's value reported
     required uint32 version = 2;
     required OnOffState state = 3;
@@ -138,6 +143,9 @@ message GatewayInfo {
 
     // Optional gateway version (gateway manufacturer specific)
     optional string gw_version = 6;
+
+    // See GatewayInfo for details of this field
+    optional uint32 max_scratchpad_size = 7;
 }
 
 message GetConfigsReq {
@@ -147,7 +155,7 @@ message GetConfigsReq {
 message GetConfigsResp {
     required ResponseHeader header = 1;
 
-    repeated SinkReadConfig configs = 2 /*[(nanopb).max_count = 16]*/; // Gateway may have multiple sinks
+    repeated SinkReadConfig configs = 2; // Gateway may have multiple sinks
 }
 
 message SetConfigReq {

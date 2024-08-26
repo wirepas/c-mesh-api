@@ -12,7 +12,10 @@ PB_BIND(wp_GetScratchpadStatusReq, wp_GetScratchpadStatusReq, AUTO)
 PB_BIND(wp_GetScratchpadStatusResp, wp_GetScratchpadStatusResp, AUTO)
 
 
-PB_BIND(wp_UploadScratchpadReq, wp_UploadScratchpadReq, AUTO)
+PB_BIND(wp_UploadScratchpadReq, wp_UploadScratchpadReq, 2)
+
+
+PB_BIND(wp_UploadScratchpadReq_ChunkInfo, wp_UploadScratchpadReq_ChunkInfo, AUTO)
 
 
 PB_BIND(wp_UploadScratchpadResp, wp_UploadScratchpadResp, AUTO)
