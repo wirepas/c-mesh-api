@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "wpc_proto.h"
 
@@ -27,40 +28,207 @@
 #define TOPIC_RX_DATA_PREFIX "gw-event/received_data"
 #define TOPIC_EVENT_PREFIX "gw-event/status"
 
+// Configuration. It has to be static as it is reused
+// to reconnect
 static char m_gateway_id[64] = "\0";
+static char m_user[64] = "\0";
+static char m_password[128] = "\0";
 
 static uint8_t m_proto_buffer[WPC_PROTO_MAX_RESPONSE_SIZE];
+
+static pthread_t m_thread_publish;
+// Mutex for publishing on MQTT
+static pthread_mutex_t m_queue_mutex;
+static pthread_cond_t m_queue_not_empty_cond = PTHREAD_COND_INITIALIZER;
+
+// Statically allocated but could be mallocated
+typedef struct
+{
+     char topic[64];        //< Topic to publish
+     uint8_t payload[1024];       //< The payload
+     size_t payload_size;
+     bool retained;
+} message_to_publish_t;
+
+#define PUBLISH_QUEUE_SIZE      16
+// Publish queue
+static message_to_publish_t m_publish_queue[PUBLISH_QUEUE_SIZE];
+
+// Head of the queue for the polling thread to write
+static unsigned int m_pub_queue_write = 0;
+
+// // Tail of the queue to read from dispatching thread
+static unsigned int m_pub_queue_read = 0;
+
+// Is queue empty?
+static bool m_queue_empty = true;
+
 
 static MQTTClient m_client = NULL;
 
 static bool MQTT_publish(char * topic, uint8_t * payload, size_t payload_size, bool retained)
 {
-    int rc;
-    MQTTClient_message pubmsg = MQTTClient_message_initializer;
-    MQTTClient_deliveryToken token;
+    message_to_publish_t * message_p;
+    bool ret;
+    pthread_mutex_lock(&m_queue_mutex);
 
-    pubmsg.payloadlen = payload_size;
-    pubmsg.payload = payload;
-    pubmsg.qos = 1;
-    pubmsg.retained = retained;
+    if (!m_queue_empty && (m_pub_queue_write == m_pub_queue_read))
+    {
+        ret = false;
+    }
+    else
+    {
+        // Insert our publish
+        message_p = &m_publish_queue[m_pub_queue_write];
+        // TODO add check on size
+        strcpy(message_p->topic, topic);
+        memcpy(message_p->payload, payload, payload_size);
+        message_p->payload_size = payload_size;
+        message_p->retained = retained;
 
-    LOGI("Publishing on topic %s\n", topic);
-    MQTTClient_publishMessage(m_client, topic, &pubmsg, &token);
-    rc = MQTTClient_waitForCompletion(m_client, token, 200);
-    LOGD("Message with delivery token %d delivered rc=%d\n", token, rc);
+        m_pub_queue_write = (m_pub_queue_write + 1) % PUBLISH_QUEUE_SIZE;
 
-    return rc == MQTTCLIENT_SUCCESS;
+        pthread_cond_signal(&m_queue_not_empty_cond);
+        m_queue_empty = false;
+        ret = true;
+    }
+
+    pthread_mutex_unlock(&m_queue_mutex);
+
+    return ret;
 }
 
-static bool MQTT_connect(uint32_t timeout_s,
-                         const char * host,
-                         const char * user,
-                         const char * password)
+static void * publish_thread(void * unused)
+{
+    message_to_publish_t * message;
+    pthread_mutex_lock(&m_queue_mutex);
+    while (true)
+    {
+        if (m_queue_empty)
+        {
+            // Queue is empty, wait
+            pthread_cond_wait(&m_queue_not_empty_cond, &m_queue_mutex);
+
+            // Check if we wake up but nothing in queue
+            if (m_queue_empty)
+            {
+                // Release the lock
+                pthread_mutex_unlock(&m_queue_mutex);
+                // Continue to evaluate the stop condition
+                continue;
+            }
+        }
+
+        // Publish our oldest message
+        message = &m_publish_queue[m_pub_queue_read];
+
+        pthread_mutex_unlock(&m_queue_mutex);
+
+        // Queue our message
+        int rc;
+        MQTTClient_message pubmsg = MQTTClient_message_initializer;
+        MQTTClient_deliveryToken token;
+
+        pubmsg.payloadlen = message->payload_size;
+        pubmsg.payload = message->payload;
+        pubmsg.qos = 1;
+        pubmsg.retained = message->retained;
+
+
+        LOGD("Publishing on topic %s\n", message->topic);
+        rc = MQTTClient_publishMessage(m_client, message->topic, &pubmsg, &token);
+        LOGI("Message with token %d published rc=%d\n", token, rc);
+
+        m_pub_queue_read = (m_pub_queue_read + 1) % PUBLISH_QUEUE_SIZE;
+        if (m_pub_queue_read == m_pub_queue_write)
+        {
+            // Indication was the last one
+            m_queue_empty = true;
+        }
+    }
+    LOGW("Exiting publish thread\n");
+    return NULL;
+}
+
+static void on_mqtt_message_delivered(void *context, MQTTClient_deliveryToken dt)
+{
+    // For now, only informal but message should be cleared from queue only when
+    // delivered and not published as of today
+    LOGI("Message with token %d delivery confirmed\n", dt);
+}
+
+static int on_message_rx_mqtt(void *context, char *topic, int topic_len, MQTTClient_message *message)
+{
+    size_t response_size;
+    char * response_topic_p;
+    app_proto_res_e res;
+
+    LOGD("Message received on topic %s\n", topic);
+    response_size = sizeof(m_proto_buffer);
+
+    res = WPC_Proto_handle_request(message->payload, message->payloadlen, m_proto_buffer, &response_size);
+    if (res == APP_RES_PROTO_OK)
+    {
+        // response_topic is same as request with substitution of request with response
+        // Allocate space for response topic (+1 as "gw-response" is longer than "gw-request" by 1)
+        size_t response_topic_size = strlen(topic) + 2;
+        response_topic_p = (char *) malloc(response_topic_size);
+        if (!response_topic_p)
+        {
+            LOGE("Cannot allocate space for response topic\n");
+        }
+        else
+        {
+            // Create response topic
+            snprintf(response_topic_p,
+                    response_topic_size,
+                    "gw-response/%s",
+                    topic + 11); // Everything after gw-request/
+            LOGI("Response generated of size = %d for topic: %s\n", response_size, response_topic_p);
+            MQTT_publish(response_topic_p, m_proto_buffer, response_size, false);
+            free(response_topic_p);
+        }
+    }
+    else
+    {
+        LOGE("Cannot handle request: %d\n", res);
+    }
+
+    MQTTClient_free(topic);
+    MQTTClient_freeMessage(&message);
+    return 1;
+}
+
+
+static bool reconnect(uint32_t timeout_s)
 {
     int rc;
     size_t proto_size;
     char topic_status[sizeof(TOPIC_EVENT_PREFIX) + sizeof(m_gateway_id) + 1];
     char topic_all_requests[16 + sizeof(m_gateway_id)]; //"gw-request/+/<gateway_id/#"
+    uint8_t last_will_message[128];
+    MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
+    MQTTClient_willOptions will_options = MQTTClient_willOptions_initializer;
+    MQTTClient_SSLOptions ssl_options = MQTTClient_SSLOptions_initializer;
+
+    conn_opts.keepAliveInterval = 20;
+    conn_opts.cleansession = 1;
+    conn_opts.ssl = &ssl_options;
+
+    conn_opts.username = m_user;
+    conn_opts.password = m_password;
+
+    // Setup last will
+    proto_size = sizeof(last_will_message);
+    if (WPC_Proto_get_current_event_status(false, last_will_message, &proto_size) == APP_RES_PROTO_OK)
+    {
+        will_options.topicName = topic_status;
+        will_options.qos = 1;
+        will_options.retained = 1;
+        will_options.payload.len = proto_size;
+        will_options.payload.data = last_will_message;
+        conn_opts.will = &will_options;
+    }
 
     // Prepare our topics
     snprintf(topic_status,
@@ -74,63 +242,22 @@ static bool MQTT_connect(uint32_t timeout_s,
              "gw-request/+/%s/#",
              m_gateway_id);
 
-    MQTTClient_init_options global_init_options = MQTTClient_init_options_initializer;
-    global_init_options.do_openssl_init = true;
-
-    MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
-    MQTTClient_willOptions will_options = MQTTClient_willOptions_initializer;
-    MQTTClient_SSLOptions ssl_options = MQTTClient_SSLOptions_initializer;
-
-    MQTTClient_global_init(&global_init_options);
-
-    conn_opts.keepAliveInterval = 20;
-    conn_opts.cleansession = 1;
-    conn_opts.ssl = &ssl_options;
-
-    conn_opts.username = user;
-    conn_opts.password = password;
-
-    // Setup last will
-    proto_size = sizeof(m_proto_buffer);
-    if (WPC_Proto_get_current_event_status(false, m_proto_buffer, &proto_size) == APP_RES_PROTO_OK)
-    {
-        will_options.topicName = topic_status;
-        will_options.qos = 1;
-        will_options.retained = 1;
-        will_options.payload.len = proto_size;
-        will_options.payload.data = m_proto_buffer;
-        conn_opts.will = &will_options;
-    }
-
-    if ((rc = MQTTClient_create(&m_client, host, "embeded-gw",
-        MQTTCLIENT_PERSISTENCE_NONE, NULL)) != MQTTCLIENT_SUCCESS)
-    {
-         LOGE("Failed to create client, return code %d\n", rc);
-         exit(EXIT_FAILURE);
-    }
-
-    if ((rc = MQTTClient_connect(m_client, &conn_opts)) != MQTTCLIENT_SUCCESS)
-    {
-        LOGE("Failed to connect, return code %d\n", rc);
-        exit(EXIT_FAILURE);
-    }
-
     while (timeout_s > 0)
     {
-        if (MQTTClient_isConnected(m_client))
+        if ((rc = MQTTClient_connect(m_client, &conn_opts)) == MQTTCLIENT_SUCCESS)
         {
             break;
         }
-        sleep(1);
+        LOGE("Failed to connect, return code %d trying again %d s remaining\n", rc, timeout_s);
         timeout_s--;
+        sleep(1);
     }
 
-    if (!timeout_s)
+    if (!MQTTClient_isConnected(m_client))
     {
-        LOGE("Cannot connect within timeout");
-        exit(EXIT_FAILURE);
+        LOGE("Failed to connect, return code %d\n", rc);
+        return false;
     }
-    LOGI("Mqtt client connected\n");
 
     // Set our current status
     proto_size = sizeof(m_proto_buffer);
@@ -143,63 +270,49 @@ static bool MQTT_connect(uint32_t timeout_s,
     if ((rc = MQTTClient_subscribe(m_client, topic_all_requests, 1)) != MQTTCLIENT_SUCCESS)
     {
         LOGE("Failed to subscribe, return code %d\n", rc);
-        exit(EXIT_FAILURE);
+        return false;
     }
+
     return true;
 }
 
-static void MQTT_infinite_loop()
+static void on_mqtt_connection_lost(void *context, char *cause)
 {
-    app_proto_res_e res;
-    char * topic = NULL;
-    char * response_topic_p = NULL;
-    MQTTClient_message *message = NULL;
-    int topicLen;
-    size_t response_size;
-
-    for(;;)
-    {
-        MQTTClient_receive(m_client, &topic, &topicLen, &message, 100);
-        if (message!= NULL)
-        {
-            LOGD("Message received on topic %s\n", topic);
-            response_size = sizeof(m_proto_buffer);
-
-            res = WPC_Proto_handle_request(message->payload, message->payloadlen, m_proto_buffer, &response_size);
-            if (res == APP_RES_PROTO_OK)
-            {
-                // response_topic is same as request with substitution of request with response
-                // Allocate space for response topic (+1 as "gw-response" is longer than "gw-request" by 1)
-                size_t response_topic_size = strlen(topic) + 2;
-                response_topic_p = (char *) malloc(response_topic_size);
-                if (!response_topic_p)
-                {
-                    LOGE("Cannot allocate space for response topic\n");
-                }
-                else
-                {
-                    // Create response topic
-                    snprintf(response_topic_p,
-                            response_topic_size,
-                            "gw-response/%s",
-                            topic + 11); // Everything after gw-request/
-                    LOGI("Response generated of size = %d for topic: %s\n", response_size, response_topic_p);
-                    MQTT_publish(response_topic_p, m_proto_buffer, response_size, false);
-                    free(response_topic_p);
-                }
-            }
-            else
-            {
-                LOGE("Cannot handle request: %d\n", res);
-            }
-
-            MQTTClient_free(topic);
-            MQTTClient_freeMessage(&message);
-            message = NULL;
-            topic = NULL;
-        }
-    }
+    LOGE("Connection lost\n");
+    LOGE("cause: %s\n", cause);
+    reconnect(60);
 }
+
+static bool MQTT_connect(uint32_t timeout_s,
+                         const char * host)
+{
+    int rc;
+
+    MQTTClient_init_options global_init_options = MQTTClient_init_options_initializer;
+    global_init_options.do_openssl_init = true;
+
+    MQTTClient_global_init(&global_init_options);
+
+    if ((rc = MQTTClient_create(&m_client, host, m_gateway_id,
+        MQTTCLIENT_PERSISTENCE_NONE, NULL)) != MQTTCLIENT_SUCCESS)
+    {
+         LOGE("Failed to create client, return code %d\n", rc);
+         exit(EXIT_FAILURE);
+    }
+
+    MQTTClient_setCallbacks(m_client, NULL, on_mqtt_connection_lost, on_message_rx_mqtt, on_mqtt_message_delivered);
+
+    if (!reconnect(timeout_s))
+    {
+        LOGE("Cannot connect within timeout");
+        exit(EXIT_FAILURE);
+    }
+
+    LOGI("Mqtt client connected\n");
+
+    return true;
+}
+
 
 static void onDataRxEvent_cb(uint8_t * event_p,
                             size_t event_size,
@@ -254,6 +367,9 @@ int main(int argc, char * argv[])
     char * mqtt_user = NULL;
     char * mqtt_password = NULL;
     char * gateway_id;
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
 
     // Parse the arguments
     while ((c = getopt(argc, argv, "b:p:g:U:P:H:h")) != -1)
@@ -301,6 +417,22 @@ int main(int argc, char * argv[])
 
     strcpy(m_gateway_id, gateway_id);
 
+    if (strlen(mqtt_user) > sizeof(m_user))
+    {
+        LOGE("User is too long (> than %d)\n", sizeof(m_user));
+        return -1;
+    }
+
+    strcpy(m_user, mqtt_user);
+
+    if (strlen(mqtt_password) > sizeof(m_password))
+    {
+        LOGE("Password is too long (> than %d)\n", sizeof(m_password));
+        return -1;
+    }
+
+    strcpy(m_password, mqtt_password);
+
     if (WPC_Proto_initialize(port_name,
                              baudrate,
                              m_gateway_id,
@@ -311,14 +443,32 @@ int main(int argc, char * argv[])
         return -1;
     }
 
-    MQTT_connect(3, mqtt_host, mqtt_user, mqtt_password);
+
+    // Initialize mutex to protect publish
+    if (pthread_mutex_init(&m_queue_mutex, &attr) != 0)
+    {
+        LOGE("Pub Mutex init failed\n");
+        return -1;
+    }
+
+    // Start a thread to execute publish from same thread
+    if (pthread_create(&m_thread_publish, NULL, publish_thread, NULL) != 0)
+    {
+        LOGE("Cannot create dispatch thread\n");
+        return -1;
+    }
+
+    MQTT_connect(3, mqtt_host);
 
     WPC_Proto_register_for_data_rx_event(onDataRxEvent_cb);
     WPC_Proto_register_for_event_status(onEventStatus_cb);
 
     LOGI("Starting gw with id %s on host %s\n", gateway_id, mqtt_host);
 
-    MQTT_infinite_loop();
+    for (;;)
+    {
+        sleep(2);
+    }
 
     LOGE("End of program\n");
 }
