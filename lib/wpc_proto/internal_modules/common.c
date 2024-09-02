@@ -3,6 +3,8 @@
  * See file LICENSE for full license details.
  *
  */
+#include <stdlib.h>
+
 #include "common.h"
 #include "platform.h"
 #include "wp_global.pb.h"
