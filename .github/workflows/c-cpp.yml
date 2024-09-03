@@ -21,6 +21,11 @@ jobs:
     - name: make proto example
       run: make
       working-directory: example/linux/proto-api
+    - name: install libpaho-mqtt
+      run: sudo apt install libpaho-mqtt-dev
+    - name: make gateway example
+      run: make
+      working-directory: example/linux/gw-example
     - name: make test
       run: make
       working-directory: test
