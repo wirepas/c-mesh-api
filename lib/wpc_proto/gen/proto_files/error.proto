@@ -43,4 +43,8 @@ enum ErrorCode {
     INVALID_MAX_HOP_COUNT = 25;
     SINK_OUT_OF_MEMORY = 26;
     SINK_TIMEOUT = 27;
+    INVALID_SCRATCHPAD_CHUNK_OFFSET = 28;
+    // If scratchpad chunk size is bigger than
+    // the max value supported by the gateway
+    INVALID_SCRATCHPAD_CHUNK_SIZE = 29;
 }

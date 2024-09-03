@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-      - feature/proto_api #temporary for testing
+      - update_proto/**
     paths:
       - 'lib/wpc_proto/deps/nanopb/**'
       - 'lib/wpc_proto/deps/backend-apis/**'

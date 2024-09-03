@@ -49,7 +49,11 @@ typedef enum _wp_ErrorCode {
     wp_ErrorCode_REQUEST_NEEDS_SINK_ID = 24,
     wp_ErrorCode_INVALID_MAX_HOP_COUNT = 25,
     wp_ErrorCode_SINK_OUT_OF_MEMORY = 26,
-    wp_ErrorCode_SINK_TIMEOUT = 27
+    wp_ErrorCode_SINK_TIMEOUT = 27,
+    wp_ErrorCode_INVALID_SCRATCHPAD_CHUNK_OFFSET = 28,
+    /* If scratchpad chunk size is bigger than
+ the max value supported by the gateway */
+    wp_ErrorCode_INVALID_SCRATCHPAD_CHUNK_SIZE = 29
 } wp_ErrorCode;
 
 #ifdef __cplusplus
@@ -58,8 +62,8 @@ extern "C" {
 
 /* Helper constants for enums */
 #define _wp_ErrorCode_MIN wp_ErrorCode_UNKNOWN_ERROR_CODE
-#define _wp_ErrorCode_MAX wp_ErrorCode_SINK_TIMEOUT
-#define _wp_ErrorCode_ARRAYSIZE ((wp_ErrorCode)(wp_ErrorCode_SINK_TIMEOUT+1))
+#define _wp_ErrorCode_MAX wp_ErrorCode_INVALID_SCRATCHPAD_CHUNK_SIZE
+#define _wp_ErrorCode_ARRAYSIZE ((wp_ErrorCode)(wp_ErrorCode_INVALID_SCRATCHPAD_CHUNK_SIZE+1))
 
 
 #ifdef __cplusplus
