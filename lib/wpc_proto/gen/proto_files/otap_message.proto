@@ -3,8 +3,6 @@ syntax="proto2";
 package wp;
 
 import "wp_global.proto";
-import "error.proto";
-// import "nanopb.proto";
 
 /*
  * Request/Responses definition
@@ -26,11 +24,21 @@ message GetScratchpadStatusResp {
 }
 
 message UploadScratchpadReq {
+    message ChunkInfo {
+        // Full size of the scratchpad this chunk belongs to
+        required uint32 scratchpad_total_size = 1;
+        // Offset in bytes of the chunk in the full scratchpad
+        // NB: Chunk must be sent in order
+        required uint32 start_offset = 2;
+    }
     required RequestHeader header = 1;
 
     required uint32 seq = 2;
     // If scratchpad is not set, it clears the stored scratchpad
-    optional bytes scratchpad = 3 /*[(nanopb).max_size = 1048576]*/;  // 1MB
+    optional bytes scratchpad = 3;
+
+    // If ChunkInfo is present, then above scratchpad is a chunk
+    optional ChunkInfo chunk_info = 4;
 }
 
 message UploadScratchpadResp {

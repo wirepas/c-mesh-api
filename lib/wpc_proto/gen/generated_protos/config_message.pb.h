@@ -148,15 +148,21 @@ typedef struct _wp_GatewayInfo {
  It should be replaced by a feature list */
     bool has_implemented_api_version;
     uint32_t implemented_api_version;
+    /* Maximun scratchpad size supported by gateway
+ If scratchpad is bigger than the size specified,
+ it must be sent as chunk. If not set, it means that
+ scratchpad can be sent in a single request */
+    bool has_max_scratchpad_size;
+    uint32_t max_scratchpad_size;
 } wp_GatewayInfo;
 
 /* Commands definition */
 typedef struct _wp_StatusEvent {
     wp_EventHeader header;
     /* Wirepas Gateway's protobuff message definition version
- This field is used to represent the version of the 
- protobuff messages as a whole implemented by the 
- gateway. Any breaking change in the message definition 
+ This field is used to represent the version of the
+ protobuff messages as a whole implemented by the
+ gateway. Any breaking change in the message definition
  must lead to an increment of the version's value reported */
     uint32_t version;
     wp_OnOffState state;
@@ -170,6 +176,9 @@ typedef struct _wp_StatusEvent {
     /* Optional gateway version (gateway manufacturer specific) */
     bool has_gw_version;
     char gw_version[32];
+    /* See GatewayInfo for details of this field */
+    bool has_max_scratchpad_size;
+    uint32_t max_scratchpad_size;
 } wp_StatusEvent;
 
 typedef struct _wp_GetConfigsReq {
@@ -247,8 +256,8 @@ extern "C" {
 #define wp_NetworkKeys_init_default              {{0}, {0}}
 #define wp_SinkReadConfig_init_default           {"", false, wp_NodeRole_init_default, false, 0, false, 0, false, 0, false, wp_AppConfigData_init_default, false, 0, false, 0, false, wp_AccessCycleRange_init_default, false, wp_AccessCycleRange_init_default, false, 0, false, wp_ChannelRange_init_default, false, 0, false, 0, false, 0, false, wp_FirmwareVersion_init_default, false, _wp_OnOffState_MIN, false, wp_ScratchpadInfo_init_default, false, _wp_ScratchpadStatus_MIN, false, _wp_ScratchpadType_MIN, false, wp_ScratchpadInfo_init_default, false, 0, false, wp_TargetScratchpadAndAction_init_default}
 #define wp_SinkNewConfig_init_default            {"", false, wp_NodeRole_init_default, false, 0, false, 0, false, 0, false, wp_AppConfigData_init_default, false, 0, false, wp_NetworkKeys_init_default, false, wp_AccessCycleRange_init_default, false, _wp_OnOffState_MIN}
-#define wp_GatewayInfo_init_default              {0, false, "", false, "", false, 0}
-#define wp_StatusEvent_init_default              {wp_EventHeader_init_default, 0, _wp_OnOffState_MIN, 0, {wp_SinkReadConfig_init_default}, false, "", false, ""}
+#define wp_GatewayInfo_init_default              {0, false, "", false, "", false, 0, false, 0}
+#define wp_StatusEvent_init_default              {wp_EventHeader_init_default, 0, _wp_OnOffState_MIN, 0, {wp_SinkReadConfig_init_default}, false, "", false, "", false, 0}
 #define wp_GetConfigsReq_init_default            {wp_RequestHeader_init_default}
 #define wp_GetConfigsResp_init_default           {wp_ResponseHeader_init_default, 0, {wp_SinkReadConfig_init_default}}
 #define wp_SetConfigReq_init_default             {wp_RequestHeader_init_default, wp_SinkNewConfig_init_default}
@@ -262,8 +271,8 @@ extern "C" {
 #define wp_NetworkKeys_init_zero                 {{0}, {0}}
 #define wp_SinkReadConfig_init_zero              {"", false, wp_NodeRole_init_zero, false, 0, false, 0, false, 0, false, wp_AppConfigData_init_zero, false, 0, false, 0, false, wp_AccessCycleRange_init_zero, false, wp_AccessCycleRange_init_zero, false, 0, false, wp_ChannelRange_init_zero, false, 0, false, 0, false, 0, false, wp_FirmwareVersion_init_zero, false, _wp_OnOffState_MIN, false, wp_ScratchpadInfo_init_zero, false, _wp_ScratchpadStatus_MIN, false, _wp_ScratchpadType_MIN, false, wp_ScratchpadInfo_init_zero, false, 0, false, wp_TargetScratchpadAndAction_init_zero}
 #define wp_SinkNewConfig_init_zero               {"", false, wp_NodeRole_init_zero, false, 0, false, 0, false, 0, false, wp_AppConfigData_init_zero, false, 0, false, wp_NetworkKeys_init_zero, false, wp_AccessCycleRange_init_zero, false, _wp_OnOffState_MIN}
-#define wp_GatewayInfo_init_zero                 {0, false, "", false, "", false, 0}
-#define wp_StatusEvent_init_zero                 {wp_EventHeader_init_zero, 0, _wp_OnOffState_MIN, 0, {wp_SinkReadConfig_init_zero}, false, "", false, ""}
+#define wp_GatewayInfo_init_zero                 {0, false, "", false, "", false, 0, false, 0}
+#define wp_StatusEvent_init_zero                 {wp_EventHeader_init_zero, 0, _wp_OnOffState_MIN, 0, {wp_SinkReadConfig_init_zero}, false, "", false, "", false, 0}
 #define wp_GetConfigsReq_init_zero               {wp_RequestHeader_init_zero}
 #define wp_GetConfigsResp_init_zero              {wp_ResponseHeader_init_zero, 0, {wp_SinkReadConfig_init_zero}}
 #define wp_SetConfigReq_init_zero                {wp_RequestHeader_init_zero, wp_SinkNewConfig_init_zero}
@@ -320,12 +329,14 @@ extern "C" {
 #define wp_GatewayInfo_gw_model_tag              2
 #define wp_GatewayInfo_gw_version_tag            3
 #define wp_GatewayInfo_implemented_api_version_tag 4
+#define wp_GatewayInfo_max_scratchpad_size_tag   5
 #define wp_StatusEvent_header_tag                1
 #define wp_StatusEvent_version_tag               2
 #define wp_StatusEvent_state_tag                 3
 #define wp_StatusEvent_configs_tag               4
 #define wp_StatusEvent_gw_model_tag              5
 #define wp_StatusEvent_gw_version_tag            6
+#define wp_StatusEvent_max_scratchpad_size_tag   7
 #define wp_GetConfigsReq_header_tag              1
 #define wp_GetConfigsResp_header_tag             1
 #define wp_GetConfigsResp_configs_tag            2
@@ -427,7 +438,8 @@ X(a, STATIC,   OPTIONAL, UENUM,    sink_state,       10)
 X(a, STATIC,   REQUIRED, UINT64,   current_time_s_epoch,   1) \
 X(a, STATIC,   OPTIONAL, STRING,   gw_model,          2) \
 X(a, STATIC,   OPTIONAL, STRING,   gw_version,        3) \
-X(a, STATIC,   OPTIONAL, UINT32,   implemented_api_version,   4)
+X(a, STATIC,   OPTIONAL, UINT32,   implemented_api_version,   4) \
+X(a, STATIC,   OPTIONAL, UINT32,   max_scratchpad_size,   5)
 #define wp_GatewayInfo_CALLBACK NULL
 #define wp_GatewayInfo_DEFAULT NULL
 
@@ -437,7 +449,8 @@ X(a, STATIC,   REQUIRED, UINT32,   version,           2) \
 X(a, STATIC,   REQUIRED, UENUM,    state,             3) \
 X(a, STATIC,   REPEATED, MESSAGE,  configs,           4) \
 X(a, STATIC,   OPTIONAL, STRING,   gw_model,          5) \
-X(a, STATIC,   OPTIONAL, STRING,   gw_version,        6)
+X(a, STATIC,   OPTIONAL, STRING,   gw_version,        6) \
+X(a, STATIC,   OPTIONAL, UINT32,   max_scratchpad_size,   7)
 #define wp_StatusEvent_CALLBACK NULL
 #define wp_StatusEvent_DEFAULT (const pb_byte_t*)"\x18\x01\x00"
 #define wp_StatusEvent_header_MSGTYPE wp_EventHeader
@@ -525,18 +538,18 @@ extern const pb_msgdesc_t wp_GetGwInfoResp_msg;
 #define wp_AccessCycleRange_size                 12
 #define wp_AppConfigData_size                    94
 #define wp_ChannelRange_size                     12
-#define wp_GatewayInfo_size                      115
+#define wp_GatewayInfo_size                      121
 #define wp_GetConfigsReq_size                    41
 #define wp_GetConfigsResp_size                   399
 #define wp_GetGwInfoReq_size                     41
-#define wp_GetGwInfoResp_size                    186
+#define wp_GetGwInfoResp_size                    192
 #define wp_NetworkKeys_size                      36
 #define wp_NodeRole_size                         6
 #define wp_SetConfigReq_size                     248
 #define wp_SetConfigResp_size                    398
 #define wp_SinkNewConfig_size                    204
 #define wp_SinkReadConfig_size                   326
-#define wp_StatusEvent_size                      494
+#define wp_StatusEvent_size                      500
 
 #ifdef __cplusplus
 } /* extern "C" */
