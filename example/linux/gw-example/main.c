@@ -30,7 +30,7 @@
 
 // Configuration. It has to be static as it is reused
 // to reconnect
-static char m_gateway_id[64] = "\0";
+static char m_gateway_id[32] = "\0";
 static char m_user[64] = "\0";
 static char m_password[128] = "\0";
 
