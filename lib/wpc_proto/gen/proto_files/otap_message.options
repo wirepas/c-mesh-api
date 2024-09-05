@@ -1,1 +1,0 @@
-wp.UploadScratchpadReq.scratchpad max_size:1024 fixed_length:false // Max size of a chunk

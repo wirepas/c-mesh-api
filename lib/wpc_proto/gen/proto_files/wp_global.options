@@ -1,5 +1,0 @@
-wp.RequestHeader.sink_id max_size:16
-wp.ResponseHeader.gw_id max_size:16
-wp.ResponseHeader.sink_id max_size:16
-wp.EventHeader.gw_id max_size:16
-wp.EventHeader.sink_id max_size:16
