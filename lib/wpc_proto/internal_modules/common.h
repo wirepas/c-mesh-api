@@ -14,7 +14,7 @@
 #define member_size(type, member) (sizeof( ((type *)0)->member ))
 
 /* Set the max of strings stored (including), should match values defined in proto files */
-#define GATEWAY_ID_MAX_SIZE 16
+#define GATEWAY_ID_MAX_SIZE 32
 #define GATEWAY_MODEL_MAX_SIZE 64
 #define GATEWAY_VERSION_MAX_SIZE 32
 #define SINK_ID_MAX_SIZE 16
