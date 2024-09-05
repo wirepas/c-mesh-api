@@ -47,6 +47,5 @@ jobs:
         run: |
           # Stage the file, commit and push
           git add lib/wpc_proto/gen/generated_protos/*
-          git add lib/wpc_proto/gen/proto_files/*
           git commit --allow-empty -m "Update generated proto files ${message}"
           git push origin ${GITHUB_REF}
