@@ -12,7 +12,7 @@ PB_BIND(wp_SendPacketReq, wp_SendPacketReq, AUTO)
 PB_BIND(wp_SendPacketResp, wp_SendPacketResp, AUTO)
 
 
-PB_BIND(wp_PacketReceivedEvent, wp_PacketReceivedEvent, AUTO)
+PB_BIND(wp_PacketReceivedEvent, wp_PacketReceivedEvent, 2)
 
 
 

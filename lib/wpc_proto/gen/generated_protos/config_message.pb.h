@@ -540,16 +540,16 @@ extern const pb_msgdesc_t wp_GetGwInfoResp_msg;
 #define wp_ChannelRange_size                     12
 #define wp_GatewayInfo_size                      121
 #define wp_GetConfigsReq_size                    41
-#define wp_GetConfigsResp_size                   399
+#define wp_GetConfigsResp_size                   415
 #define wp_GetGwInfoReq_size                     41
-#define wp_GetGwInfoResp_size                    192
+#define wp_GetGwInfoResp_size                    208
 #define wp_NetworkKeys_size                      36
 #define wp_NodeRole_size                         6
 #define wp_SetConfigReq_size                     248
-#define wp_SetConfigResp_size                    398
+#define wp_SetConfigResp_size                    414
 #define wp_SinkNewConfig_size                    204
 #define wp_SinkReadConfig_size                   326
-#define wp_StatusEvent_size                      500
+#define wp_StatusEvent_size                      516
 
 #ifdef __cplusplus
 } /* extern "C" */
