@@ -214,14 +214,14 @@ extern const pb_msgdesc_t wp_SetScratchpadTargetAndActionResp_msg;
 /* Maximum encoded size of messages (where known) */
 #define WP_OTAP_MESSAGE_PB_H_MAX_SIZE            wp_UploadScratchpadReq_size
 #define wp_GetScratchpadStatusReq_size           41
-#define wp_GetScratchpadStatusResp_size          141
+#define wp_GetScratchpadStatusResp_size          157
 #define wp_ProcessScratchpadReq_size             41
-#define wp_ProcessScratchpadResp_size            69
+#define wp_ProcessScratchpadResp_size            85
 #define wp_SetScratchpadTargetAndActionReq_size  63
-#define wp_SetScratchpadTargetAndActionResp_size 69
+#define wp_SetScratchpadTargetAndActionResp_size 85
 #define wp_UploadScratchpadReq_ChunkInfo_size    12
 #define wp_UploadScratchpadReq_size              1088
-#define wp_UploadScratchpadResp_size             69
+#define wp_UploadScratchpadResp_size             85
 
 #ifdef __cplusplus
 } /* extern "C" */

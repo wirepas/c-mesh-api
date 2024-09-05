@@ -72,7 +72,7 @@ typedef struct _wp_ResponseHeader {
     /* Same as in Request */
     uint64_t req_id;
     /* Gw id that handled the request */
-    char gw_id[16];
+    char gw_id[32];
     /* Sink id if relevant for request */
     bool has_sink_id;
     char sink_id[16];
@@ -85,7 +85,7 @@ typedef struct _wp_ResponseHeader {
 
 typedef struct _wp_EventHeader {
     /* Gw id that generated the event */
-    char gw_id[16];
+    char gw_id[32];
     /* Sink id if relevant for event */
     bool has_sink_id;
     char sink_id[16];
@@ -264,10 +264,10 @@ extern const pb_msgdesc_t wp_TargetScratchpadAndAction_msg;
 
 /* Maximum encoded size of messages (where known) */
 #define WP_WP_GLOBAL_PB_H_MAX_SIZE               wp_ResponseHeader_size
-#define wp_EventHeader_size                      56
+#define wp_EventHeader_size                      72
 #define wp_FirmwareVersion_size                  24
 #define wp_RequestHeader_size                    39
-#define wp_ResponseHeader_size                   67
+#define wp_ResponseHeader_size                   83
 #define wp_ScratchpadInfo_size                   18
 #define wp_TargetScratchpadAndAction_size        20
 

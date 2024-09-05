@@ -142,9 +142,9 @@ extern const pb_msgdesc_t wp_PacketReceivedEvent_msg;
 
 /* Maximum encoded size of messages (where known) */
 #define WP_DATA_MESSAGE_PB_H_MAX_SIZE            wp_PacketReceivedEvent_size
-#define wp_PacketReceivedEvent_size              232
+#define wp_PacketReceivedEvent_size              248
 #define wp_SendPacketReq_size                    183
-#define wp_SendPacketResp_size                   69
+#define wp_SendPacketResp_size                   85
 
 #ifdef __cplusplus
 } /* extern "C" */
