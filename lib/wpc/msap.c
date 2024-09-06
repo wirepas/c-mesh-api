@@ -59,8 +59,16 @@ int msap_stack_start_request(uint8_t start_option)
     if (res < 0)
         return res;
 
-    LOGI("Start request result = 0x%02x\n",
-         confirm.payload.sap_generic_confirm_payload.result);
+    res = confirm.payload.sap_generic_confirm_payload.result;
+
+    LOGI("Start request result = 0x%02x\n", res);
+
+    // Dualmcu app is not generating StackStarted event
+    // Emulate it until it is fixed.
+    if (res == 0 && m_stack_status_cb != NULL)
+    {
+        m_stack_status_cb(0);
+    }
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 

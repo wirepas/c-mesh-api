@@ -1023,8 +1023,8 @@ app_res_e WPC_unregister_from_scan_neighbors_done();
 
 /**
  * \brief   Callback definition to register for stack status event
- * \param   scan_ready
- *          1 if scan is done
+ * \param   status
+ *          0 if stack is started, a positive value if stack is stopped
  */
 typedef void (*onStackStatusReceived_cb_f)(uint8_t status);
 
