@@ -968,6 +968,10 @@ app_proto_res_e Proto_config_handle_set_scratchpad_target_and_action_request(
                                               crc,
                                               req->target_and_action.action - wp_ScratchpadAction_NO_OTAP,
                                               param);
+
+            // Read otap variable back to be sure everything is updated
+            initialize_otap_variables();
+
             break;
 
         default:
