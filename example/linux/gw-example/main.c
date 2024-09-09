@@ -38,8 +38,8 @@ static uint8_t m_proto_buffer[WPC_PROTO_MAX_RESPONSE_SIZE];
 
 static pthread_t m_thread_publish;
 // Mutex for publishing on MQTT
-static pthread_mutex_t m_queue_mutex;
-static pthread_cond_t m_queue_not_empty_cond = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t m_pub_queue_mutex;
+static pthread_cond_t m_pub_queue_not_empty_cond = PTHREAD_COND_INITIALIZER;
 
 // Statically allocated but could be mallocated
 typedef struct
@@ -61,7 +61,7 @@ static unsigned int m_pub_queue_write = 0;
 static unsigned int m_pub_queue_read = 0;
 
 // Is queue empty?
-static bool m_queue_empty = true;
+static bool m_pub_queue_empty = true;
 
 
 static MQTTClient m_client = NULL;
@@ -70,9 +70,9 @@ static bool MQTT_publish(char * topic, uint8_t * payload, size_t payload_size, b
 {
     message_to_publish_t * message_p;
     bool ret;
-    pthread_mutex_lock(&m_queue_mutex);
+    pthread_mutex_lock(&m_pub_queue_mutex);
 
-    if (!m_queue_empty && (m_pub_queue_write == m_pub_queue_read))
+    if (!m_pub_queue_empty && (m_pub_queue_write == m_pub_queue_read))
     {
         ret = false;
     }
@@ -88,33 +88,33 @@ static bool MQTT_publish(char * topic, uint8_t * payload, size_t payload_size, b
 
         m_pub_queue_write = (m_pub_queue_write + 1) % PUBLISH_QUEUE_SIZE;
 
-        pthread_cond_signal(&m_queue_not_empty_cond);
-        m_queue_empty = false;
+        pthread_cond_signal(&m_pub_queue_not_empty_cond);
+        m_pub_queue_empty = false;
         ret = true;
     }
 
-    pthread_mutex_unlock(&m_queue_mutex);
+    pthread_mutex_unlock(&m_pub_queue_mutex);
 
     return ret;
 }
 
 static void * publish_thread(void * unused)
 {
+    int rc;
     message_to_publish_t * message;
-    pthread_mutex_lock(&m_queue_mutex);
+    pthread_mutex_lock(&m_pub_queue_mutex);
     while (true)
     {
-        if (m_queue_empty)
+        // Mutex is locked here
+        if (m_pub_queue_empty)
         {
             // Queue is empty, wait
-            pthread_cond_wait(&m_queue_not_empty_cond, &m_queue_mutex);
+            pthread_cond_wait(&m_pub_queue_not_empty_cond, &m_pub_queue_mutex);
 
             // Check if we wake up but nothing in queue
-            if (m_queue_empty)
+            if (m_pub_queue_empty)
             {
-                // Release the lock
-                pthread_mutex_unlock(&m_queue_mutex);
-                // Continue to evaluate the stop condition
+                // Keep the lock and evaluate condition again
                 continue;
             }
         }
@@ -122,10 +122,10 @@ static void * publish_thread(void * unused)
         // Publish our oldest message
         message = &m_publish_queue[m_pub_queue_read];
 
-        pthread_mutex_unlock(&m_queue_mutex);
+        // Release the lock as we don't need it to publish
+        pthread_mutex_unlock(&m_pub_queue_mutex);
 
         // Queue our message
-        int rc;
         MQTTClient_message pubmsg = MQTTClient_message_initializer;
         MQTTClient_deliveryToken token;
 
@@ -137,13 +137,16 @@ static void * publish_thread(void * unused)
 
         LOGD("Publishing on topic %s\n", message->topic);
         rc = MQTTClient_publishMessage(m_client, message->topic, &pubmsg, &token);
-        LOGI("Message with token %d published rc=%d\n", token, rc);
+        LOGI("Message with token %d published rc=%d topic=%s\n", token, rc, message->topic);
+
+        // Take the lock to update queue indexes and to wait again on condition
+        pthread_mutex_lock(&m_pub_queue_mutex);
 
         m_pub_queue_read = (m_pub_queue_read + 1) % PUBLISH_QUEUE_SIZE;
         if (m_pub_queue_read == m_pub_queue_write)
         {
             // Indication was the last one
-            m_queue_empty = true;
+            m_pub_queue_empty = true;
         }
     }
     LOGW("Exiting publish thread\n");
@@ -445,7 +448,7 @@ int main(int argc, char * argv[])
 
 
     // Initialize mutex to protect publish
-    if (pthread_mutex_init(&m_queue_mutex, &attr) != 0)
+    if (pthread_mutex_init(&m_pub_queue_mutex, &attr) != 0)
     {
         LOGE("Pub Mutex init failed\n");
         return -1;
