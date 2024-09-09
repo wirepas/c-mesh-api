@@ -126,6 +126,7 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
     if (!wp_message_req_p)
     {
         LOGW("Not a wirepas message\n");
+        pb_release(wp_GenericMessage_fields, &message_req);
         return APP_RES_PROTO_INVALID_REQUEST;
     }
 
@@ -138,13 +139,16 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
         if (resp_msg_p == NULL)
         {
             LOGE("Not enough memory to encode GetConfigsResp");
-            return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
+            res = APP_RES_PROTO_NOT_ENOUGH_MEMORY;
         }
-        message_resp.wirepas->get_configs_resp
-            = (wp_GetConfigsResp *) resp_msg_p;
+        else
+        {
+            message_resp.wirepas->get_configs_resp
+                = (wp_GetConfigsResp *) resp_msg_p;
 
-        res = Proto_config_handle_get_configs(wp_message_req_p->get_configs_req,
-                                             (wp_GetConfigsResp *) resp_msg_p);
+            res = Proto_config_handle_get_configs(wp_message_req_p->get_configs_req,
+                                                (wp_GetConfigsResp *) resp_msg_p);
+        }
     }
     else if (wp_message_req_p->set_config_req)
     {
@@ -154,13 +158,16 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
         if (resp_msg_p == NULL)
         {
             LOGE("Not enough memory to encode SetConfigResp");
-            return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
+            res = APP_RES_PROTO_NOT_ENOUGH_MEMORY;
         }
-        message_resp.wirepas->set_config_resp
-            = (wp_SetConfigResp *) resp_msg_p;
+        else
+        {
+            message_resp.wirepas->set_config_resp
+                = (wp_SetConfigResp *) resp_msg_p;
 
-        res = Proto_config_handle_set_config(wp_message_req_p->set_config_req,
-                                            (wp_SetConfigResp *) resp_msg_p);
+            res = Proto_config_handle_set_config(wp_message_req_p->set_config_req,
+                                                (wp_SetConfigResp *) resp_msg_p);
+        }
     }
     else if (wp_message_req_p->send_packet_req)
     {
@@ -170,13 +177,16 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
         if (resp_msg_p == NULL)
         {
             LOGE("Not enough memory to encode SendPacketResp");
-            return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
+            res = APP_RES_PROTO_NOT_ENOUGH_MEMORY;
         }
-        message_resp.wirepas->send_packet_resp
-            = (wp_SendPacketResp *) resp_msg_p;
+        else
+        {
+            message_resp.wirepas->send_packet_resp
+                = (wp_SendPacketResp *) resp_msg_p;
 
-        res = Proto_data_handle_send_data(wp_message_req_p->send_packet_req,
-                                          (wp_SendPacketResp *) resp_msg_p);
+            res = Proto_data_handle_send_data(wp_message_req_p->send_packet_req,
+                                            (wp_SendPacketResp *) resp_msg_p);
+        }
     }
     else if (wp_message_req_p->get_scratchpad_status_req)
     {
@@ -186,13 +196,16 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
         if (resp_msg_p == NULL)
         {
             LOGE("Not enough memory to encode GetScratchpadStatusResp");
-            return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
+            res = APP_RES_PROTO_NOT_ENOUGH_MEMORY;
         }
-        message_resp.wirepas->get_scratchpad_status_resp
-            = (wp_GetScratchpadStatusResp *) resp_msg_p;
+        else
+        {
+            message_resp.wirepas->get_scratchpad_status_resp
+                = (wp_GetScratchpadStatusResp *) resp_msg_p;
 
-        res = Proto_config_handle_get_scratchpad_status(wp_message_req_p->get_scratchpad_status_req,
-                                                        (wp_GetScratchpadStatusResp *) resp_msg_p);
+            res = Proto_config_handle_get_scratchpad_status(wp_message_req_p->get_scratchpad_status_req,
+                                                            (wp_GetScratchpadStatusResp *) resp_msg_p);
+        }
     }
     else if (wp_message_req_p->upload_scratchpad_req)
     {
@@ -202,17 +215,20 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
         if (resp_msg_p == NULL)
         {
             LOGE("Not enough memory to encode UploadScratchpadResp");
-            return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
+            res = APP_RES_PROTO_NOT_ENOUGH_MEMORY;
         }
-        wp_UploadScratchpadResp * upload_scratchpad_resp_p = resp_msg_p;
-        message_resp.wirepas->upload_scratchpad_resp = upload_scratchpad_resp_p;
+        else
+        {
+            wp_UploadScratchpadResp * upload_scratchpad_resp_p = resp_msg_p;
+            message_resp.wirepas->upload_scratchpad_resp = upload_scratchpad_resp_p;
 
 
-        res = Proto_otap_handle_upload_scratchpad(wp_message_req_p->upload_scratchpad_req,
-                                                  upload_scratchpad_resp_p);
+            res = Proto_otap_handle_upload_scratchpad(wp_message_req_p->upload_scratchpad_req,
+                                                    upload_scratchpad_resp_p);
 
-        /* Update parameters */
-        Proto_config_refresh_otap_infos();
+            /* Update parameters */
+            Proto_config_refresh_otap_infos();
+        }
     }
     else if (wp_message_req_p->process_scratchpad_req)
     {
@@ -222,13 +238,16 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
         if (resp_msg_p == NULL)
         {
             LOGE("Not enough memory to encode ProcessScratchpadResp");
-            return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
+            res = APP_RES_PROTO_NOT_ENOUGH_MEMORY;
         }
-        message_resp.wirepas->process_scratchpad_resp
-            = (wp_ProcessScratchpadResp *) resp_msg_p;
+        else
+        {
+            message_resp.wirepas->process_scratchpad_resp
+                = (wp_ProcessScratchpadResp *) resp_msg_p;
 
-        res = Proto_otap_handle_process_scratchpad(wp_message_req_p->process_scratchpad_req,
-                                                   (wp_ProcessScratchpadResp *) resp_msg_p);
+            res = Proto_otap_handle_process_scratchpad(wp_message_req_p->process_scratchpad_req,
+                                                    (wp_ProcessScratchpadResp *) resp_msg_p);
+        }
     }
     else if (wp_message_req_p->get_gateway_info_req)
     {
@@ -238,12 +257,15 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
         if (resp_msg_p == NULL)
         {
             LOGE("Not enough memory to encode GetGatewayInfo\n");
-            return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
+            res = APP_RES_PROTO_NOT_ENOUGH_MEMORY;
         }
-        message_resp.wirepas->get_gateway_info_resp = (wp_GetGwInfoResp *) resp_msg_p;
+        else
+        {
+            message_resp.wirepas->get_gateway_info_resp = (wp_GetGwInfoResp *) resp_msg_p;
 
-        res = Proto_config_handle_get_gateway_info_request(
-            wp_message_req_p->get_gateway_info_req, (wp_GetGwInfoResp *) resp_msg_p);
+            res = Proto_config_handle_get_gateway_info_request(
+                wp_message_req_p->get_gateway_info_req, (wp_GetGwInfoResp *) resp_msg_p);
+        }
     }
     else if (wp_message_req_p->set_scratchpad_target_and_action_req)
     {
@@ -253,18 +275,22 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
         if (resp_msg_p == NULL)
         {
             LOGE("Not enough memory to encode SetScratchpadTargetAndAction\n");
-            return APP_RES_PROTO_NOT_ENOUGH_MEMORY;
+            res = APP_RES_PROTO_NOT_ENOUGH_MEMORY;
         }
-        message_resp.wirepas->set_scratchpad_target_and_action_resp
-            = (wp_SetScratchpadTargetAndActionResp *) resp_msg_p;
+        else
+        {
+            message_resp.wirepas->set_scratchpad_target_and_action_resp
+                = (wp_SetScratchpadTargetAndActionResp *) resp_msg_p;
 
-        res = Proto_config_handle_set_scratchpad_target_and_action_request(
-            wp_message_req_p->set_scratchpad_target_and_action_req,
-            (wp_SetScratchpadTargetAndActionResp *) resp_msg_p);
+            res = Proto_config_handle_set_scratchpad_target_and_action_request(
+                wp_message_req_p->set_scratchpad_target_and_action_req,
+                (wp_SetScratchpadTargetAndActionResp *) resp_msg_p);
+        }
     }
     else
     {
         LOGE("Not a supported request\n");
+        res = APP_RES_PROTO_INVALID_REQUEST;
     }
 
     if (res == APP_RES_PROTO_OK)
@@ -277,19 +303,18 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
 
         if (!status) {
             LOGE("Encoding failed: %s\n", PB_GET_ERROR(&stream_out));
-            return APP_RES_PROTO_CANNOT_GENERATE_RESPONSE;
+            res = APP_RES_PROTO_CANNOT_GENERATE_RESPONSE;
         }
         else
         {
             LOGI("Response generated %d\n", stream_out.bytes_written);
             *response_size_p = stream_out.bytes_written;
-            return APP_RES_PROTO_OK;
         }
     }
 
+    pb_release(wp_GenericMessage_fields, &message_req);
     Platform_free(resp_msg_p, resp_size);
 
-    /** Set correctly the response_p and response_size */
     return res;
 
 }
