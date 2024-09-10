@@ -79,6 +79,7 @@ app: $(TARGET_APP)
 .PHONY: clean
 clean:
 	$(call CLEAN)
+	make -C $(MESH_LIB_FOLDER) clean
 
 $(MESH_LIB): FORCE
 	make -C $(MESH_LIB_FOLDER) proto_api_support=yes
