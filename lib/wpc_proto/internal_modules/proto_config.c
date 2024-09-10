@@ -805,7 +805,6 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
     if (restart_stack)
     {
         // Start the stack
-        WPC_set_autostart(1);
         res = WPC_start_stack();
         if (res != APP_RES_OK)
         {
@@ -814,6 +813,7 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
         }
         else
         {
+            WPC_set_autostart(1);
             LOGI("Stack started\n");
         }
     }
