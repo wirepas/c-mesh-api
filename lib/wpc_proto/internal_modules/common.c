@@ -105,8 +105,8 @@ wp_ErrorCode Common_convert_error_code(app_res_e error)
 
 void Common_fill_event_header(wp_EventHeader * header_p)
 {
-    _Static_assert(member_size(wp_EventHeader, gw_id) >= GATEWAY_ID_MAX_SIZE);
-    _Static_assert(member_size(wp_EventHeader, sink_id) >= SINK_ID_MAX_SIZE);
+    _Static_assert(member_size(wp_EventHeader, gw_id) >= GATEWAY_ID_MAX_SIZE, "Gateway ID too long");
+    _Static_assert(member_size(wp_EventHeader, sink_id) >= SINK_ID_MAX_SIZE, "Sink ID too long");
 
     *header_p = (wp_EventHeader){
         .has_sink_id = (strlen(m_sink_id) != 0),
@@ -123,8 +123,8 @@ void Common_Fill_response_header(wp_ResponseHeader * header_p,
                                  uint64_t req_id,
                                  wp_ErrorCode res)
 {
-    _Static_assert(member_size(wp_ResponseHeader, gw_id) >= GATEWAY_ID_MAX_SIZE);
-    _Static_assert(member_size(wp_ResponseHeader, sink_id) >= SINK_ID_MAX_SIZE);
+    _Static_assert(member_size(wp_ResponseHeader, gw_id) >= GATEWAY_ID_MAX_SIZE, "Gateway ID too long");
+    _Static_assert(member_size(wp_ResponseHeader, sink_id) >= SINK_ID_MAX_SIZE, "Sink ID too long");
 
     *header_p = (wp_ResponseHeader) {
         .req_id = req_id,
