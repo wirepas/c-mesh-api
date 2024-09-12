@@ -130,7 +130,7 @@ static app_role_t convert_role_to_app_format(wp_NodeRole * proto_role)
 
 static void convert_role_to_proto_format(app_role_t role, wp_NodeRole * proto_role)
 {
-    _Static_assert(member_size(wp_NodeRole, flags) >= (2 * sizeof(wp_NodeRole_RoleFlags)) );
+    _Static_assert(member_size(wp_NodeRole, flags) >= (2 * sizeof(wp_NodeRole_RoleFlags)), "Too many role flags");
 
     pb_size_t flags_count = 0;
     proto_role->role = GET_BASE_ROLE(role);
@@ -322,9 +322,10 @@ static void fill_target_and_action(wp_TargetScratchpadAndAction * target_and_act
 
 static void fill_sink_read_config(wp_SinkReadConfig * config_p)
 {
-    _Static_assert( member_size(wp_AppConfigData_app_config_data_t, bytes)
-                    >= member_size(msap_app_config_data_write_req_pl_t, app_config_data));
-    _Static_assert(member_size(wp_SinkReadConfig, sink_id) >= SINK_ID_MAX_SIZE);
+    _Static_assert(     member_size(wp_AppConfigData_app_config_data_t, bytes)
+                     >= member_size(msap_app_config_data_write_req_pl_t, app_config_data),
+                      "wp_AppConfigData_app_config_data_t is too small");
+    _Static_assert(member_size(wp_SinkReadConfig, sink_id) >= SINK_ID_MAX_SIZE, "wp_SinkReadConfig is too small");
 
     uint8_t status = m_sink_config.StackStatus;
 
@@ -418,8 +419,8 @@ static void fill_status_event(wp_StatusEvent * status_event_p,
                                  wp_OnOffState state,
                                  pb_size_t config_count)
 {
-    _Static_assert(member_size(wp_StatusEvent, gw_model) >= GATEWAY_MODEL_MAX_SIZE);
-    _Static_assert(member_size(wp_StatusEvent, gw_version) >= GATEWAY_VERSION_MAX_SIZE);
+    _Static_assert(member_size(wp_StatusEvent, gw_model) >= GATEWAY_MODEL_MAX_SIZE, "Gateway model too big");
+    _Static_assert(member_size(wp_StatusEvent, gw_version) >= GATEWAY_VERSION_MAX_SIZE, "Gateway version too big");
 
     *status_event_p = (wp_StatusEvent){
         .version = GW_PROTO_MESSAGE_VERSION,
@@ -904,7 +905,7 @@ app_proto_res_e Proto_config_handle_set_scratchpad_target_and_action_request(
 {
     app_res_e res = APP_RES_OK;
     uint8_t seq;
-    uint8_t param;
+    uint8_t param = 0;
     uint16_t crc;
 
     // TODO: Add some sanity checks
