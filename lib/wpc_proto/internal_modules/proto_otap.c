@@ -110,19 +110,19 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
     app_res_e res = APP_RES_OK;
     uint8_t status;
 
-    if (    (WPC_get_stack_status(&status) == APP_RES_OK)
-         && (status == 0))
+    if ((WPC_get_stack_status(&status) == APP_RES_OK)
+        && (status == 0))
     {
         /* Stack must be stoped */
         /* No action required on fail as next step will anyway fail */
         WPC_set_autostart(0);
         if (WPC_stop_stack() != APP_RES_OK)
         {
-            LOGE("Scratchpad : Stack stop failed\n");
+            LOGE("Upload scratchpad : Stack stop failed\n");
         }
         else
         {
-            LOGI("Scratchpad : Stack stopped\n");
+            LOGI("Upload scratchpad : Stack stopped\n");
         }
         m_restart_after_load = true;
     }
@@ -177,12 +177,12 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
         res = WPC_start_stack();
         if (res != APP_RES_OK)
         {
-            LOGE("Cannot restart stack after loading last chunk\n");
+            LOGE("Cannot restart stack after scratchpad update\n");
         }
         else
         {
             WPC_set_autostart(1);
-            LOGI("Scratchpad : Stack started\n");
+            LOGI("Upload scratchpad : Stack started\n");
         }
         m_restart_after_load = false;
     }
