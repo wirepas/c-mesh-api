@@ -45,7 +45,6 @@ static app_res_e handle_scratchpad_chunk(uint8_t * chunk,
                                          uint32_t seq)
 {
     app_res_e res;
-    uint8_t status;
     LOGD("Uploading scratchpad chunk: size %u, offset %u, total_size %u, seq %u\n",
                             chunk_size,
                             offset,
@@ -57,20 +56,11 @@ static app_res_e handle_scratchpad_chunk(uint8_t * chunk,
     {
         if (m_scratchpad_load_current_seq != INVALID_CURRENT_SEQ)
         {
-            LOGW("Previous upload not finshed: old seq %u, new seq %u\n",
+            LOGW("Previous upload not finished: old seq %u, new seq %u\n",
                                 m_scratchpad_load_current_seq,
                                 seq);
 
             /* Only a log, keep going with it */
-        }
-
-        if ((WPC_get_stack_status(&status) == APP_RES_OK)
-             && (status == 0))
-        {
-            /* Stack must be stoped */
-            /* No check required as next step will anyway fail */
-            WPC_stop_stack();
-            m_restart_after_load = true;
         }
 
         /* Sink only support seq on 8 bits even if gateway api supports up to 32bits value */
@@ -109,14 +99,6 @@ static app_res_e handle_scratchpad_chunk(uint8_t * chunk,
     {
         /* Yes it is */
         m_scratchpad_load_current_seq = INVALID_CURRENT_SEQ;
-        if (m_restart_after_load)
-        {
-            if (WPC_start_stack() != APP_RES_OK)
-            {
-                LOGE("Cannot restart stack after loading last chunk\n");
-            }
-            m_restart_after_load = false;
-        }
     }
 
     return APP_RES_OK;
@@ -126,6 +108,24 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
                                                     wp_UploadScratchpadResp *resp)
 {
     app_res_e res = APP_RES_OK;
+    uint8_t status;
+
+    if (    (WPC_get_stack_status(&status) == APP_RES_OK)
+         && (status == 0))
+    {
+        /* Stack must be stoped */
+        /* No action required on fail as next step will anyway fail */
+        WPC_set_autostart(0);
+        if (WPC_stop_stack() != APP_RES_OK)
+        {
+            LOGE("Scratchpad : Stack stop failed\n");
+        }
+        else
+        {
+            LOGI("Scratchpad : Stack stopped\n");
+        }
+        m_restart_after_load = true;
+    }
 
     if(req->has_scratchpad)
     {
@@ -152,6 +152,7 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
             {
                 LOGE("Upload scratchpad failed %d: with seq %d of size %d\n", res, req->seq, req->scratchpad.size);
             }
+            m_scratchpad_load_current_seq = INVALID_CURRENT_SEQ;
         }
     }
     else
@@ -161,12 +162,29 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
         if (res == APP_RES_OK)
         {
             LOGI("Scratchpad cleared\n");
-            m_scratchpad_load_current_seq = INVALID_CURRENT_SEQ;
         }
         else
         {
             LOGE("Clear scratchpad failed %d\n", res);
         }
+        m_scratchpad_load_current_seq = INVALID_CURRENT_SEQ;
+    }
+
+    if ((m_restart_after_load)
+        && (m_scratchpad_load_current_seq == INVALID_CURRENT_SEQ))
+    {
+        // Restart the stack, as there is no more load in progress
+        res = WPC_start_stack();
+        if (res != APP_RES_OK)
+        {
+            LOGE("Cannot restart stack after loading last chunk\n");
+        }
+        else
+        {
+            WPC_set_autostart(1);
+            LOGI("Scratchpad : Stack started\n");
+        }
+        m_restart_after_load = false;
     }
 
     Common_Fill_response_header(&resp->header,
