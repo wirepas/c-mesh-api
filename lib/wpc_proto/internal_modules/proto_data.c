@@ -92,7 +92,6 @@ static bool onDataReceived(const uint8_t * bytes,
 
     Common_fill_event_header(&message_PacketReceived_p->header);
 
-    // Using the module static buffer
     pb_ostream_t stream = pb_ostream_from_buffer(encoded_message_p, max_encoded_size);
 
     /* Now we are ready to encode the message! */
