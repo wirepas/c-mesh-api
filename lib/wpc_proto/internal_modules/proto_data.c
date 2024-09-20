@@ -44,6 +44,12 @@ static bool onDataReceived(const uint8_t * bytes,
          src_addr,
          dst_addr);
 
+    if (num_bytes > member_size(wp_PacketReceivedEvent_payload_t, bytes))
+    {
+        LOGE("Message received too big");
+        return false;
+    }
+
     // Allocate the needed space for only the submessage we want to send
     message_PacketReceived_p = Platform_malloc(sizeof(wp_PacketReceivedEvent));
     if (message_PacketReceived_p == NULL)
@@ -53,7 +59,8 @@ static bool onDataReceived(const uint8_t * bytes,
     }
 
     // Allocate needed buffer for encoded message
-    encoded_message_p = Platform_malloc(WPC_PROTO_MAX_RESPONSE_SIZE);
+    size_t max_encoded_size = WPC_PROTO_OFFSET_DATA_SIZE + num_bytes;
+    encoded_message_p = Platform_malloc(max_encoded_size);
     if (encoded_message_p == NULL)
     {
         LOGE("Not enough memory for output buffer");
@@ -86,7 +93,7 @@ static bool onDataReceived(const uint8_t * bytes,
     Common_fill_event_header(&message_PacketReceived_p->header);
 
     // Using the module static buffer
-    pb_ostream_t stream = pb_ostream_from_buffer(encoded_message_p, WPC_PROTO_MAX_RESPONSE_SIZE);
+    pb_ostream_t stream = pb_ostream_from_buffer(encoded_message_p, max_encoded_size);
 
     /* Now we are ready to encode the message! */
 	status = pb_encode(&stream, wp_GenericMessage_fields, &message);
@@ -109,7 +116,7 @@ static bool onDataReceived(const uint8_t * bytes,
         }
     }
 
-    Platform_free(encoded_message_p, WPC_PROTO_MAX_RESPONSE_SIZE);
+    Platform_free(encoded_message_p, max_encoded_size);
 
     return true;
 }

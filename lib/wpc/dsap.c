@@ -42,7 +42,7 @@ static uint32_t m_fragment_max_duration_s = 0;
 // to not have it allocated on stack dynamically. Could also be allocated
 // dynamically with platform malloc, but as there is only one needed, static
 // allocation is probably best option.
-static uint8_t reassembly_buffer[1500];
+static uint8_t reassembly_buffer[MAX_FULL_PACKET_SIZE];
 
 // Table to store the data sent callbacks status for Tx data
 static packet_with_indication_t indication_sent_cb_table[MAX_SENT_PACKET_WITH_INDICATION];
