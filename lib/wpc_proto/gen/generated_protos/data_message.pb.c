@@ -6,7 +6,7 @@
 #error Regenerate this file with the current version of nanopb generator.
 #endif
 
-PB_BIND(wp_SendPacketReq, wp_SendPacketReq, AUTO)
+PB_BIND(wp_SendPacketReq, wp_SendPacketReq, 2)
 
 
 PB_BIND(wp_SendPacketResp, wp_SendPacketResp, AUTO)
