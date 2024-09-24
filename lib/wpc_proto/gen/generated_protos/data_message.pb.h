@@ -11,7 +11,7 @@
 #endif
 
 /* Struct definitions */
-typedef PB_BYTES_ARRAY_T(102) wp_SendPacketReq_payload_t;
+typedef PB_BYTES_ARRAY_T(1500) wp_SendPacketReq_payload_t;
 /* Commands/Responses definition */
 typedef struct _wp_SendPacketReq {
     wp_RequestHeader header;
@@ -35,7 +35,7 @@ typedef struct _wp_SendPacketResp {
     wp_ResponseHeader header;
 } wp_SendPacketResp;
 
-typedef PB_BYTES_ARRAY_T(102) wp_PacketReceivedEvent_payload_t;
+typedef PB_BYTES_ARRAY_T(1500) wp_PacketReceivedEvent_payload_t;
 /* Event definition */
 typedef struct _wp_PacketReceivedEvent {
     wp_EventHeader header;
@@ -142,8 +142,8 @@ extern const pb_msgdesc_t wp_PacketReceivedEvent_msg;
 
 /* Maximum encoded size of messages (where known) */
 #define WP_DATA_MESSAGE_PB_H_MAX_SIZE            wp_PacketReceivedEvent_size
-#define wp_PacketReceivedEvent_size              248
-#define wp_SendPacketReq_size                    183
+#define wp_PacketReceivedEvent_size              1647
+#define wp_SendPacketReq_size                    1582
 #define wp_SendPacketResp_size                   85
 
 #ifdef __cplusplus
