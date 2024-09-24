@@ -129,7 +129,7 @@ void Common_Fill_response_header(wp_ResponseHeader * header_p,
     *header_p = (wp_ResponseHeader) {
         .req_id = req_id,
         .has_sink_id = (strlen(m_sink_id) != 0),
-        .res = Common_convert_error_code(res),
+        .res = res,
         .has_time_ms_epoch = true,
         .time_ms_epoch = Platform_get_timestamp_ms_epoch(),
     };
