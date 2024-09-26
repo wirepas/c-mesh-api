@@ -28,6 +28,13 @@
 #define TOPIC_RX_DATA_PREFIX "gw-event/received_data"
 #define TOPIC_EVENT_PREFIX "gw-event/status"
 
+/* max default delay to keep incomplete fragmented packet inside our buffers */
+#define FRAGMENT_MAX_DURATION_S    45
+/* max default delay for poll fail duration */
+/* 120s should cover most scratchpad exchanges and image processing. Sink is
+   not answearing during that time */
+#define MAX_POLL_FAIL_DURATION_S   120
+
 // Configuration. It has to be static as it is reused
 // to reconnect
 static char m_gateway_id[32] = "\0";
@@ -524,11 +531,13 @@ int main(int argc, char * argv[])
                              m_gateway_id,
                              "test_gw",
                              "v0.1",
-                             "sink0") != APP_RES_PROTO_OK)
+                             "sink0",
+                             MAX_POLL_FAIL_DURATION_S,
+                             FRAGMENT_MAX_DURATION_S
+                             ) != APP_RES_PROTO_OK)
     {
         return -1;
     }
-
 
     // Initialize mutex to protect publish
     if (pthread_mutex_init(&m_pub_queue_mutex, &attr) != 0)

@@ -52,11 +52,24 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
                                      char * gateway_id,
                                      char * gateway_model,
                                      char * gateway_version,
-                                     char * sink_id)
+                                     char * sink_id,
+                                     unsigned int max_poll_fail_duration_s,
+                                     unsigned int max_fragment_duration_s)
 {
     if (open_and_check_connection(bitrate, port_name) != 0)
     {
         return APP_RES_PROTO_WPC_NOT_INITIALIZED;
+    }
+
+    if (WPC_set_max_poll_fail_duration(max_poll_fail_duration_s) != APP_RES_OK)
+    {
+        LOGE("Cannot set max poll fail duration (%d)\n", max_poll_fail_duration_s);
+        return APP_RES_PROTO_WRONG_PARAMETER;
+    }
+    if ( WPC_set_max_fragment_duration(max_fragment_duration_s) != APP_RES_OK)
+    {
+        LOGE("Cannot set max fragment duration (%d)\n", max_fragment_duration_s);
+        return APP_RES_PROTO_WRONG_PARAMETER;
     }
 
     Common_init(gateway_id, gateway_model, gateway_version, sink_id);
@@ -64,11 +77,11 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
     Proto_config_init();
     Proto_otap_init();
 
-    LOGI("WPC proto initialized with gw_id = %s, gw_model = %s, gw_version = %s and sink_id = %s\n",
-                gateway_id,
-                gateway_model,
-                gateway_version,
-                sink_id);
+    LOGI("WPC proto initialized with gw_id = %s\n", gateway_id);
+    LOGI("gw_model = %s, gw_version = %s and sink_id = %s\n",
+         gateway_model,
+         gateway_version,
+         sink_id);
 
     return APP_RES_PROTO_OK;
 }
