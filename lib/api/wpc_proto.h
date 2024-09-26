@@ -54,6 +54,7 @@ typedef enum
     APP_RES_PROTO_RESPONSE_BUFFER_TOO_SMALL,
     APP_RES_PROTO_NOT_ENOUGH_MEMORY,
     APP_RES_PROTO_NOT_IMPLEMENTED,
+    APP_RES_PROTO_WRONG_PARAMETER,
 } app_proto_res_e;
 
 
@@ -71,6 +72,10 @@ typedef enum
  *               Pointer to gateway version string, "" if not available
  * \param[in]    sink_id
  *               Pointer to the sink id string
+ * \param[in]    max_poll_fail_duration_s
+ *               Maximum duration in seconds for poll failure
+ * \param[in]    max_fragment_duration_s
+ *               Maximum duration in seconds for fragment reassembly
  * \return       Return code of the operation
  */
 app_proto_res_e WPC_Proto_initialize(const char * port_name,
@@ -78,7 +83,9 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
                                      char * gateway_id,
                                      char * gateway_model,
                                      char * gateway_version,
-                                     char * sink_id);
+                                     char * sink_id,
+                                     unsigned int max_poll_fail_duration_s,
+                                     unsigned int max_fragment_duration_s);
 
 /**
  * \brief        close protobuf interface

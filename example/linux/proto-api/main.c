@@ -25,6 +25,13 @@ static char * port_name = "/dev/ttyACM0";
 #define GATEWAY_VERSION "0.1"
 #define SINK_ID         "sink0"
 
+/* max default delay to keep incomplete fragmented packet inside our buffers */
+#define FRAGMENT_MAX_DURATION_S    45
+/* max default delay for poll fail duration */
+/* 120s should cover most scratchpad exchanges and image processing. Sink is
+   not answearing during that time */
+#define MAX_POLL_FAIL_DURATION_S   120
+
 static uint8_t m_response_buffer[WPC_PROTO_MAX_RESPONSE_SIZE];
 
 /* Dummy DataRequest generated as followed */
@@ -69,7 +76,10 @@ int main(int argc, char * argv[])
                              GATEWAY_ID,
                              GATEWAY_MODEL,
                              GATEWAY_VERSION,
-                             SINK_ID) != APP_RES_PROTO_OK)
+                             SINK_ID,
+                             MAX_POLL_FAIL_DURATION_S,
+                             FRAGMENT_MAX_DURATION_S
+                             ) != APP_RES_PROTO_OK)
 
         return -1;
 

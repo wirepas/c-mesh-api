@@ -75,7 +75,7 @@ static app_res_e handle_scratchpad_chunk(uint8_t * chunk,
     /* Check chunk is from valid scratchpad */
     if (seq != m_scratchpad_load_current_seq)
     {
-        LOGE("Invalid scratcpad seq %u vs %u expected\n",
+        LOGE("Invalid scratchpad seq %u vs %u expected\n",
                         seq,
                         m_scratchpad_load_current_seq);
         return APP_RES_INVALID_SEQ;
