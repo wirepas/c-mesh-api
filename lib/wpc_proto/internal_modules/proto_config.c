@@ -894,7 +894,7 @@ app_proto_res_e Proto_config_handle_get_configs(wp_GetConfigsReq *req,
     // as config is available in cache, response is ok
     Common_Fill_response_header(&resp->header,
                                 req->header.req_id,
-                                Common_convert_error_code(APP_RES_OK));
+                                wp_ErrorCode_OK);
     resp->configs_count = 1;
     fill_sink_read_config(&resp->configs[0]);
 
@@ -908,7 +908,7 @@ app_proto_res_e Proto_config_handle_get_gateway_info_request(wp_GetGwInfoReq * r
 
     Common_Fill_response_header(&resp->header,
                                 req->header.req_id,
-                                Common_convert_error_code(APP_RES_OK));
+                                wp_ErrorCode_OK);
 
     resp->info.current_time_s_epoch = Platform_get_timestamp_ms_epoch();
 

@@ -15,7 +15,7 @@ MESH_LIB_FOLDER := ../../../lib/
 MESH_LIB := $(MESH_LIB_FOLDER)build/mesh_api_lib.a
 
 # General compiler flags
-CFLAGS  := -std=gnu99 -Wall -Werror
+CFLAGS  := -std=gnu99 -Wall -Werror -Wenum-conversion
 
 # Targets definition
 MAIN_APP := gw-example

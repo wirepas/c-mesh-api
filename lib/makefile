@@ -11,7 +11,7 @@ SOURCEPREFIX   :=
 BUILDPREFIX    := build/
 
 # General compiler flags
-CFLAGS  := -std=gnu99 -Wall -Werror
+CFLAGS  := -std=gnu99 -Wall -Werror -Wenum-conversion
 # Uncomment the following line only if running with an old stack
 #CFLAGS  += -DLEGACY_APP_CONFIG
 
