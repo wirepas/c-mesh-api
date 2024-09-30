@@ -363,12 +363,13 @@ void print_usage() {
 
 int main(int argc, char * argv[])
 {
+    static const char EMPTY_STRING[1] = "\0";
     unsigned long baudrate = DEFAULT_BAUDTRATE;
     int c;
     char * port_name = NULL;
     char * mqtt_host = NULL;
-    char * mqtt_user = NULL;
-    char * mqtt_password = NULL;
+    const char * mqtt_user = EMPTY_STRING;
+    const char * mqtt_password = EMPTY_STRING;
     char * gateway_id;
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
