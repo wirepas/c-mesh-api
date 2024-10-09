@@ -516,7 +516,7 @@ static void onStackStatusReceived(uint8_t status)
     }
 
     // Allocate needed buffer for encoded message
-    encoded_message_p = Platform_malloc(WPC_PROTO_MAX_RESPONSE_SIZE);
+    encoded_message_p = Platform_malloc(WPC_PROTO_MAX_EVENTSTATUS_SIZE);
     if (encoded_message_p == NULL)
     {
         LOGE("Not enough memory for output buffer");
@@ -529,7 +529,7 @@ static void onStackStatusReceived(uint8_t status)
     fill_status_event(message_StatusEvent_p, wp_OnOffState_ON, 1);
 
     // Using the module static buffer
-    pb_ostream_t stream = pb_ostream_from_buffer(encoded_message_p, WPC_PROTO_MAX_RESPONSE_SIZE);
+    pb_ostream_t stream = pb_ostream_from_buffer(encoded_message_p, WPC_PROTO_MAX_EVENTSTATUS_SIZE);
 
     /* Now we are ready to encode the message! */
     res = pb_encode(&stream, wp_GenericMessage_fields, &message);
@@ -549,7 +549,7 @@ static void onStackStatusReceived(uint8_t status)
         }
     }
 
-    Platform_free(encoded_message_p, WPC_PROTO_MAX_RESPONSE_SIZE);
+    Platform_free(encoded_message_p, WPC_PROTO_MAX_EVENTSTATUS_SIZE);
 }
 
 bool Proto_config_init(void)

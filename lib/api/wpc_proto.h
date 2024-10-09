@@ -13,9 +13,33 @@
 /*
  * Maximum size of a response. It can be used as an hint
  * to give a big enough buffer to @ref WPC_Proto_handle_request
- * or @WPC_Proto_get_current_event_status
+ * note : it should be higher than this response size list, as it's a wp_GenericMessage
+ * wp_GetConfigsResp_size
+ * wp_GetGwInfoResp_size
+ * wp_SetConfigResp_size
+ * wp_SendPacketResp_size
+ * wp_GetScratchpadStatusResp_size
+ * wp_ProcessScratchpadResp_size
+ * wp_SetScratchpadTargetAndActionResp_size
+ * wp_UploadScratchpadResp_size
  */
-#define WPC_PROTO_MAX_RESPONSE_SIZE 512
+#define WPC_PROTO_MAX_RESPONSE_SIZE 450 
+
+/*
+ * Maximum size of an Event Status. It can be used as an hint
+ * to give a big enough buffer to @WPC_Proto_get_current_event_status
+ * or @onStackStatusReceived
+ * note : it should be higher than wp_StatusEvent_size, as it's a wp_GenericMessage
+ */
+#define WPC_PROTO_MAX_EVENTSTATUS_SIZE 550
+
+/*
+ * Maximum size offset for data reception. Added to payload size, it can be used as an hint
+ * to give a big enough buffer to @onDataReceived
+ * note : see wp_SendPacketReq_size compared to payload size defined in wp_PacketReceivedEvent_payload_t
+ * assuming that is will be a wp_GenericMessage
+ */
+#define WPC_PROTO_OFFSET_DATA_SIZE 100
 
 /**
  * \brief   Return code
@@ -30,6 +54,7 @@ typedef enum
     APP_RES_PROTO_RESPONSE_BUFFER_TOO_SMALL,
     APP_RES_PROTO_NOT_ENOUGH_MEMORY,
     APP_RES_PROTO_NOT_IMPLEMENTED,
+    APP_RES_PROTO_WRONG_PARAMETER,
 } app_proto_res_e;
 
 
@@ -47,6 +72,10 @@ typedef enum
  *               Pointer to gateway version string, "" if not available
  * \param[in]    sink_id
  *               Pointer to the sink id string
+ * \param[in]    max_poll_fail_duration_s
+ *               Maximum duration in seconds for poll failure
+ * \param[in]    max_fragment_duration_s
+ *               Maximum duration in seconds for fragment reassembly
  * \return       Return code of the operation
  */
 app_proto_res_e WPC_Proto_initialize(const char * port_name,
@@ -54,7 +83,9 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
                                      char * gateway_id,
                                      char * gateway_model,
                                      char * gateway_version,
-                                     char * sink_id);
+                                     char * sink_id,
+                                     unsigned int max_poll_fail_duration_s,
+                                     unsigned int max_fragment_duration_s);
 
 /**
  * \brief        close protobuf interface
@@ -79,6 +110,7 @@ void WPC_Proto_close();
  * \return       Return code of the operation
  * \note         The execution time of this request can be quite long as
  *               it may involves multiple uart communication.
+ *               Buffer to store the response should bigger or equal to @WPC_PROTO_MAX_RESPONSE_SIZE
  */
 app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
                                          size_t request_size,
@@ -129,7 +161,7 @@ app_proto_res_e WPC_Proto_register_for_event_status(onEventStatus_cb_f onEventSt
  *               Caller [in] must set it to the max size of buffer
  *               Callee [out] will update it to the size of the generated buffer
  *               Set to 0 in case return code is different from APP_RES_PROTO_OK
- * \note         Buffer size should higher or equal to @WPC_PROTO_MAX_RESPONSE_SIZE
+ * \note         Buffer size should higher or equal to @WPC_PROTO_MAX_EVENTSTATUS_SIZE
  */
 app_proto_res_e WPC_Proto_get_current_event_status(bool online,
                                                    uint8_t * event_status_p,
