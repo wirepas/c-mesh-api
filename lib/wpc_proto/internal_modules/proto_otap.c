@@ -63,12 +63,6 @@ static app_res_e handle_scratchpad_chunk(uint8_t * chunk,
             /* Only a log, keep going with it */
         }
 
-        /* Sink only support seq on 8 bits even if gateway api supports up to 32bits value */
-        if (seq > 255)
-        {
-            return APP_RES_INVALID_SEQ;
-        }
-
         m_scratchpad_load_current_seq = seq;
         res = WPC_start_local_scratchpad_update(total_size, seq);
         if (res != APP_RES_OK)
@@ -109,6 +103,17 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
 {
     app_res_e res = APP_RES_OK;
     uint8_t status;
+
+    /* Check parameters */
+    /* Sink only supports seq on 8 bits even if gateway api supports up to 32bits value */
+    if (req->seq > 255)
+    {
+        Common_Fill_response_header(&resp->header,
+                                    req->header.req_id,
+                                    Common_convert_error_code(APP_RES_INVALID_SEQ));
+
+        return APP_RES_PROTO_OK;
+    }
 
     if ((WPC_get_stack_status(&status) == APP_RES_OK)
         && (status == 0))
