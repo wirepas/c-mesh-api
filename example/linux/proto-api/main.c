@@ -25,6 +25,7 @@ static char * port_name = "/dev/ttyACM0";
 #define GATEWAY_VERSION "0.1"
 #define SINK_ID         "sink0"
 
+
 static uint8_t m_response_buffer[WPC_PROTO_MAX_RESPONSE_SIZE];
 
 /* Dummy DataRequest generated as followed */

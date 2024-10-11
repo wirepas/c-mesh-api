@@ -25,6 +25,13 @@
 // Max possible size of encoded message
 #define MAX_PROTOBUF_SIZE WP_CONFIG_MESSAGE_PB_H_MAX_SIZE
 
+/* max default delay to keep incomplete fragmented packet inside our buffers */
+#define FRAGMENT_MAX_DURATION_S    45
+/* max default delay for poll fail duration */
+/* 120s should cover most scratchpad exchanges and image processing. Sink is
+   not answearing during that time */
+#define MAX_POLL_FAIL_DURATION_S   120
+
 
 static int open_and_check_connection(unsigned long baudrate, const char * port_name)
 {
@@ -54,9 +61,40 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
                                      char * gateway_version,
                                      char * sink_id)
 {
+    _Static_assert(WPC_PROTO_MAX_RESPONSE_SIZE >= (wp_GetConfigsResp_size + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD),
+                   "Max proto size too low");
+    _Static_assert(WPC_PROTO_MAX_RESPONSE_SIZE >= (wp_GetGwInfoResp_size + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD),
+                   "Max proto size too low");
+    _Static_assert(WPC_PROTO_MAX_RESPONSE_SIZE >= (wp_SetConfigResp_size + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD),
+                   "Max proto size too low");
+    _Static_assert(WPC_PROTO_MAX_RESPONSE_SIZE >= (wp_SendPacketResp_size + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD),
+                   "Max proto size too low");
+    _Static_assert(WPC_PROTO_MAX_RESPONSE_SIZE >= (wp_GetScratchpadStatusResp_size + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD),
+                   "Max proto size too low");
+    _Static_assert(WPC_PROTO_MAX_RESPONSE_SIZE >= (wp_ProcessScratchpadResp_size + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD),
+                   "Max proto size too low");
+    _Static_assert(WPC_PROTO_MAX_RESPONSE_SIZE >= (wp_SetScratchpadTargetAndActionResp_size + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD),
+                   "Max proto size too low");
+    _Static_assert(WPC_PROTO_MAX_RESPONSE_SIZE >= (wp_UploadScratchpadResp_size + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD),
+                   "Max proto size too low");
+                   
+    _Static_assert(WPC_PROTO_MAX_EVENTSTATUS_SIZE >= (wp_StatusEvent_size + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD),
+                   "Max proto size too low");
+
     if (open_and_check_connection(bitrate, port_name) != 0)
     {
         return APP_RES_PROTO_WPC_NOT_INITIALIZED;
+    }
+
+    if (WPC_set_max_poll_fail_duration(MAX_POLL_FAIL_DURATION_S) != APP_RES_OK)
+    {
+        LOGE("Cannot set max poll fail duration (%d)\n", MAX_POLL_FAIL_DURATION_S);
+        return APP_RES_PROTO_WRONG_PARAMETER;
+    }
+    if ( WPC_set_max_fragment_duration(FRAGMENT_MAX_DURATION_S) != APP_RES_OK)
+    {
+        LOGE("Cannot set max fragment duration (%d)\n", FRAGMENT_MAX_DURATION_S);
+        return APP_RES_PROTO_WRONG_PARAMETER;
     }
 
     Common_init(gateway_id, gateway_model, gateway_version, sink_id);
@@ -64,11 +102,11 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
     Proto_config_init();
     Proto_otap_init();
 
-    LOGI("WPC proto initialized with gw_id = %s, gw_model = %s, gw_version = %s and sink_id = %s\n",
-                gateway_id,
-                gateway_model,
-                gateway_version,
-                sink_id);
+    LOGI("WPC proto initialized with gw_id = %s\n", gateway_id);
+    LOGI("gw_model = %s, gw_version = %s and sink_id = %s\n",
+         gateway_model,
+         gateway_version,
+         sink_id);
 
     return APP_RES_PROTO_OK;
 }
@@ -171,7 +209,7 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
     }
     else if (wp_message_req_p->send_packet_req)
     {
-        LOGI("Send packet request\n");
+        LOGI("Send packet request, size = %d\n", wp_message_req_p->send_packet_req->payload.size);
         resp_size  = sizeof(wp_SendPacketResp);
         resp_msg_p = Platform_malloc(resp_size);
         if (resp_msg_p == NULL)
@@ -185,7 +223,7 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
                 = (wp_SendPacketResp *) resp_msg_p;
 
             res = Proto_data_handle_send_data(wp_message_req_p->send_packet_req,
-                                            (wp_SendPacketResp *) resp_msg_p);
+                                              (wp_SendPacketResp *) resp_msg_p);
         }
     }
     else if (wp_message_req_p->get_scratchpad_status_req)
