@@ -10,10 +10,18 @@
 #include <stddef.h>
 #include <stdint.h>
 
+
+/**
+ * Max possible overhead estimation for wp_GenericMessage
+ * compared to specific single message. Should be added to
+ * size of single message to estimate the max sized occupied
+ * by the full proto encoded message */
+#define WPC_PROTO_GENERIC_MESSAGE_OVERHEAD 20
+
 /*
  * Maximum size of a response. It can be used as an hint
  * to give a big enough buffer to @ref WPC_Proto_handle_request
- * note : it should be higher than this response size list, as it's a wp_GenericMessage
+ * note : as it's a wp_GenericMessage, it should be higher to these message sizes + overhead
  * wp_GetConfigsResp_size
  * wp_GetGwInfoResp_size
  * wp_SetConfigResp_size
@@ -23,7 +31,7 @@
  * wp_SetScratchpadTargetAndActionResp_size
  * wp_UploadScratchpadResp_size
  */
-#define WPC_PROTO_MAX_RESPONSE_SIZE 450 
+#define WPC_PROTO_MAX_RESPONSE_SIZE (415 + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD)
 
 /*
  * Maximum size of an Event Status. It can be used as an hint
@@ -31,7 +39,7 @@
  * or @onStackStatusReceived
  * note : it should be higher than wp_StatusEvent_size, as it's a wp_GenericMessage
  */
-#define WPC_PROTO_MAX_EVENTSTATUS_SIZE 550
+#define WPC_PROTO_MAX_EVENTSTATUS_SIZE (516 + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD)
 
 /*
  * Maximum size offset for data reception. Added to payload size, it can be used as an hint
@@ -72,10 +80,6 @@ typedef enum
  *               Pointer to gateway version string, "" if not available
  * \param[in]    sink_id
  *               Pointer to the sink id string
- * \param[in]    max_poll_fail_duration_s
- *               Maximum duration in seconds for poll failure
- * \param[in]    max_fragment_duration_s
- *               Maximum duration in seconds for fragment reassembly
  * \return       Return code of the operation
  */
 app_proto_res_e WPC_Proto_initialize(const char * port_name,
@@ -83,9 +87,7 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
                                      char * gateway_id,
                                      char * gateway_model,
                                      char * gateway_version,
-                                     char * sink_id,
-                                     unsigned int max_poll_fail_duration_s,
-                                     unsigned int max_fragment_duration_s);
+                                     char * sink_id);
 
 /**
  * \brief        close protobuf interface

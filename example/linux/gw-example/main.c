@@ -28,12 +28,6 @@
 #define TOPIC_RX_DATA_PREFIX "gw-event/received_data"
 #define TOPIC_EVENT_PREFIX "gw-event/status"
 
-/* max default delay to keep incomplete fragmented packet inside our buffers */
-#define FRAGMENT_MAX_DURATION_S    45
-/* max default delay for poll fail duration */
-/* 120s should cover most scratchpad exchanges and image processing. Sink is
-   not answearing during that time */
-#define MAX_POLL_FAIL_DURATION_S   120
 
 // Configuration. It has to be static as it is reused
 // to reconnect
@@ -92,9 +86,7 @@ static bool MQTT_publish(char * topic, uint8_t * payload, size_t payload_size, b
         message_p = &m_publish_queue[m_pub_queue_write];
         if(message_p->payload_p != NULL)
         {
-            LOGE("Overwriting message pos %d on topic %s, delivered info not received\n",
-                 m_pub_queue_write,
-                 message_p->topic);
+            LOGE("Overwriting message pos %d\n", m_pub_queue_write);
             free(message_p->payload_p);
         }
 
@@ -179,6 +171,9 @@ static void * publish_thread(void * unused)
                  message->topic);
         }
 
+        free(m_publish_queue[m_pub_queue_read].payload_p);
+        m_publish_queue[m_pub_queue_read].payload_p = NULL;
+
         // Take the lock to update queue indexes and to wait again on condition
         pthread_mutex_lock(&m_pub_queue_mutex);
 
@@ -197,18 +192,6 @@ static void on_mqtt_message_delivered(void *context, MQTTClient_deliveryToken dt
 {
     // Warning : this is called only if Qos is not 0
     LOGI("Message with token %d delivery confirmed\n", dt);
-    for (unsigned int i = 0; i < PUBLISH_QUEUE_SIZE; i++)
-    {
-        if (m_publish_queue[i].token == dt)
-        {
-            // Free the payload
-            free(m_publish_queue[i].payload_p);
-            m_publish_queue[i].payload_p = NULL;
-            return;
-        }
-    }
-    // Token not found
-    LOGE("Message with token %d not found\n", dt);
 }
 
 static int on_message_rx_mqtt(void *context, char *topic, int topic_len, MQTTClient_message *message)
@@ -531,10 +514,7 @@ int main(int argc, char * argv[])
                              m_gateway_id,
                              "test_gw",
                              "v0.1",
-                             "sink0",
-                             MAX_POLL_FAIL_DURATION_S,
-                             FRAGMENT_MAX_DURATION_S
-                             ) != APP_RES_PROTO_OK)
+                             "sink0") != APP_RES_PROTO_OK)
     {
         return -1;
     }
