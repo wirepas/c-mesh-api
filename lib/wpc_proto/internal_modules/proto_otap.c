@@ -179,8 +179,8 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
         && (m_scratchpad_load_current_seq == INVALID_CURRENT_SEQ))
     {
         // Restart the stack, as there is no more load in progress
-        res = WPC_start_stack();
-        if (res != APP_RES_OK)
+        app_res_e restart_res = WPC_start_stack();
+        if (restart_res != APP_RES_OK)
         {
             LOGE("Cannot restart stack after scratchpad update\n");
         }
@@ -190,6 +190,14 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
             LOGI("Upload scratchpad : Stack started\n");
         }
         m_restart_after_load = false;
+
+        if (res == APP_RES_OK && restart_res != APP_RES_OK)
+        {
+            // Overide "main" res only if it was a success
+            // and restart was failling. Otherwise keep the
+            // main res as it is more important
+            res = restart_res;
+        }
     }
 
     Common_Fill_response_header(&resp->header,

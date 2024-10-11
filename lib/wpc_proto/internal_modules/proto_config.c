@@ -840,7 +840,11 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
         if (res != APP_RES_OK)
         {
             LOGE("Stack start failed\n");
-            global_res = APP_RES_INVALID_VALUE;
+            if (global_res == APP_RES_OK)
+            {
+                // Update global_res only if was success
+                global_res = res;
+            }
         }
         else
         {
