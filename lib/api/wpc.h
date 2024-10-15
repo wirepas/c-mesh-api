@@ -7,6 +7,7 @@
 #define WPC_H__
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 /**
@@ -94,7 +95,8 @@ typedef enum
     APP_STACK_NETWORK_ADDRESS_NOT_SET = 2,
     APP_STACK_NODE_ADDRESS_NOT_SET = 4,
     APP_STACK_NETWORK_CHANNEL_NOT_SET = 8,
-    APP_STACK_ROLE_NOT_SET = 16
+    APP_STACK_ROLE_NOT_SET = 16,
+    APP_STACK_APP_DATA_NOT_SET = 32
 } app_stack_state_e;
 
 /**
@@ -1021,8 +1023,8 @@ app_res_e WPC_unregister_from_scan_neighbors_done();
 
 /**
  * \brief   Callback definition to register for stack status event
- * \param   scan_ready
- *          1 if scan is done
+ * \param   status
+ *          0 if stack is started, a positive value if stack is stopped
  */
 typedef void (*onStackStatusReceived_cb_f)(uint8_t status);
 

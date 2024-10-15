@@ -1,4 +1,4 @@
-# Makefile for Wirepas C Mesh API Lib
+# Makefile for Wirepas C Mesh API example
 
 # Toolchain
 CC  := gcc
@@ -7,44 +7,40 @@ LD  := ld
 AR  := ar
 
 # Paths, including trailing path separator
-SOURCEPREFIX   :=
+SOURCEPREFIX   := ./
 BUILDPREFIX    := build/
+
+# This example needs the mesh lib
+MESH_LIB_FOLDER := ../../../lib/
+MESH_LIB := $(MESH_LIB_FOLDER)build/mesh_api_lib.a
 
 # General compiler flags
 CFLAGS  := -std=gnu99 -Wall -Werror -Wenum-conversion
-# Uncomment the following line only if running with an old stack
-#CFLAGS  += -DLEGACY_APP_CONFIG
-
-# Uncomment the following line if you want the per endoint data reception
-#CFLAGS  += -DREGISTER_DATA_PER_ENDPOINT
 
 # Targets definition
-LIB_NAME := mesh_api_lib.a
+MAIN_APP := gw-example
 
-TARGET_LIB := $(BUILDPREFIX)$(LIB_NAME)
+TARGET_APP := $(BUILDPREFIX)$(MAIN_APP)
 
-SOURCES :=
+# Add Api header
+CFLAGS  += -I$(MESH_LIB_FOLDER)api
+# Add pthtread lib as needed by Mesh Lib
+LDFLAGS += -pthread
+# Add paho shared library
+LDFLAGS += -lpaho-mqtt3cs
 
-# Add Api header (including logger)
-CFLAGS  += -Iapi/
+# Add Reentrant flag as using pthread
+CFLAGS  += -D_REENTRANT
 
-# Include platform module sources
-include platform/makefile
-
-# Include WPC generic sources
-include wpc/makefile
-
-ifeq ($(proto_api_support),yes)
-include wpc_proto/makefile
-endif
+# Specific sources for main
+SOURCES:= $(SOURCEPREFIX)main.c
 
 OBJECTS := $(patsubst $(SOURCEPREFIX)%,                     \
-                      $(BUILDPREFIX)%,                      \
-                      $(SOURCES:.c=.o))
+                  $(BUILDPREFIX)%,                          \
+                  $(SOURCES:.c=.o))
 
 # Functions
 
-# Use GCC to automatically generate dependency files for C files.
 # Also create the target directory if it does not exist
 define COMPILE
 	echo "  CC $(2)"
@@ -52,9 +48,9 @@ define COMPILE
 	$(CC) $(CFLAGS) -c -o $(1) $(2)
 endef
 
-define LINK_LIB
+define LINK
 	echo "  Linking $(1)"
-	$(AR) rc -o $(1) $(2)
+	$(CC) $(CFLAGS) -o $(1) $(2) $(MESH_LIB) $(LDFLAGS)
 endef
 
 define CLEAN
@@ -76,16 +72,23 @@ else
 endif
 
 .PHONY: all
-all: lib
+all: app
 
-lib: $(TARGET_LIB)
+app: $(TARGET_APP)
 
 .PHONY: clean
 clean:
 	$(call CLEAN)
+	make -C $(MESH_LIB_FOLDER) clean
+
+$(MESH_LIB): FORCE
+	make -C $(MESH_LIB_FOLDER) proto_api_support=yes
 
 $(BUILDPREFIX)%.o: $(SOURCEPREFIX)%.c
 	$(call COMPILE,$@,$<)
 
-$(TARGET_LIB): $(OBJECTS)
-	$(call LINK_LIB,$@,$^)
+$(BUILDPREFIX)$(MAIN_APP): $(OBJECTS) $(MESH_LIB)
+	$(call LINK,$@,$^)
+
+# Special rule to force other rule to run every time
+FORCE:

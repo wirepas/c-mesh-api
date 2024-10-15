@@ -1,0 +1,2 @@
+wp.SendPacketReq.payload max_size:1500 fixed_length:false 
+wp.PacketReceivedEvent.payload max_size:1500 fixed_length:false
