@@ -207,13 +207,31 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
     return APP_RES_PROTO_OK;
 }
 
-
 app_proto_res_e Proto_otap_handle_process_scratchpad(wp_ProcessScratchpadReq *req,
                                                      wp_ProcessScratchpadResp *resp)
 {
     app_res_e res = APP_RES_OK;
+    uint8_t status;
+    bool restart_after_process = false;
 
     // TODO: Add some sanity checks
+
+    if ((WPC_get_stack_status(&status) == APP_RES_OK)
+        && (status == 0))
+    {
+        /* Stack must be stoped */
+        /* No action required on fail as next step will anyway fail */
+        WPC_set_autostart(0);
+        if (WPC_stop_stack() != APP_RES_OK)
+        {
+            LOGE("Process scratchpad : Stack stop failed\n");
+        }
+        else
+        {
+            LOGI("Process scratchpad : Stack stopped\n");
+        }
+        restart_after_process = true;
+    }
 
     res = WPC_update_local_scratchpad();
     if (res != APP_RES_OK)
@@ -226,9 +244,22 @@ app_proto_res_e Proto_otap_handle_process_scratchpad(wp_ProcessScratchpadReq *re
         res = WPC_stop_stack();
         if (res != APP_RES_OK)
         {
-            LOGE("WPC_stop_stack failed %d", res);
+            LOGE("WPC_stop_stack failed after update %d", res);
         }
-        /* Config will be read back after the restart */
+        else if (restart_after_process)
+        {
+            /* Start the stack */
+            /* Config will be read back after the restart */
+            res = WPC_start_stack();
+            if (res != APP_RES_OK)
+            {
+                LOGE("Stack start failed after reboot %d\n", res);
+            }
+            else
+            {
+                WPC_set_autostart(1);
+            }
+        }
     }
 
     Common_Fill_response_header(&resp->header,
