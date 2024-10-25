@@ -914,7 +914,7 @@ app_proto_res_e Proto_config_handle_get_gateway_info_request(wp_GetGwInfoReq * r
                                 req->header.req_id,
                                 wp_ErrorCode_OK);
 
-    resp->info.current_time_s_epoch = Platform_get_timestamp_ms_epoch();
+    resp->info.current_time_s_epoch = Platform_get_timestamp_ms_epoch() / 1000;
 
     resp->info.has_gw_model = (Common_get_gateway_model() != 0);
     strcpy(resp->info.gw_model, Common_get_gateway_model());
