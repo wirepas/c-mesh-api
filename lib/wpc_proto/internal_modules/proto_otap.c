@@ -106,11 +106,13 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
 
     /* Check parameters */
     /* Sink only supports seq on 8 bits even if gateway api supports up to 32bits value */
-    if (req->seq > 255)
+    if (req->seq > UINT8_MAX)
     {
+        LOGE("Scratchpad sequence number too large\n");
+        
         Common_Fill_response_header(&resp->header,
                                     req->header.req_id,
-                                    Common_convert_error_code(APP_RES_INVALID_SEQ));
+                                    Common_convert_error_code(APP_RES_INVALID_VALUE));
 
         return APP_RES_PROTO_OK;
     }

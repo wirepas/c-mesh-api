@@ -728,56 +728,84 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
         }
     }
 
-    if ( cfg->has_network_address &&
+    if (cfg->has_network_address &&
         (cfg->network_address != m_sink_config.network_address))
     {
-        res = WPC_set_network_address(cfg->network_address);
-        if (res != APP_RES_OK)
+        if (cfg->network_address >= (1ULL << (sizeof(net_addr_t) * 8)) )
         {
-            LOGE("Set network address failed\n");
+            LOGE("Network address value too large\n");
             global_res = APP_RES_INVALID_VALUE;
         }
         else
         {
-            LOGI("Set network address %d\n", cfg->network_address);
-            m_sink_config.network_address = cfg->network_address;
-            config_has_changed = true;
+            res = WPC_set_network_address(cfg->network_address);
+            if (res != APP_RES_OK)
+            {
+                LOGE("Set network address failed\n");
+                global_res = APP_RES_INVALID_VALUE;
+            }
+            else
+            {
+                LOGI("Set network address %d\n", cfg->network_address);
+                m_sink_config.network_address = cfg->network_address;
+                config_has_changed = true;
+            }
         }
     }
 
-    if ( cfg->has_network_channel &&
+    if (cfg->has_network_channel &&
         (cfg->network_channel != m_sink_config.network_channel))
     {
-        res = WPC_set_network_channel(cfg->network_channel);
-        if (res != APP_RES_OK)
+        if (cfg->network_channel >= (1 << (sizeof(net_channel_t) * 8)))
         {
-            LOGE("Set network channel failed\n");
+            LOGE("Network channel value too large\n");
             global_res = APP_RES_INVALID_VALUE;
         }
         else
         {
-            LOGI("Set network channel %d\n", cfg->network_channel);
-            m_sink_config.network_channel = cfg->network_channel;
-            config_has_changed = true;
+            res = WPC_set_network_channel(cfg->network_channel);
+            if (res != APP_RES_OK)
+            {
+                LOGE("Set network channel failed\n");
+                global_res = APP_RES_INVALID_VALUE;
+            }
+            else
+            {
+                LOGI("Set network channel %d\n", cfg->network_channel);
+                m_sink_config.network_channel = cfg->network_channel;
+                config_has_changed = true;
+            }
         }
     }
 
     if (cfg->has_app_config)
     {
-        // no check, just apply it
-        res = WPC_set_app_config_data(cfg->app_config.seq,
-                                      cfg->app_config.diag_interval_s,
-                                      cfg->app_config.app_config_data.bytes,
-                                      cfg->app_config.app_config_data.size);
-        if (res != APP_RES_OK)
+        if (cfg->app_config.seq > UINT8_MAX)
         {
-            LOGE("Set app config failed\n");
+            LOGE("App config sequence value too large\n");
+            global_res = APP_RES_INVALID_VALUE;
+        }
+        else if (cfg->app_config.diag_interval_s > UINT16_MAX)
+        {
+            LOGE("App diagnostic interval value too large\n");
             global_res = APP_RES_INVALID_VALUE;
         }
         else
         {
-            LOGI("Set app config\n");
-            config_has_changed = true;
+            res = WPC_set_app_config_data(cfg->app_config.seq,
+                                          cfg->app_config.diag_interval_s,
+                                          cfg->app_config.app_config_data.bytes,
+                                          cfg->app_config.app_config_data.size);
+            if (res != APP_RES_OK)
+            {
+                LOGE("Set app config failed\n");
+                global_res = APP_RES_INVALID_VALUE;
+            }
+            else
+            {
+                LOGI("Set app config\n");
+                config_has_changed = true;
+            }
         }
     }
 
@@ -812,8 +840,14 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
 
     if (cfg->has_current_ac_range)
     {
-        if ((cfg->current_ac_range.min_ms != m_sink_config.ac_range_min_cur)
-            || (cfg->current_ac_range.max_ms != m_sink_config.ac_range_max_cur))
+        if ((cfg->current_ac_range.min_ms > UINT16_MAX) ||
+            (cfg->current_ac_range.max_ms > UINT16_MAX))
+        {
+            LOGE("AC range values too large\n");
+            global_res = APP_RES_INVALID_VALUE;
+        }
+        else if ((cfg->current_ac_range.min_ms != m_sink_config.ac_range_min_cur) ||
+                 (cfg->current_ac_range.max_ms != m_sink_config.ac_range_max_cur))
         {
             res = WPC_set_access_cycle_range(cfg->current_ac_range.min_ms,
                                              cfg->current_ac_range.max_ms);
@@ -960,6 +994,12 @@ app_proto_res_e Proto_config_handle_set_scratchpad_target_and_action_request(
             }
             else if (req->target_and_action.which_param == wp_TargetScratchpadAndAction_raw_tag)
             {
+                if (req->target_and_action.param.raw > UINT8_MAX)
+                {
+                    LOGE("Raw param value too large\n");
+                    res = APP_RES_INVALID_VALUE;
+                    break;
+                }
                 param = req->target_and_action.param.raw;
             }
             else
@@ -972,6 +1012,12 @@ app_proto_res_e Proto_config_handle_set_scratchpad_target_and_action_request(
         case wp_ScratchpadAction_PROPAGATE_AND_PROCESS :
             if (req->target_and_action.has_target_sequence)
             {
+                if (req->target_and_action.target_sequence > UINT8_MAX)
+                {
+                    LOGE("Target sequence value too large\n");
+                    res = APP_RES_INVALID_VALUE;
+                    break;
+                }
                 seq = req->target_and_action.target_sequence;
             }
             else if (m_sink_config.otap_status.scrat_seq_number != 0)
@@ -987,6 +1033,12 @@ app_proto_res_e Proto_config_handle_set_scratchpad_target_and_action_request(
 
             if (req->target_and_action.has_target_crc)
             {
+                if (req->target_and_action.target_crc > UINT16_MAX)
+                {
+                    LOGE("Target CRC value too large\n");
+                    res = APP_RES_INVALID_VALUE;
+                    break;
+                }
                 crc = req->target_and_action.target_crc;
             }
             else
