@@ -100,10 +100,11 @@ static bool onDataReceived(const uint8_t * bytes,
     /* Release buffer as we don't need it anymore */
     Platform_free(message_PacketReceived_p, sizeof(wp_PacketReceivedEvent));
 
-	if (!status) {
-		LOGE("Encoding failed: %s\n", PB_GET_ERROR(&stream));
-	}
-	else
+    if (!status)
+    {
+        LOGE("Encoding failed: %s\n", PB_GET_ERROR(&stream));
+    }
+    else
 	{
 		LOGI("Msg size %d\n", stream.bytes_written);
         if (m_rx_event_cb != NULL)
@@ -136,18 +137,25 @@ app_proto_res_e Proto_data_handle_send_data(wp_SendPacketReq *req,
 {
     app_res_e res;
 
-    // TODO: Add some sanity checks
-    res = WPC_send_data(req->payload.bytes,
-                        req->payload.size,
-                        0,
-                        req->destination_address,
-                        req->qos,
-                        (uint8_t) req->source_endpoint,
-                        (uint8_t) req->destination_endpoint,
-                        NULL,
-                        0); // No initial delay supported
+    if (req->source_endpoint > UINT8_MAX || req->destination_endpoint > UINT8_MAX)
+    {
+        LOGE("Source or destination endpoint value too large\n");
+        res = APP_RES_INVALID_VALUE;
+    }
+    else
+    {
+        res = WPC_send_data(req->payload.bytes,
+                            req->payload.size,
+                            0,
+                            req->destination_address,
+                            req->qos,
+                            (uint8_t) req->source_endpoint,
+                            (uint8_t) req->destination_endpoint,
+                            NULL,
+                            0);  // No initial delay supported
 
-    LOGI("WPC_send_data res=%d\n", res);
+        LOGI("WPC_send_data res=%d\n", res);
+    }
 
     Common_Fill_response_header(&resp->header,
                                 req->header.req_id,
