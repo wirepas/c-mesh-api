@@ -167,6 +167,11 @@ app_res_e WPC_get_network_address(net_addr_t * addr_p)
 app_res_e WPC_set_network_address(net_addr_t add)
 {
     uint8_t att[4];
+    // Check address is  not bigger than 3 bytes
+    if (add >> 24)
+    {
+        return APP_RES_INVALID_VALUE;
+    }
     uint32_encode_le(add, att);
     int res = csap_attribute_write_request(C_NETWORK_ADDRESS_ID, 3, att);
 
