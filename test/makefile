@@ -83,6 +83,7 @@ app: $(TARGET_APP)
 .PHONY: clean
 clean:
 	$(call CLEAN)
+	make -C $(MESH_LIB_FOLDER) clean
 
 $(MESH_LIB):
 	make -C $(MESH_LIB_FOLDER)

@@ -13,3 +13,13 @@ int Test_runAll();
  * \brief   Test scratchpad functionality
  */
 int Test_scratchpad();
+
+/**
+ * \brief   Returns number of passed test cases
+ */
+int GetPassedTestCount();
+
+/**
+ * \brief   Returns number of failed test cases
+ */
+int GetFailedTestCount();
