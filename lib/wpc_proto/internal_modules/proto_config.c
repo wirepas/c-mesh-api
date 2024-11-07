@@ -731,7 +731,7 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
     if (cfg->has_network_address &&
         (cfg->network_address != m_sink_config.network_address))
     {
-        if (cfg->network_address >= (1ULL << (sizeof(net_addr_t) * 8)) )
+        if (cfg->network_address  > UINT32_MAX)
         {
             LOGE("Network address value too large\n");
             global_res = APP_RES_INVALID_VALUE;
@@ -756,7 +756,7 @@ app_proto_res_e Proto_config_handle_set_config(wp_SetConfigReq *req,
     if (cfg->has_network_channel &&
         (cfg->network_channel != m_sink_config.network_channel))
     {
-        if (cfg->network_channel >= (1 << (sizeof(net_channel_t) * 8)))
+        if (cfg->network_channel > UINT8_MAX)
         {
             LOGE("Network channel value too large\n");
             global_res = APP_RES_INVALID_VALUE;
