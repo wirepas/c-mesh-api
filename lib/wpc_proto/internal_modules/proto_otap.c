@@ -213,6 +213,7 @@ app_proto_res_e Proto_otap_handle_process_scratchpad(wp_ProcessScratchpadReq *re
                                                      wp_ProcessScratchpadResp *resp)
 {
     app_res_e res = APP_RES_OK;
+    app_res_e global_res = APP_RES_OK;
     uint8_t status;
     bool restart_after_process = false;
 
@@ -235,38 +236,44 @@ app_proto_res_e Proto_otap_handle_process_scratchpad(wp_ProcessScratchpadReq *re
         restart_after_process = true;
     }
 
-    res = WPC_update_local_scratchpad();
-    if (res != APP_RES_OK)
+    global_res = WPC_update_local_scratchpad();
+    if (global_res != APP_RES_OK)
     {
-        LOGE("WPC_update_local_scratchpad failed %d\n", res);
+        LOGE("WPC_update_local_scratchpad failed %d\n", global_res);
     }
     else
     {
         /* Node must be rebooted to process the scratchpad */
-        res = WPC_stop_stack();
+        global_res = WPC_stop_stack();
+        if (global_res != APP_RES_OK)
+        {
+            LOGE("WPC_stop_stack failed after update %d", global_res);
+        }
+    }
+
+    if (restart_after_process)
+    {
+        /* Start the stack */
+        /* Config will be read back after the restart */
+        res = WPC_start_stack();
         if (res != APP_RES_OK)
         {
-            LOGE("WPC_stop_stack failed after update %d", res);
+            LOGE("Stack start failed after reboot %d\n", res);
+            if (global_res == APP_RES_OK)
+            {
+                // Update global_res only if was success
+                global_res = res;
+            }
         }
-        else if (restart_after_process)
+        else
         {
-            /* Start the stack */
-            /* Config will be read back after the restart */
-            res = WPC_start_stack();
-            if (res != APP_RES_OK)
-            {
-                LOGE("Stack start failed after reboot %d\n", res);
-            }
-            else
-            {
-                WPC_set_autostart(1);
-            }
+            WPC_set_autostart(1);
         }
     }
 
     Common_Fill_response_header(&resp->header,
                                 req->header.req_id,
-                                Common_convert_error_code(res));
+                                Common_convert_error_code(global_res));
 
     return APP_RES_PROTO_OK;
 }
