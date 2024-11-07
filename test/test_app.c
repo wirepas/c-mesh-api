@@ -41,5 +41,8 @@ int main(int argc, char * argv[])
     Test_scratchpad();
 
     WPC_close();
-    return 0;
+
+    LOGI("Test summary: Passed: %d, Failed: %d\n", GetPassedTestCount(), GetFailedTestCount());
+
+    return GetFailedTestCount();
 }

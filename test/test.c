@@ -13,6 +13,9 @@
 
 #include "wpc.h"
 
+static int passedTestCount = 0;
+static int failedTestCount = 0;
+
 static bool setInitialState(app_role_t role,
                             app_addr_t id,
                             net_addr_t network_add,
@@ -611,8 +614,8 @@ bool testClearScratchpad()
 #define BLOCK_SIZE 128
 #define SEQ_NUMBER 50
 
-#define OTAP_UPLOAD_FILE_PATH "source/test/scratchpad_nrf52_upload.otap"
-#define OTAP_DOWNLOAD_FILE_PATH "source/test/scratchpad_nrf52_download.otap"
+#define OTAP_UPLOAD_FILE_PATH "otap_files/dummy.otap"
+#define OTAP_DOWNLOAD_FILE_PATH "otap_files/downloaded.otap"
 
 bool testUploadScratchpad()
 {
@@ -741,9 +744,15 @@ bool testDownloadScratchpad()
         uint8_t block_size = (remaining > BLOCK_SIZE) ? BLOCK_SIZE : remaining;
 
         /* Receive the block */
-        if (WPC_download_local_scratchpad(block_size, block, read) != APP_RES_OK)
+        const app_res_e download_res = WPC_download_local_scratchpad(block_size, block, read);
+        if (download_res != APP_RES_OK)
         {
             LOGE("Cannot download scratchpad block\n");
+            if (download_res == APP_RES_ACCESS_DENIED)
+            {
+                LOGE("Access denied when downloading scratchpad block. "
+                     "Make sure the dual MCU application was built with scratchpad reading enabled.\n");
+            }
             break;
         }
 
@@ -860,12 +869,24 @@ static bool testStackStatus()
         if (_test_func_() != _expected_result_)       \
         {                                             \
             LOGE("### Test is FAIL\n\n");             \
+            failedTestCount++;                        \
         }                                             \
         else                                          \
         {                                             \
             LOGI("### Test is PASS\n\n");             \
+            passedTestCount++;                        \
         }                                             \
     } while (0)
+
+int GetPassedTestCount()
+{
+    return passedTestCount;
+}
+
+int GetFailedTestCount()
+{
+    return failedTestCount;
+}
 
 int Test_runAll()
 {
