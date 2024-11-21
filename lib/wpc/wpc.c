@@ -525,7 +525,7 @@ app_res_e WPC_get_sink_cost(uint8_t * cost_p)
     return convert_error_code(SINK_COST_ERROR_CODE_LUT, res);
 }
 
-static bool get_statck_status(uint16_t timeout_s)
+static bool get_stack_status(uint16_t timeout_s)
 {
     uint8_t status;
     app_res_e res = APP_RES_INTERNAL_ERROR;
@@ -582,7 +582,7 @@ app_res_e WPC_start_stack(void)
     // of service but let's poll for it to be symmetric with stop
     // and for some reason it was seen on some platforms that the
     // first request following a start is lost
-    if (!get_statck_status(2))
+    if (!get_stack_status(2))
     {
         return APP_RES_INTERNAL_ERROR;
     }
@@ -623,7 +623,7 @@ app_res_e WPC_stop_stack(void)
         // A stop of the stack will reboot the device
         // Wait for the stack to be up again
         // It can be quite long in case a scratchpad is processed
-        if (!get_statck_status(m_timeout_after_stop_task_s))
+        if (!get_stack_status(m_timeout_after_stop_task_s))
         {
             f_res = APP_RES_INTERNAL_ERROR;
         }
