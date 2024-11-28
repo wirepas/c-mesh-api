@@ -975,11 +975,15 @@ app_proto_res_e Proto_config_handle_set_scratchpad_target_and_action_request(
 
     // TODO: Add some sanity checks
 
+    LOGI("Set scratchpad target and action request received with action: %d\n",
+         req->target_and_action.action);
+
     switch (req->target_and_action.action) {
 
         case wp_ScratchpadAction_NO_OTAP :
             res = WPC_write_target_scratchpad(0, 0, 0, 0);
-            LOGI("Target and action pushed NoOtap\n", res);
+            // Read otap variable back to be sure everything is updated
+            initialize_otap_variables();
             break;
 
         case wp_ScratchpadAction_PROPAGATE_AND_PROCESS_WITH_DELAY :
