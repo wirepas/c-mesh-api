@@ -75,7 +75,7 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
                    "Max proto size too low");
     _Static_assert(WPC_PROTO_MAX_RESPONSE_SIZE >= (wp_UploadScratchpadResp_size + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD),
                    "Max proto size too low");
-                   
+
     _Static_assert(WPC_PROTO_MAX_EVENTSTATUS_SIZE >= (wp_StatusEvent_size + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD),
                    "Max proto size too low");
 
