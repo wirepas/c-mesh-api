@@ -202,12 +202,28 @@ bool dsap_register_for_data(onDataReceived_cb_f onDataReceived);
 bool dsap_unregister_for_data();
 #endif
 
+bool dsap_register_downlink_data_hook(onDownlinkTrafficReceived_cb_f onDownlinkDataCb);
+
+bool dsap_unregister_downlink_data_hook();
+
 /**
  * \brief   Set maximum duration to keep fragment in our buffer until packet is ful
  * \param   fragment_max_duration_s
  *          Maximum time in s to keep fragments from incomplete packets inside our buffers
  */
 bool dsap_set_max_fragment_duration(unsigned int fragment_max_duration_s);
+
+
+void dsap_data_inject_uplink_data(const uint8_t * bytes,
+                                  size_t num_bytes,
+                                  app_addr_t src_addr,
+                                  app_addr_t dst_addr,
+                                  app_qos_e qos,
+                                  uint8_t src_ep,
+                                  uint8_t dst_ep,
+                                  uint32_t travel_time,
+                                  int8_t hop_count,
+                                  unsigned long long timestamp_ms_epoch);
 
 /**
  * \brief   Initialize the dsap module

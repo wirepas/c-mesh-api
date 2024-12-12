@@ -12,6 +12,7 @@
 #include <pthread.h>
 
 #include "wpc_proto.h"
+#include "meter_hook.h"
 
 #include "MQTTClient.h"
 
@@ -110,7 +111,6 @@ static bool MQTT_publish(char * topic, uint8_t * payload, size_t payload_size, b
             pthread_cond_signal(&m_pub_queue_not_empty_cond);
             m_pub_queue_empty = false;
             ret = true;
-  
         }
     }
 
@@ -540,10 +540,14 @@ int main(int argc, char * argv[])
 
     LOGI("Starting gw with id %s on host %s\n", gateway_id, mqtt_host);
 
-    for (;;)
-    {
-        sleep(2);
-    }
+    Meter_Hook_init(123456);
+
+    Meter_Hook_start();
+
+    // for (;;)
+    // {
+    //     sleep(2);
+    // }
 
     LOGE("End of program\n");
 }
