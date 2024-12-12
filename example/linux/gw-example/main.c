@@ -13,6 +13,7 @@
 #include <pthread.h>
 
 #include "wpc_proto.h"
+#include "meter_hook.h"
 
 #include "MQTTClient.h"
 
@@ -120,7 +121,6 @@ static bool MQTT_publish(char * topic, uint8_t * payload, size_t payload_size, b
             pthread_cond_signal(&m_pub_queue_not_empty_cond);
             m_pub_queue_empty = false;
             ret = true;
-  
         }
     }
 
@@ -360,7 +360,7 @@ static bool MQTT_connect(uint32_t timeout_s,
 
     MQTTClient_init_options global_init_options = MQTTClient_init_options_initializer;
     global_init_options.do_openssl_init = true;
-    
+
     snprintf(topic_all_requests, sizeof(topic_all_requests), "gw-request/+/%s/#", m_gateway_id);
 
     MQTTClient_global_init(&global_init_options);

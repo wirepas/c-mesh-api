@@ -24,6 +24,8 @@ TARGET_APP := $(BUILDPREFIX)$(MAIN_APP)
 
 # Add Api header
 CFLAGS  += -I$(MESH_LIB_FOLDER)api
+# Add platform api too
+CFLAGS  += -I$(MESH_LIB_FOLDER)platform
 # Add pthtread lib as needed by Mesh Lib
 LDFLAGS += -pthread
 # Add paho shared library
@@ -34,6 +36,7 @@ CFLAGS  += -D_REENTRANT
 
 # Specific sources for main
 SOURCES:= $(SOURCEPREFIX)main.c
+SOURCES+= $(SOURCEPREFIX)meter_hook.c
 
 OBJECTS := $(patsubst $(SOURCEPREFIX)%,                     \
                   $(BUILDPREFIX)%,                          \
