@@ -1045,4 +1045,38 @@ app_res_e WPC_register_for_stack_status(onStackStatusReceived_cb_f onStackStatus
  */
 app_res_e WPC_unregister_from_stack_status();
 
+/**
+ * \brief  Inject uplink traffic as if it was received from Wirepas Network
+ */
+app_res_e WPC_inject_uplink_data(const uint8_t * bytes,
+                                 size_t num_bytes,
+                                 app_addr_t src_addr,
+                                 app_addr_t dst_addr,
+                                 app_qos_e qos,
+                                 uint8_t src_ep,
+                                 uint8_t dst_ep,
+                                 uint32_t travel_time,
+                                 int8_t hop_count,
+                                 unsigned long long timestamp_ms_epoch);
+
+/**
+ * \brief   Callback definition to register for stack status event
+ * \param   data
+ *          The downlink traffic
+ * \return  True if data was intercepted, false otherwise
+ */
+typedef bool (*onDownlinkTrafficReceived_cb_f)(app_message_t * data_p);
+
+/**
+ * \brief   Register for being able to intercept downlink traffic
+ *          before being sent to wirepas network
+ * \param   onDownlinkDataCb
+ *          The callback to be called when downlink traffic is received
+ * \note    The callback will decide if message must be propagated or not.
+ *          If not propagated, up to the interceptor to consume it
+ */
+app_res_e WPC_register_downlink_data_hook(onDownlinkTrafficReceived_cb_f onDownlinkDataCb);
+
+app_res_e WPC_unregister_downlink_data_hook();
+
 #endif
