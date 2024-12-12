@@ -438,7 +438,7 @@ static app_res_e set_key_pair(uint16_t attribute_id, const uint8_t * value)
 {
     int res = csap_attribute_write_request(attribute_id, sizeof(wpc_key_pair_t), value);
     return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
-} 
+}
 
 
 app_res_e WPC_set_network_key_pair(const wpc_key_pair_t * key_pair)
@@ -1146,6 +1146,7 @@ static const app_res_e SEND_DATA_ERROR_CODE_LUT[] = {
     APP_RES_INVALID_VALUE,     // 9
     APP_RES_ACCESS_DENIED      // 10
 };
+
 app_res_e WPC_send_data_with_options(const app_message_t * message_t)
 {
     int res;
@@ -1350,4 +1351,41 @@ app_res_e WPC_register_for_config_data_item(onConfigDataItemReceived_cb_f onConf
 app_res_e WPC_unregister_from_config_data_item()
 {
     return msap_unregister_from_config_data_item() ? APP_RES_OK : APP_RES_INVALID_VALUE;
+}
+
+app_res_e WPC_inject_uplink_data(const uint8_t * bytes,
+                                 size_t num_bytes,
+                                 app_addr_t src_addr,
+                                 app_addr_t dst_addr,
+                                 app_qos_e qos,
+                                 uint8_t src_ep,
+                                 uint8_t dst_ep,
+                                 uint32_t travel_time,
+                                 int8_t hop_count,
+                                 unsigned long long timestamp_ms_epoch)
+{
+    // Call directly the dsap handler.
+    // This code is not executed from dispatch thread, but it shouldn't be an issue for now.
+    dsap_data_inject_uplink_data(bytes,
+                                 num_bytes,
+                                 src_addr,
+                                 dst_addr,
+                                 qos,
+                                 src_ep,
+                                 dst_ep,
+                                 travel_time,
+                                 hop_count,
+                                 timestamp_ms_epoch);
+
+    return APP_RES_OK;
+}
+
+app_res_e WPC_register_downlink_data_hook(onDownlinkTrafficReceived_cb_f onDownlinkDataCb)
+{
+    return dsap_register_downlink_data_hook(onDownlinkDataCb) ? APP_RES_OK : APP_RES_INVALID_VALUE;
+}
+
+app_res_e WPC_unregister_downlink_data_hook()
+{
+    return dsap_unregister_downlink_data_hook() ? APP_RES_OK : APP_RES_INVALID_VALUE;
 }

@@ -21,6 +21,8 @@ static onDataReceived_cb_f data_cb_table[MAX_NUMBER_EP];
 static onDataReceived_cb_f m_data_cb;
 #endif
 
+static onDownlinkTrafficReceived_cb_f m_data_hook_downlink_cb;
+
 typedef struct
 {
     onDataSent_cb_f cb;
@@ -164,6 +166,35 @@ int dsap_data_tx_request(const uint8_t * buffer,
     // Packet id used for fragmented packet
     static uint16_t packet_id = 0;
     uint8_t max_data_pdu_size = WPC_Int_get_mtu();
+
+    // Check if a hook is present and offer it first
+    if (m_data_hook_downlink_cb)
+    {
+        app_message_t message = (app_message_t) {
+            .bytes = buffer,
+            .dst_addr = dest_add,
+            .on_data_sent_cb = NULL,
+            .buffering_delay = buffering_delay,
+            .pdu_id = pdu_id,
+            .num_bytes = len,
+            .src_ep = src_ep,
+            .dst_ep = dest_ep,
+            .hop_limit = hop_limit,
+            .qos = qos,
+            .is_unack_csma_ca = is_unack_csma_ca
+        };
+
+        if (m_data_hook_downlink_cb(&message))
+        {
+            // Message was hooked, call the callback directly
+            LOGI("Message hooked for add %u\n", dest_add);
+            if (dest_add != APP_ADDR_BROADCAST)
+            {
+                // If dest is not Broadcast, stop propagation
+                return APP_RES_OK;
+            }
+        }
+    }
 
     if (len > MAX_FULL_PACKET_SIZE)
     {
@@ -387,6 +418,42 @@ void dsap_data_rx_frag_indication_handler(dsap_data_rx_frag_ind_pl_t * payload,
 
 }
 
+void dsap_data_inject_uplink_data(const uint8_t * bytes,
+                                  size_t num_bytes,
+                                  app_addr_t src_addr,
+                                  app_addr_t dst_addr,
+                                  app_qos_e qos,
+                                  uint8_t src_ep,
+                                  uint8_t dst_ep,
+                                  uint32_t travel_time,
+                                  int8_t hop_count,
+                                  unsigned long long timestamp_ms_epoch)
+{
+    onDataReceived_cb_f cb;
+#ifdef REGISTER_DATA_PER_ENDPOINT
+    cb = data_cb_table[payload->dest_endpoint];
+#else
+    cb = m_data_cb;
+#endif
+    if (cb == NULL)
+    {
+        // No cb registered
+        return;
+    }
+
+    // Call the registered callback
+    cb(bytes,
+       num_bytes,
+       src_addr,
+       dst_addr,
+       qos,
+       src_ep,
+       dst_ep,
+       travel_time,
+       hop_count,
+       timestamp_ms_epoch);
+}
+
 void dsap_data_rx_indication_handler(dsap_data_rx_ind_pl_t * payload,
                                      unsigned long long timestamp_ms_epoch)
 {
@@ -481,6 +548,18 @@ bool dsap_unregister_for_data()
     return true;
 }
 #endif
+
+bool dsap_register_downlink_data_hook(onDownlinkTrafficReceived_cb_f onDownlinkDataCb)
+{
+    m_data_hook_downlink_cb = onDownlinkDataCb;
+    return true;
+}
+
+bool dsap_unregister_downlink_data_hook()
+{
+    m_data_hook_downlink_cb = NULL;
+    return true;
+}
 
 bool dsap_set_max_fragment_duration(unsigned int fragment_max_duration_s)
 {
