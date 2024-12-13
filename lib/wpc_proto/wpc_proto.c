@@ -25,8 +25,6 @@
 // Max possible size of encoded message
 #define MAX_PROTOBUF_SIZE WP_CONFIG_MESSAGE_PB_H_MAX_SIZE
 
-/* max default delay to keep incomplete fragmented packet inside our buffers */
-#define FRAGMENT_MAX_DURATION_S    45
 /* max default delay for poll fail duration */
 /* 120s should cover most scratchpad exchanges and image processing. Sink is
    not answearing during that time */
@@ -113,11 +111,11 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
 
 void WPC_Proto_close()
 {
+    WPC_close();
     WPC_unregister_from_stack_status();
     Proto_otap_close();
     Proto_config_close();
     Proto_data_close();
-    WPC_close();
 }
 
 app_proto_res_e WPC_Proto_register_for_data_rx_event(onDataRxEvent_cb_f onDataRxEvent_cb)
