@@ -5,6 +5,7 @@
  */
 
 #include <getopt.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,6 +44,10 @@ static pthread_t m_thread_publish;
 static pthread_mutex_t m_pub_queue_mutex;
 static pthread_cond_t m_pub_queue_not_empty_cond = PTHREAD_COND_INITIALIZER;
 
+static char topic_all_requests[16 + sizeof(m_gateway_id)];  //"gw-request/+/<gateway_id/#"
+
+static volatile bool running = true;
+
 // Statically allocated but could be mallocated
 typedef struct
 {
@@ -68,6 +73,11 @@ static bool m_pub_queue_empty = true;
 
 
 static MQTTClient m_client = NULL;
+
+static void signal_handler(int signum)
+{
+    running = false;
+}
 
 static bool MQTT_publish(char * topic, uint8_t * payload, size_t payload_size, bool retained)
 {
@@ -242,7 +252,6 @@ static bool reconnect(uint32_t timeout_s)
     int rc;
     size_t proto_size;
     char topic_status[sizeof(TOPIC_EVENT_PREFIX) + sizeof(m_gateway_id) + 1];
-    char topic_all_requests[16 + sizeof(m_gateway_id)]; //"gw-request/+/<gateway_id/#"
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
     MQTTClient_willOptions will_options = MQTTClient_willOptions_initializer;
     MQTTClient_SSLOptions ssl_options = MQTTClient_SSLOptions_initializer;
@@ -289,11 +298,6 @@ static bool reconnect(uint32_t timeout_s)
              TOPIC_EVENT_PREFIX,
              m_gateway_id);
 
-    snprintf(topic_all_requests,
-             sizeof(topic_all_requests),
-             "gw-request/+/%s/#",
-             m_gateway_id);
-
     while (timeout_s > 0)
     {
         if ((rc = MQTTClient_connect(m_client, &conn_opts)) == MQTTCLIENT_SUCCESS)
@@ -331,6 +335,17 @@ static bool reconnect(uint32_t timeout_s)
     return true;
 }
 
+static bool mqtt_unsubscribe_topics(void)
+{
+    if (MQTTClient_unsubscribe(m_client, topic_all_requests) != MQTTCLIENT_SUCCESS)
+    {
+        LOGE("Failed to unsubscribe from topic %s\n", topic_all_requests);
+        return false;
+    }
+    LOGI("Successfully unsubscribed from topic %s\n", topic_all_requests);
+    return true;
+}
+
 static void on_mqtt_connection_lost(void *context, char *cause)
 {
     LOGE("Connection lost\n");
@@ -345,6 +360,8 @@ static bool MQTT_connect(uint32_t timeout_s,
 
     MQTTClient_init_options global_init_options = MQTTClient_init_options_initializer;
     global_init_options.do_openssl_init = true;
+    
+    snprintf(topic_all_requests, sizeof(topic_all_requests), "gw-request/+/%s/#", m_gateway_id);
 
     MQTTClient_global_init(&global_init_options);
 
@@ -433,6 +450,9 @@ int main(int argc, char * argv[])
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
+
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
 
     // Parse the arguments
     static struct option long_options[]
@@ -540,10 +560,19 @@ int main(int argc, char * argv[])
 
     LOGI("Starting gw with id %s on host %s\n", gateway_id, mqtt_host);
 
-    for (;;)
+    while (running)
     {
         sleep(2);
     }
 
-    LOGE("End of program\n");
+    LOGI("Clean exit requested\n");
+    mqtt_unsubscribe_topics();
+    WPC_Proto_close();
+    if (MQTTClient_disconnect(m_client, 10000) != MQTTCLIENT_SUCCESS)
+    {
+        LOGE("MQTT failed to disconnect\n");
+    }
+    MQTTClient_destroy(&m_client);
+    pthread_mutex_destroy(&m_pub_queue_mutex);
+    LOGI("Clean exit completed\n");
 }

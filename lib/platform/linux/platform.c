@@ -3,6 +3,7 @@
  * See file LICENSE for full license details.
  *
  */
+#include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -14,6 +15,8 @@
 #define MAX_LOG_LEVEL INFO_LOG_LEVEL
 #include "logger.h"
 #include "platform.h"
+#include "reassembly.h"
+#include "wpc_proto.h"
 
 // Maximum number of indication to be retrieved from a single poll
 #define MAX_NUMBER_INDICATION 30
@@ -27,8 +30,14 @@ static pthread_mutex_t sending_mutex;
 // This thread is used to poll for indication
 static pthread_t thread_polling;
 
-// Set to false to stop polling thread execution
-static bool m_polling_thread_running;
+typedef enum {
+    POLLING_THREAD_RUN,
+    POLLING_THREAD_STOP,
+    POLLING_THREAD_STOP_REQUESTED
+} polling_thread_state_t;
+
+// Request to handle polling thread state
+static polling_thread_state_t m_polling_thread_state_request = POLLING_THREAD_STOP;
 
 // This thread is used to dispatch indication
 static pthread_t thread_dispatch;
@@ -170,9 +179,32 @@ static void * poll_for_indication(void * unused)
     // Initially wait for 500ms before any polling
     uint32_t wait_before_next_polling_ms = 500;
 
-    while (m_polling_thread_running)
+    m_polling_thread_state_request = POLLING_THREAD_RUN;
+
+    while (m_polling_thread_state_request != POLLING_THREAD_STOP)
     {
         usleep(wait_before_next_polling_ms * 1000);
+
+        if(m_polling_thread_state_request == POLLING_THREAD_STOP_REQUESTED)
+        {
+            if (!m_queue_empty)
+            {
+                // Dispatch did not process all indications. Just wait for it to complete.
+                wait_before_next_polling_ms = POLLING_INTERVAL_MS;
+                continue;
+            }
+
+            if (reassembly_is_queue_empty())
+            {
+                LOGI("Reassembly queue is empty, exiting polling thread\n");
+                m_polling_thread_state_request = POLLING_THREAD_STOP;
+                break;
+            }
+            else
+            {
+                reassembly_garbage_collect(FRAGMENT_MAX_DURATION_S);
+            }
+        }
 
         // Get the number of free buffers in the indication queue
         // Note: No need to lock the queue as only m_ind_queue_read can be updated
@@ -207,16 +239,26 @@ static void * poll_for_indication(void * unused)
                 free_buffer_room = m_ind_queue_read - m_ind_queue_write;
             }
         }
-
-        max_num_indication = free_buffer_room > MAX_NUMBER_INDICATION ?
-                                 MAX_NUMBER_INDICATION :
-                                 free_buffer_room;
+                  
+        if (m_polling_thread_state_request == POLLING_THREAD_STOP_REQUESTED)
+        {
+            // In case we are about to stop, let's poll only one by one to have more chance to
+            // finish uncomplete fragmented packet and not start to receive a new one
+            max_num_indication = 1;
+            LOGD("Poll for one more fragment to empty reassembly queue\n");
+        }
+        else
+        {
+            // Let's read max indications that can fit in the queue
+            max_num_indication = MIN(MAX_NUMBER_INDICATION, free_buffer_room);
+        }
 
         LOGD("Poll for %d indications\n", max_num_indication);
 
         get_ind_res = m_get_indication_f(max_num_indication, onIndicationReceivedLocked);
 
-        if (get_ind_res == 1)
+        if ((get_ind_res == 1)
+            && (m_polling_thread_state_request != POLLING_THREAD_STOP_REQUESTED))
         {
             // Still pending indication, only wait 1 ms to give a chance
             // to other threads but not more to have better throughput
@@ -226,6 +268,7 @@ static void * poll_for_indication(void * unused)
         {
             // In case of error or if no more indication, just wait
             // the POLLING INTERVAL to avoid polling all the time
+            // In case of stop request, wait for to give time to push data received
             wait_before_next_polling_ms = POLLING_INTERVAL_MS;
         }
     }
@@ -242,7 +285,14 @@ bool Platform_lock_request()
     {
         // It must never happen but add a check and
         // return to avoid a deadlock
-        LOGE("Mutex already locked %d\n", res);
+        if (res == EINVAL)
+        {
+            LOGW("Mutex no longer exists (destroyed)\n");
+        }
+        else
+        {
+            LOGE("Mutex lock failed %d\n", res);
+        }
         return false;
     }
     return true;
@@ -320,7 +370,6 @@ bool Platform_init(Platform_get_indication_f get_indication_f,
         goto error2;
     }
 
-    m_polling_thread_running = true;
     // Start a thread to poll for indication
     if (pthread_create(&thread_polling, NULL, poll_for_indication, NULL) != 0)
     {
@@ -352,21 +401,23 @@ void Platform_close()
 {
     void * res;
     pthread_t cur_thread = pthread_self();
-    // Signal our dispatch thread to stop
-    m_dispatch_thread_running = false;
-    // Signal condition to wakeup thread
-    pthread_cond_signal(&m_queue_not_empty_cond);
 
     // Signal our polling thread to stop
     // No need to signal it as it will wakeup periodically
-    m_polling_thread_running = false;
+    m_polling_thread_state_request = POLLING_THREAD_STOP_REQUESTED;
 
-    // Wait for both tread to finish
+    // Wait for polling tread to finish
     if (cur_thread != thread_polling)
     {
         pthread_join(thread_polling, &res);
     }
 
+    // Signal our dispatch thread to stop
+    m_dispatch_thread_running = false;
+    // Signal condition to wakeup thread
+    pthread_cond_signal(&m_queue_not_empty_cond);
+
+    // Wait for dispatch tread to finish
     if (cur_thread != thread_dispatch)
     {
         pthread_join(thread_dispatch, &res);
