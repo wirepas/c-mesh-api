@@ -229,6 +229,11 @@ void reassembly_init()
     // Nothing to do at the moment
 }
 
+bool reassembly_is_queue_empty(void)
+{
+    return HASH_COUNT(m_packets) == 0;
+}
+
 bool reassembly_add_fragment(reassembly_fragment_t * frag, size_t * full_size_p)
 {
     full_packet_t *full_packet_p;
