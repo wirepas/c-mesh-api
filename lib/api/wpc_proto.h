@@ -10,12 +10,17 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/**
+ * Max default delay to keep incomplete fragmented packet inside our buffers
+ */
+#define FRAGMENT_MAX_DURATION_S 45
 
 /**
  * Max possible overhead estimation for wp_GenericMessage
  * compared to specific single message. Should be added to
  * size of single message to estimate the max sized occupied
- * by the full proto encoded message */
+ * by the full proto encoded message
+ */
 #define WPC_PROTO_GENERIC_MESSAGE_OVERHEAD 20
 
 /*

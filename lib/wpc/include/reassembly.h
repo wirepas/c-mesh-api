@@ -28,6 +28,12 @@ typedef struct {
 void reassembly_init();
 
 /**
+ * \brief   Check queue emptyness
+ * \return  true if empty, false otherwise
+ */
+bool reassembly_is_queue_empty(void);
+
+/**
  * \brief   Add fragment to an existing full message
  *          Full message holder will be created if first fragment
  * \param   frag
