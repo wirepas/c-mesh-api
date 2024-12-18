@@ -263,9 +263,6 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
 
             res = Proto_otap_handle_upload_scratchpad(wp_message_req_p->upload_scratchpad_req,
                                                     upload_scratchpad_resp_p);
-
-            /* Update parameters */
-            Proto_config_refresh_otap_infos();
         }
     }
     else if (wp_message_req_p->process_scratchpad_req)
