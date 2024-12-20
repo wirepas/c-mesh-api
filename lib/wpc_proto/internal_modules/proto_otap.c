@@ -65,6 +65,13 @@ static app_res_e handle_scratchpad_chunk(uint8_t * chunk,
 
         m_scratchpad_load_current_seq = seq;
         res = WPC_start_local_scratchpad_update(total_size, seq);
+        
+        /* Force parameters update */
+        if (!m_restart_after_load)
+        {
+            Proto_config_refresh_otap_infos();
+        }
+
         if (res != APP_RES_OK)
         {
             m_scratchpad_load_current_seq = INVALID_CURRENT_SEQ;
@@ -93,6 +100,12 @@ static app_res_e handle_scratchpad_chunk(uint8_t * chunk,
     {
         /* Yes it is */
         m_scratchpad_load_current_seq = INVALID_CURRENT_SEQ;
+
+        /* Force parameters update */
+        if (!m_restart_after_load)
+        {
+            Proto_config_refresh_otap_infos();
+        }
     }
 
     return APP_RES_OK;
@@ -160,6 +173,12 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
                 LOGE("Upload scratchpad failed %d: with seq %d of size %d\n", res, req->seq, req->scratchpad.size);
             }
             m_scratchpad_load_current_seq = INVALID_CURRENT_SEQ;
+
+            /* Force parameters update */
+            if (!m_restart_after_load)
+            {
+                Proto_config_refresh_otap_infos();
+            }
         }
     }
     else
