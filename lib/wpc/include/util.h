@@ -7,6 +7,32 @@
 #define UTIL_H__
 
 /**
+ * \brief   Get the maximum value between two parameters
+ * \param   a First value to compare
+ * \param   b Second value to compare
+ * \return  The highest value between a and b
+ */
+#define MAX(a, b)                                                              \
+    ({                                                                         \
+        __typeof__(a) _a = (a);                                                \
+        __typeof__(b) _b = (b);                                                \
+        _a > _b ? _a : _b;                                                     \
+    })
+    
+/**
+ * \brief   Get the minimum value between two parameters  
+ * \param   a First value to compare
+ * \param   b Second value to compare
+ * \return  The lowest value between a and b
+ */
+#define MIN(a, b)                                                              \
+    ({                                                                         \
+        __typeof__(a) _a = (a);                                                \
+        __typeof__(b) _b = (b);                                                \
+        _a < _b ? _a : _b;                                                     \
+    })
+
+/**
  * \brief   Function for encoding a uint16 value in Little endian.
  * \param   value
  *          Value to be encoded.
