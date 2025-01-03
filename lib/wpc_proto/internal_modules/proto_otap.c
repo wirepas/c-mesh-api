@@ -14,6 +14,7 @@
 #include <pb_encode.h>
 #include <pb_decode.h>
 #include "platform.h"
+#include "platform_custom.h"
 #include "common.h"
 
 #define LOG_MODULE_NAME "otap_proto"
@@ -26,7 +27,7 @@
 // for uploading chunks of scratchpad
 static uint32_t m_scratchpad_load_current_seq = INVALID_CURRENT_SEQ;
 
-static bool m_restart_after_load = false;
+//static bool m_restart_after_load = false;
 
 bool Proto_otap_init(void)
 {
@@ -64,13 +65,14 @@ static app_res_e handle_scratchpad_chunk(uint8_t * chunk,
         }
 
         m_scratchpad_load_current_seq = seq;
-        res = WPC_start_local_scratchpad_update(total_size, seq);
-        
+        //res = WPC_start_local_scratchpad_update(total_size, seq);
+        res = Platform_start_gateway_update(total_size);
+
         /* Force parameters update */
-        if (!m_restart_after_load)
-        {
-            Proto_config_refresh_otap_infos();
-        }
+        // if (!m_restart_after_load)
+        // {
+        //     Proto_config_refresh_otap_infos();
+        // }
 
         if (res != APP_RES_OK)
         {
@@ -89,7 +91,8 @@ static app_res_e handle_scratchpad_chunk(uint8_t * chunk,
     }
 
     /* Load the chunk */
-    res = WPC_upload_local_block_scratchpad(chunk_size, chunk, offset);
+    //res = WPC_upload_local_block_scratchpad(chunk_size, chunk, offset);
+    res = Platform_gateway_update_upload_chunk(chunk_size, chunk, offset);
     if (res != APP_RES_OK)
     {
         return res;
@@ -102,10 +105,10 @@ static app_res_e handle_scratchpad_chunk(uint8_t * chunk,
         m_scratchpad_load_current_seq = INVALID_CURRENT_SEQ;
 
         /* Force parameters update */
-        if (!m_restart_after_load)
-        {
-            Proto_config_refresh_otap_infos();
-        }
+        // if (!m_restart_after_load)
+        // {
+        //     Proto_config_refresh_otap_infos();
+        // }
     }
 
     return APP_RES_OK;
@@ -115,7 +118,7 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
                                                     wp_UploadScratchpadResp *resp)
 {
     app_res_e res = APP_RES_OK;
-    uint8_t status;
+    //uint8_t status;
 
     /* Check parameters */
     /* Sink only supports seq on 8 bits even if gateway api supports up to 32bits value */
@@ -130,22 +133,22 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
         return APP_RES_PROTO_OK;
     }
 
-    if ((WPC_get_stack_status(&status) == APP_RES_OK)
-        && (status == 0))
-    {
-        /* Stack must be stoped */
-        /* No action required on fail as next step will anyway fail */
-        WPC_set_autostart(0);
-        if (WPC_stop_stack() != APP_RES_OK)
-        {
-            LOGE("Upload scratchpad : Stack stop failed\n");
-        }
-        else
-        {
-            LOGI("Upload scratchpad : Stack stopped\n");
-        }
-        m_restart_after_load = true;
-    }
+    // if ((WPC_get_stack_status(&status) == APP_RES_OK)
+    //     && (status == 0))
+    // {
+    //     /* Stack must be stoped */
+    //     /* No action required on fail as next step will anyway fail */
+    //     WPC_set_autostart(0);
+    //     if (WPC_stop_stack() != APP_RES_OK)
+    //     {
+    //         LOGE("Upload scratchpad : Stack stop failed\n");
+    //     }
+    //     else
+    //     {
+    //         LOGI("Upload scratchpad : Stack stopped\n");
+    //     }
+    //     m_restart_after_load = true;
+    // }
 
     if(req->has_scratchpad)
     {
@@ -161,24 +164,24 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
         else
         {
             /* Send the full file to the sink */
-            res = WPC_upload_local_scratchpad(req->scratchpad.size,
-                                              req->scratchpad.bytes,
-                                              req->seq);
-            if (res == APP_RES_OK)
-            {
-                LOGI("Scratchpad uploaded : with seq %d of size %d\n", req->seq, req->scratchpad.size);
-            }
-            else
-            {
-                LOGE("Upload scratchpad failed %d: with seq %d of size %d\n", res, req->seq, req->scratchpad.size);
-            }
+            // res = WPC_upload_local_scratchpad(req->scratchpad.size,
+            //                                   req->scratchpad.bytes,
+            //                                   req->seq);
+            // if (res == APP_RES_OK)
+            // {
+            //     LOGI("Scratchpad uploaded : with seq %d of size %d\n", req->seq, req->scratchpad.size);
+            // }
+            // else
+            // {
+            //     LOGE("Upload scratchpad failed %d: with seq %d of size %d\n", res, req->seq, req->scratchpad.size);
+            // }
             m_scratchpad_load_current_seq = INVALID_CURRENT_SEQ;
 
-            /* Force parameters update */
-            if (!m_restart_after_load)
-            {
-                Proto_config_refresh_otap_infos();
-            }
+            // /* Force parameters update */
+            // if (!m_restart_after_load)
+            // {
+            //     Proto_config_refresh_otap_infos();
+            // }
         }
     }
     else
@@ -196,30 +199,30 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
         m_scratchpad_load_current_seq = INVALID_CURRENT_SEQ;
     }
 
-    if ((m_restart_after_load)
-        && (m_scratchpad_load_current_seq == INVALID_CURRENT_SEQ))
-    {
-        // Restart the stack, as there is no more load in progress
-        app_res_e restart_res = WPC_start_stack();
-        if (restart_res != APP_RES_OK)
-        {
-            LOGE("Cannot restart stack after scratchpad update\n");
-        }
-        else
-        {
-            WPC_set_autostart(1);
-            LOGI("Upload scratchpad : Stack started\n");
-        }
-        m_restart_after_load = false;
+    // if ((m_restart_after_load)
+    //     && (m_scratchpad_load_current_seq == INVALID_CURRENT_SEQ))
+    // {
+    //     // Restart the stack, as there is no more load in progress
+    //     app_res_e restart_res = WPC_start_stack();
+    //     if (restart_res != APP_RES_OK)
+    //     {
+    //         LOGE("Cannot restart stack after scratchpad update\n");
+    //     }
+    //     else
+    //     {
+    //         WPC_set_autostart(1);
+    //         LOGI("Upload scratchpad : Stack started\n");
+    //     }
+    //     m_restart_after_load = false;
 
-        if (res == APP_RES_OK && restart_res != APP_RES_OK)
-        {
-            // Overide "main" res only if it was a success
-            // and restart was failling. Otherwise keep the
-            // main res as it is more important
-            res = restart_res;
-        }
-    }
+    //     if (res == APP_RES_OK && restart_res != APP_RES_OK)
+    //     {
+    //         // Overide "main" res only if it was a success
+    //         // and restart was failling. Otherwise keep the
+    //         // main res as it is more important
+    //         res = restart_res;
+    //     }
+    // }
 
     Common_Fill_response_header(&resp->header,
                                 req->header.req_id,
@@ -231,6 +234,11 @@ app_proto_res_e Proto_otap_handle_upload_scratchpad(wp_UploadScratchpadReq *req,
 app_proto_res_e Proto_otap_handle_process_scratchpad(wp_ProcessScratchpadReq *req,
                                                      wp_ProcessScratchpadResp *resp)
 {
+    app_res_e global_res = APP_RES_OK;
+
+    global_res = Platform_gateway_update_start_process();
+
+#if 0
     app_res_e res = APP_RES_OK;
     app_res_e global_res = APP_RES_OK;
     uint8_t status;
@@ -241,7 +249,7 @@ app_proto_res_e Proto_otap_handle_process_scratchpad(wp_ProcessScratchpadReq *re
     if ((WPC_get_stack_status(&status) == APP_RES_OK)
         && (status == 0))
     {
-        /* Stack must be stoped */
+        /* Stack must be stopped */
         /* No action required on fail as next step will anyway fail */
         WPC_set_autostart(0);
         if (WPC_stop_stack() != APP_RES_OK)
@@ -289,6 +297,7 @@ app_proto_res_e Proto_otap_handle_process_scratchpad(wp_ProcessScratchpadReq *re
             WPC_set_autostart(1);
         }
     }
+#endif
 
     Common_Fill_response_header(&resp->header,
                                 req->header.req_id,
