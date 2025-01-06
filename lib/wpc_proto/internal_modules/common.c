@@ -103,20 +103,23 @@ wp_ErrorCode Common_convert_error_code(app_res_e error)
     return ret;
 }
 
-void Common_fill_event_header(wp_EventHeader * header_p)
+void Common_fill_event_header(wp_EventHeader * header_p, bool has_sink_id)
 {
     _Static_assert(member_size(wp_EventHeader, gw_id) >= GATEWAY_ID_MAX_SIZE, "Gateway ID too long");
     _Static_assert(member_size(wp_EventHeader, sink_id) >= SINK_ID_MAX_SIZE, "Sink ID too long");
 
     *header_p = (wp_EventHeader){
-        .has_sink_id = (strlen(m_sink_id) != 0),
+        .has_sink_id = (strlen(m_sink_id) != 0) && has_sink_id,
         .has_time_ms_epoch = true,
         .time_ms_epoch = Platform_get_timestamp_ms_epoch(),
         .event_id = rand() + (((uint64_t) rand()) << 32),
     };
 
     strncpy(header_p->gw_id, Common_get_gateway_id(), GATEWAY_ID_MAX_SIZE);
-    strncpy(header_p->sink_id, Common_get_sink_id(), SINK_ID_MAX_SIZE);
+    if (header_p->has_sink_id)
+    {
+        strncpy(header_p->sink_id, Common_get_sink_id(), SINK_ID_MAX_SIZE);
+    }
 }
 
 void Common_Fill_response_header(wp_ResponseHeader * header_p,
