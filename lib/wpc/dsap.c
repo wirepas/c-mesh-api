@@ -28,16 +28,6 @@ typedef struct
     bool busy;
 } packet_with_indication_t;
 
-// Minimum period between two consecutive garbage collects of
-// uncomplete fragments
-// GC is anyway synchronous with received fragment so period between 2 GC
-// could be much bigger if not fragments are received for a while
-#define MIN_GARBAGE_COLLECT_PERIOD_S   5
-
-// Max timeout in seconds for uncomplete fragmented packet to be discarded
-// from rx queue.
-static uint32_t m_fragment_max_duration_s = 0;
-
 // Static buffer used to reassemble messages. Allocated statically
 // to not have it allocated on stack dynamically. Could also be allocated
 // dynamically with platform malloc, but as there is only one needed, static
@@ -318,7 +308,6 @@ void dsap_data_tx_indication_handler(dsap_data_tx_ind_pl_t * payload)
 void dsap_data_rx_frag_indication_handler(dsap_data_rx_frag_ind_pl_t * payload,
                                           unsigned long long timestamp_ms_epoch)
 {
-    static unsigned long long last_gc_ts_ms = 0;
     reassembly_fragment_t frag;
     size_t full_size;
     app_qos_e qos;
@@ -394,13 +383,8 @@ void dsap_data_rx_frag_indication_handler(dsap_data_rx_frag_ind_pl_t * payload,
 
     // Do GC synchronously to avoid races as all fragment related actions happens on same thread
     // and no need for an another scheduling method to add in Platform
-    if (m_fragment_max_duration_s > 0 &&
-        Platform_get_timestamp_ms_monotonic() - last_gc_ts_ms > (MIN_GARBAGE_COLLECT_PERIOD_S * 1000))
-    {
-        // Time for a new GC
-        reassembly_garbage_collect(m_fragment_max_duration_s);
-        last_gc_ts_ms = Platform_get_timestamp_ms_monotonic();
-    }
+    reassembly_garbage_collect();
+
 }
 
 void dsap_data_rx_indication_handler(dsap_data_rx_ind_pl_t * payload,
@@ -500,7 +484,7 @@ bool dsap_unregister_for_data()
 
 bool dsap_set_max_fragment_duration(unsigned int fragment_max_duration_s)
 {
-    m_fragment_max_duration_s = fragment_max_duration_s;
+    reassembly_set_max_fragment_duration(fragment_max_duration_s);
     return true;
 }
 

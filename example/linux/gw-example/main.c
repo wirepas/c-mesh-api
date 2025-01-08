@@ -572,6 +572,7 @@ int main(int argc, char * argv[])
     {
         LOGE("MQTT failed to disconnect\n");
     }
+    LOGI("MQTT disconnected\n");
     MQTTClient_destroy(&m_client);
     pthread_mutex_destroy(&m_pub_queue_mutex);
     LOGI("Clean exit completed\n");

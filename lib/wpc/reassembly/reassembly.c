@@ -14,6 +14,9 @@
 
 #include "platform.h"
 
+// Minimum period between two consecutive garbage collects of uncomplete fragments
+#define MIN_GARBAGE_COLLECT_PERIOD_S   5
+
 /* undefine the defaults */
 #undef uthash_malloc
 #undef uthash_free
@@ -52,10 +55,24 @@ typedef struct
     UT_hash_handle hh;
 } full_packet_t;
 
-/**
- * Hash containing all the fragmented packet under construction
- */
+// Max timeout in seconds for uncomplete fragmented packet to be discarded
+// from rx queue.
+static uint32_t m_fragment_max_duration_s = 0;
+
+// Hash containing all the fragmented packet under construction
 static full_packet_t * m_packets = NULL;
+
+// Keep track of the queue emptyness, to get info from other tasks
+// True indicate that queue is empty, false indicate that queue is most probably not empty
+static bool m_is_queue_empty;
+
+// Timestamp of last garbage collect
+static unsigned long long m_last_gc_ts_ms;
+
+void reassembly_set_max_fragment_duration(unsigned int fragment_max_duration_s)
+{
+    m_fragment_max_duration_s = fragment_max_duration_s;
+}
 
 static full_packet_t * get_packet_from_hash(uint32_t src_add, uint16_t packet_id)
 {
@@ -221,6 +238,8 @@ static bool reassemble_full_packet(full_packet_t * full_packet_p, uint8_t * buff
     // release also full packet struct form hash
     HASH_DEL(m_packets, full_packet_p);
     Platform_free(full_packet_p, sizeof(full_packet_t));
+
+    m_is_queue_empty = (HASH_COUNT(m_packets) == 0);
     return true;
 }
 
@@ -229,9 +248,9 @@ void reassembly_init()
     // Nothing to do at the moment
 }
 
-bool reassembly_is_queue_empty(void)
+bool reassembly_is_queue_empty()
 {
-    return HASH_COUNT(m_packets) == 0;
+    return m_is_queue_empty;
 }
 
 bool reassembly_add_fragment(reassembly_fragment_t * frag, size_t * full_size_p)
@@ -239,6 +258,9 @@ bool reassembly_add_fragment(reassembly_fragment_t * frag, size_t * full_size_p)
     full_packet_t *full_packet_p;
 
     *full_size_p = 0;
+    
+    // set the queue empty flag in advance, even if we fail later (corrected by garbage collection)
+    m_is_queue_empty = false;
 
     // Get packet or create it
     full_packet_p = get_packet_from_hash(frag->src_add, frag->packet_id);
@@ -288,32 +310,41 @@ bool reassembly_get_full_message(uint32_t src_add, uint16_t packet_id, uint8_t *
 
 }
 
-void reassembly_garbage_collect(uint32_t timeout_s)
+void reassembly_garbage_collect()
 {
-    full_packet_t *fp, *tmp;
-    uint32_t messages_removed = 0;
-    HASH_ITER(hh, m_packets, fp, tmp) {
-        uint32_t last_activity =
-            (Platform_get_timestamp_ms_monotonic() - fp->timestamp_ms_epoch_last) / 1000;
+    if (m_fragment_max_duration_s > 0 &&
+        Platform_get_timestamp_ms_monotonic() - m_last_gc_ts_ms > (MIN_GARBAGE_COLLECT_PERIOD_S * 1000))
+    {
+        // Time for a new GC
+        m_last_gc_ts_ms = Platform_get_timestamp_ms_monotonic();
 
-        /* Check if message is not getting too old */
-        if (last_activity > timeout_s)
-        {
-            LOGW("Fragmented message from src %u with id %u has no activity for more than %u s => delete it\n",
-                fp->key.src_add, fp->key.packet_id, timeout_s);
+        full_packet_t *fp, *tmp;
+        uint32_t messages_removed = 0;
+        HASH_ITER(hh, m_packets, fp, tmp) {
+            uint32_t last_activity =
+                (Platform_get_timestamp_ms_monotonic() - fp->timestamp_ms_epoch_last) / 1000;
 
-            internal_fragment_t *f, *tmp;
-            LL_FOREACH_SAFE(fp->head, f, tmp) {
-                Platform_free(f->bytes, f->size);
-                LL_DELETE(fp->head, f);
-                Platform_free(f, sizeof(internal_fragment_t));
+            /* Check if message is not getting too old */
+            if (last_activity > m_fragment_max_duration_s)
+            {
+                LOGW("Fragmented message from src %u with id %u has no activity for more than %u s => delete it\n",
+                    fp->key.src_add, fp->key.packet_id, m_fragment_max_duration_s);
+
+                internal_fragment_t *f, *tmp;
+                LL_FOREACH_SAFE(fp->head, f, tmp) {
+                    Platform_free(f->bytes, f->size);
+                    LL_DELETE(fp->head, f);
+                    Platform_free(f, sizeof(internal_fragment_t));
+                }
+
+                // release also full packet struct from hash
+                HASH_DEL(m_packets, fp);
+                Platform_free(fp, sizeof(full_packet_t));
+                messages_removed ++;
             }
-
-            // release also full packet struct from hash
-            HASH_DEL(m_packets, fp);
-            Platform_free(fp, sizeof(full_packet_t));
-            messages_removed ++;
         }
+        LOGD("GC: %d message removed\n", messages_removed);
+
+        m_is_queue_empty = (HASH_COUNT(m_packets) == 0);
     }
-    LOGD("GC: %d message removed\n", messages_removed);
 }
