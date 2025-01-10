@@ -41,8 +41,9 @@ wp_ErrorCode Common_convert_error_code(app_res_e error);
 /**
  * \brief   Fill event message header
  * \param   header_p pointer to header to fill
+ * \param   has_sink_id boolean indicating if sink_id should be included in header
  */
-void Common_fill_event_header(wp_EventHeader * header_p);
+void Common_fill_event_header(wp_EventHeader * header_p, bool has_sink_id);
 
 /**
  * \brief   Fill response header

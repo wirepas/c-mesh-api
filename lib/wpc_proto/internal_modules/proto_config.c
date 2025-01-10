@@ -445,7 +445,7 @@ static void fill_status_event(wp_StatusEvent * status_event_p,
     strncpy(status_event_p->gw_model, Common_get_gateway_model(), GATEWAY_MODEL_MAX_SIZE);
     strncpy(status_event_p->gw_version, Common_get_gateway_version(), GATEWAY_VERSION_MAX_SIZE);
 
-    Common_fill_event_header(&status_event_p->header);
+    Common_fill_event_header(&status_event_p->header, false);
 }
 
 static bool refresh_full_stack_state()
