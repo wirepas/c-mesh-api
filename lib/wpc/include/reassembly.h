@@ -23,9 +23,25 @@ typedef struct {
 } reassembly_fragment_t;
 
 /**
+ * \brief   Set maximum duration for fragment
+ * \param   duration_s
+ *          the maximum duration in seconds to keep fragment from incomplete packets.
+ *          Zero equals forever
+ * \return  Return code of the operation
+ */
+void reassembly_set_max_fragment_duration(unsigned int duration_s);
+
+/**
  * \brief   Initialize reassembly module
  */
 void reassembly_init();
+
+/**
+ * \brief   Check queue emptyness
+ * \return  True means that queue is empty, false that queue is most probably not empty
+ * \note    This function can be called from any task
+ */
+bool reassembly_is_queue_empty();
 
 /**
  * \brief   Add fragment to an existing full message
@@ -59,9 +75,7 @@ bool reassembly_get_full_message(uint32_t src_addr, uint16_t packet_id, uint8_t 
 /**
  * \brief   Clear all the uncomplete fragmented message that have no activity for \ref timeout_s
  *
- * \param   timeout_s
- *          Limit in second for inactivity before message being deleted
  */
-void reassembly_garbage_collect(uint32_t timeout_s);
+void reassembly_garbage_collect();
 
 #endif //REASSEMBLY_H__

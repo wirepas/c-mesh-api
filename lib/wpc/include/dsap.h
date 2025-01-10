@@ -203,7 +203,7 @@ bool dsap_unregister_for_data();
 #endif
 
 /**
- * \brief   Set maximum duration to keep fragment in our buffer until packet is ful
+ * \brief   Set maximum duration to keep fragment in our buffer until packet is full
  * \param   fragment_max_duration_s
  *          Maximum time in s to keep fragments from incomplete packets inside our buffers
  */
