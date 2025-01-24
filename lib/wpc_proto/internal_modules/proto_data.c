@@ -90,7 +90,7 @@ static bool onDataReceived(const uint8_t * bytes,
     memcpy(message_PacketReceived_p->payload.bytes, bytes, num_bytes);
     message_PacketReceived_p->payload.size = num_bytes;
 
-    Common_fill_event_header(&message_PacketReceived_p->header);
+    Common_fill_event_header(&message_PacketReceived_p->header, true);
 
     pb_ostream_t stream = pb_ostream_from_buffer(encoded_message_p, max_encoded_size);
 
