@@ -64,7 +64,7 @@ static full_packet_t * m_packets = NULL;
 
 // Keep track of the queue emptyness, to get info from other tasks
 // True indicate that queue is empty, false indicate that queue is most probably not empty
-static bool m_is_queue_empty;
+static bool m_is_queue_empty = true;
 
 // Timestamp of last garbage collect
 static unsigned long long m_last_gc_ts_ms;

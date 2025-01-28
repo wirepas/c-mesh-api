@@ -25,7 +25,7 @@
 #define POLLING_INTERVAL_MS 20
 
 // Wakeup timeout for dispatch thread, mainly for garbage collection of fragments
-#define DISPATCH_WAKEUP_TIMEOUT_MS 5000
+#define DISPATCH_WAKEUP_TIMEOUT_S 5
 
 // Mutex for sending, ie serial access
 static pthread_mutex_t sending_mutex;
@@ -106,7 +106,7 @@ static void * dispatch_indication(void * unused)
         {
             // Queue is empty, wait
             clock_gettime(CLOCK_REALTIME, &ts);
-            ts.tv_sec += DISPATCH_WAKEUP_TIMEOUT_MS ;  // 5 second timeout
+            ts.tv_sec += DISPATCH_WAKEUP_TIMEOUT_S ;  // 5 second timeout
             pthread_cond_timedwait(&m_queue_not_empty_cond, &m_queue_mutex, &ts);
 
             // Force a garbage collect (to be sure it's called even if no frag are received)
