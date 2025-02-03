@@ -982,8 +982,6 @@ app_proto_res_e Proto_config_handle_set_scratchpad_target_and_action_request(
 
         case wp_ScratchpadAction_NO_OTAP :
             res = WPC_write_target_scratchpad(0, 0, 0, 0);
-            // Read otap variable back to be sure everything is updated
-            initialize_otap_variables();
             break;
 
         case wp_ScratchpadAction_PROPAGATE_AND_PROCESS_WITH_DELAY :
@@ -1056,10 +1054,6 @@ app_proto_res_e Proto_config_handle_set_scratchpad_target_and_action_request(
                                               crc,
                                               req->target_and_action.action - wp_ScratchpadAction_NO_OTAP,
                                               param);
-
-            // Read otap variable back to be sure everything is updated
-            initialize_otap_variables();
-
             break;
 
         default:
@@ -1070,6 +1064,10 @@ app_proto_res_e Proto_config_handle_set_scratchpad_target_and_action_request(
     {
         LOGE("Target and action failed %d\n", res);
     }
+
+    // Force otap variable read back to be sure everything is in sync
+    // And generate event status
+    Proto_config_refresh_otap_infos();
 
     Common_Fill_response_header(&resp->header,
                                 req->header.req_id,
