@@ -259,6 +259,9 @@ static void dispatch_indication(wpc_frame_t * frame, unsigned long long timestam
         case MSAP_SCAN_NBORS_INDICATION:
             msap_scan_nbors_indication_handler(&frame->payload.msap_scan_nbors_indication_payload);
             break;
+        case MSAP_CONFIG_DATA_ITEM_RX_INDICATION:
+            msap_config_data_item_rx_indication_handler(&frame->payload.msap_config_data_item_rx_indication_payload);
+            break;
         default:
             LOGE("Unknown indication 0x%02x\n", frame->primitive_id);
             LOG_PRINT_BUFFER((uint8_t *) frame, FRAME_SIZE(frame));
