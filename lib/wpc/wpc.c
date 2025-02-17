@@ -1176,6 +1176,48 @@ app_res_e WPC_send_data(const uint8_t * bytes,
     return WPC_send_data_with_options(&message);
 }
 
+static const app_res_e CDC_ITEM_SET_ERROR_CODE_LUT[] = {
+    APP_RES_OK,              // 0
+    APP_RES_NOT_A_SINK,      // 1
+    APP_RES_INVALID_VALUE,   // 2 invalid endpoint
+    APP_RES_OUT_OF_MEMORY,   // 3 too many optional items
+    APP_RES_DATA_ERROR,      // 4 invalid payload contents
+};
+
+app_res_e WPC_set_config_data_item(const uint16_t endpoint,
+                                   const uint8_t *const payload,
+                                   const uint8_t size)
+{
+    const int res = msap_config_data_item_set_request(endpoint, payload, size);
+    if (res < 0)
+    {
+        LOGE("Internal error setting config data item. Endpoint: %d, response: %d\n",
+             endpoint, res);
+    }
+
+    return convert_error_code(CDC_ITEM_SET_ERROR_CODE_LUT, res);
+}
+
+static const app_res_e CDC_ITEM_GET_ERROR_CODE_LUT[] = {
+    APP_RES_OK,            // 0
+    APP_RES_INVALID_VALUE, // 1 invalid endpoint
+};
+
+app_res_e WPC_get_config_data_item(const uint16_t endpoint,
+                                   uint8_t *const payload,
+                                   const size_t payload_capacity,
+                                   uint8_t *const size)
+{
+    const int res = msap_config_data_item_get_request(endpoint, payload, payload_capacity, size);
+    if (res < 0)
+    {
+        LOGE("Internal error getting config data item. Endpoint: %d, response: %d\n",
+             endpoint, res);
+    }
+
+    return convert_error_code(CDC_ITEM_GET_ERROR_CODE_LUT, res);
+}
+
 #ifdef REGISTER_DATA_PER_ENDPOINT
 app_res_e WPC_register_for_data(uint8_t dst_ep, onDataReceived_cb_f onDataReceived)
 {
@@ -1226,4 +1268,14 @@ app_res_e WPC_register_for_stack_status(onStackStatusReceived_cb_f onStackStatus
 app_res_e WPC_unregister_from_stack_status()
 {
     return msap_unregister_from_stack_status() ? APP_RES_OK : APP_RES_INVALID_VALUE;
+}
+
+app_res_e WPC_register_for_config_data_item(onConfigDataItemReceived_cb_f onConfigDataItemReceived)
+{
+    return msap_register_for_config_data_item(onConfigDataItemReceived) ? APP_RES_OK : APP_RES_INVALID_VALUE;
+}
+
+app_res_e WPC_unregister_from_config_data_item()
+{
+    return msap_unregister_from_config_data_item() ? APP_RES_OK : APP_RES_INVALID_VALUE;
 }
