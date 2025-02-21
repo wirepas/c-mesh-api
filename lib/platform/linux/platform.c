@@ -115,8 +115,6 @@ static void * dispatch_indication(void * unused)
             // Check if we wake up but nothing in queue
             if (m_queue_empty)
             {
-                // Release the lock
-                pthread_mutex_unlock(&m_queue_mutex);
                 // Continue to evaluate the stop condition
                 continue;
             }
@@ -245,7 +243,7 @@ static void * poll_for_indication(void * unused)
                 free_buffer_room = m_ind_queue_read - m_ind_queue_write;
             }
         }
-                  
+
         if (m_polling_thread_state_request == POLLING_THREAD_STOP_REQUESTED)
         {
             // In case we are about to stop, let's poll only one by one to have more chance to
