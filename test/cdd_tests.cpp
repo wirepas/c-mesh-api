@@ -9,8 +9,7 @@ public:
 
         // Stack should be stopped for factory reset, and it's not needed to be
         // started for these tests.
-        const auto res = WPC_stop_stack();
-        ASSERT_TRUE(APP_RES_OK == res || APP_RES_STACK_ALREADY_STOPPED == res);
+        ASSERT_NO_FATAL_FAILURE(WpcTest::StopStack());
         ASSERT_EQ(APP_RES_OK, WPC_do_factory_reset());
     }
 
