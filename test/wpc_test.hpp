@@ -26,5 +26,8 @@ class WpcTest : public testing::Test
 {
 public:
     static void SetUpTestSuite();
+protected:
+    static void StartStack();
+    static void StopStack();
 };
 

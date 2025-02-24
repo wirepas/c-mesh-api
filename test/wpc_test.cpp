@@ -49,3 +49,15 @@ void WpcTest::SetUpTestSuite()
     ASSERT_TRUE(WpcTestEnvironment::IsInitialized()) << "Environment is not initialized";
 }
 
+void WpcTest::StartStack()
+{
+    const auto res = WPC_start_stack();
+    ASSERT_TRUE(APP_RES_OK == res || APP_RES_STACK_ALREADY_STARTED == res);
+}
+
+void WpcTest::StopStack()
+{
+    const auto res = WPC_stop_stack();
+    ASSERT_TRUE(APP_RES_OK == res || APP_RES_STACK_ALREADY_STOPPED == res);
+}
+
