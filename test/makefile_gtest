@@ -40,6 +40,7 @@ SOURCES := $(SOURCEPREFIX)test_main.cpp
 CFLAGS  += -I$(SOURCEPREFIX)
 SOURCES += $(SOURCEPREFIX)wpc_test.cpp \
 	$(SOURCEPREFIX)general_tests.cpp     \
+	$(SOURCEPREFIX)scratchpad_tests.cpp  \
 	$(SOURCEPREFIX)cdd_tests.cpp
 
 OBJECTS := $(patsubst $(SOURCEPREFIX)%,                     \
