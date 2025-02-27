@@ -2,6 +2,7 @@
 
 # Toolchain
 CC  := gcc
+CXX := g++
 AS  := as
 LD  := ld
 AR  := ar
@@ -15,7 +16,7 @@ MESH_LIB_FOLDER := ../lib/
 MESH_LIB := $(MESH_LIB_FOLDER)build/mesh_api_lib.a
 
 # General compiler flags
-CFLAGS  := -std=gnu99 -Wall -Werror
+CFLAGS  := -std=c++17 -Wall -Werror
 
 # Targets definition
 MAIN_APP := meshAPItest
@@ -25,7 +26,7 @@ TARGET_APP := $(BUILDPREFIX)$(MAIN_APP)
 # Add Api header
 CFLAGS  += -I$(MESH_LIB_FOLDER)api
 # Add pthtread lib as needed by Mesh Lib
-LDFLAGS += -pthread
+LDFLAGS += -pthread -lgtest
 # Add Reentrant flag as using pthread
 CFLAGS  += -D_REENTRANT
 
@@ -33,28 +34,32 @@ CFLAGS  += -D_REENTRANT
 CFLAGS  += -I$(MESH_LIB_FOLDER)platform
 
 # Main app
-SOURCES := $(SOURCEPREFIX)test_app.c
+SOURCES := $(SOURCEPREFIX)test_main.cpp
 
 # Test cases
 CFLAGS  += -I$(SOURCEPREFIX)
-SOURCES += $(SOURCEPREFIX)test.c
+SOURCES += $(SOURCEPREFIX)wpc_test.cpp \
+	$(SOURCEPREFIX)general_tests.cpp     \
+	$(SOURCEPREFIX)scratchpad_tests.cpp  \
+	$(SOURCEPREFIX)callback_tests.cpp  \
+	$(SOURCEPREFIX)cdd_tests.cpp
 
 OBJECTS := $(patsubst $(SOURCEPREFIX)%,                     \
                   $(BUILDPREFIX)%,                          \
-                  $(SOURCES:.c=.o))
+                  $(SOURCES:.cpp=.o))
 
 # Functions
 
 # Also create the target directory if it does not exist
 define COMPILE
-	echo "  CC $(2)"
+	echo "  CXX $(2)"
 	mkdir -p $(dir $(1))
-	$(CC) $(CFLAGS) -c -o $(1) $(2)
+	$(CXX) $(CFLAGS) -c -o $(1) $(2)
 endef
 
 define LINK
 	echo "  Linking $(1)"
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $(1) $(2) $(MESH_LIB)
+	$(CXX) $(CFLAGS) -o $(1) $(2) $(MESH_LIB) $(LDFLAGS)
 endef
 
 define CLEAN
@@ -88,7 +93,7 @@ clean:
 $(MESH_LIB):
 	make -C $(MESH_LIB_FOLDER)
 
-$(BUILDPREFIX)%.o: $(SOURCEPREFIX)%.c
+$(BUILDPREFIX)%.o: $(SOURCEPREFIX)%.cpp
 	$(call COMPILE,$@,$<)
 
 $(BUILDPREFIX)$(MAIN_APP): $(OBJECTS) $(MESH_LIB)
