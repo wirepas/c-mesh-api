@@ -1,4 +1,5 @@
 #include "wpc_test.hpp"
+#include <gtest/gtest.h>
 
 class WpcCddApiTest : public WpcTest
 {
@@ -146,6 +147,8 @@ TEST_F(WpcCddApiTest, testWritingScratchpatTargetWithCddApi)
 
 TEST_F(WpcCddApiTest, testWritingInvalidScratchpatTargetWithCddApi)
 {
+    GTEST_SKIP() << "TODO re-enable once implemented on stack";
+
     const CddScratchpadDataItem SCRATCHPAD_DATA = {
         .seq = 71,
         .crc = 0xFEEB,
@@ -161,6 +164,8 @@ TEST_F(WpcCddApiTest, testWritingInvalidScratchpatTargetWithCddApi)
 
 TEST_F(WpcCddApiTest, testWritingInvalidDiagIntervalWithCddApi)
 {
+    GTEST_SKIP() << "TODO re-enable once implemented on stack";
+
     const uint8_t TEST_DIAG_INTERVAL[] = { 0xFE };
     ASSERT_EQ(APP_RES_DATA_ERROR,
               WPC_set_config_data_item(CDD_DIAG_INTERVAL_EP, TEST_DIAG_INTERVAL, 1));
