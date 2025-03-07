@@ -128,11 +128,27 @@ protected:
         uint8_t expected_dst_ep;
     };
 
+    struct ConfigDataItemCb : public BaseCallbackHandler
+    {
+        void reset()
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            callback_called = false;
+            payload.clear();
+            expected_endpoint = 0;
+        }
+
+        std::vector<uint8_t> payload;
+
+        uint16_t expected_endpoint;
+    };
+
     inline static StackStatusCb stack_status_cb;
     inline static ScanNeighborsCb scan_neighbors_cb;
     inline static AppConfigCb app_config_cb;
     inline static DataSentCb data_sent_cb;
     inline static DataReceivedCb data_received_cb;
+    inline static ConfigDataItemCb config_data_item_cb;
 
     static void onStackStatusReceived(uint8_t status)
     {
@@ -195,6 +211,21 @@ protected:
         return true;
     }
 
+    static void onConfigDataItemReceived(const uint16_t endpoint,
+                                         const uint8_t* const payload,
+                                         const uint8_t size)
+    {
+        if (endpoint != config_data_item_cb.expected_endpoint) {
+            return;
+        }
+
+        std::lock_guard<std::mutex> lock(config_data_item_cb.mutex);
+        config_data_item_cb.callback_called = true;
+
+        config_data_item_cb.payload.resize(size);
+        std::memcpy(config_data_item_cb.payload.data(), payload, size);
+    }
+
     void SetUp() override
     {
         stack_status_cb.reset();
@@ -202,6 +233,7 @@ protected:
         app_config_cb.reset();
         data_sent_cb.reset();
         data_received_cb.reset();
+        config_data_item_cb.reset();
     }
 
     void TearDown() override
@@ -210,6 +242,7 @@ protected:
         WPC_unregister_from_scan_neighbors_done();
         WPC_unregister_from_app_config_data();
         WPC_unregister_for_data();
+        WPC_unregister_from_config_data_item();
     }
 };
 
@@ -376,3 +409,25 @@ TEST_F(WpcCallbackTest, testSendFragmentedDataWithReceiveCallback)
     }
 }
 
+TEST_F(WpcCallbackTest, testConfigDataItemCallback)
+{
+    const uint16_t TEST_ENDPOINT = 0x4156;
+    const uint8_t TEST_DATA[] = { 0x95, 0x85, 0x75 };
+
+    {
+        std::lock_guard<std::mutex> lock(data_received_cb.mutex);
+        config_data_item_cb.expected_endpoint = TEST_ENDPOINT;
+    }
+
+    ASSERT_EQ(APP_RES_OK, WPC_register_for_config_data_item(onConfigDataItemReceived));
+
+    ASSERT_EQ(APP_RES_OK, WPC_set_config_data_item(TEST_ENDPOINT, TEST_DATA, sizeof(TEST_DATA)));
+
+    ASSERT_NO_FATAL_FAILURE(config_data_item_cb.WaitForCallback());
+
+    {
+        std::lock_guard<std::mutex> lock(config_data_item_cb.mutex);
+        ASSERT_EQ(sizeof(TEST_DATA), config_data_item_cb.payload.size());
+        ASSERT_EQ_ARRAY(TEST_DATA, (uint8_t*)config_data_item_cb.payload.data(), sizeof(TEST_DATA));
+    }
+}
