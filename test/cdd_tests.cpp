@@ -313,6 +313,18 @@ TEST_F(WpcCddApiTest, settingTooManyOptionalItemsShouldFail)
     ASSERT_GT(detected_max_item_count, 0);
 }
 
+TEST_F(WpcCddApiTest, gettingItemShouldFailIfBufferIsTooSmall)
+{
+    const uint8_t TEST_PAYLOAD[] = { 0x10, 0x20, 0x30, 0x40, 0x50 };
+    const uint16_t TEST_ENDPOINT = 0x1001;
+    ASSERT_EQ(APP_RES_OK, WPC_set_config_data_item(TEST_ENDPOINT, TEST_PAYLOAD, sizeof(TEST_PAYLOAD)));
+
+    uint8_t payload[4] = { 0 };
+    uint8_t payload_size = 0;
+    ASSERT_EQ(APP_RES_INTERNAL_ERROR,
+              WPC_get_config_data_item(TEST_ENDPOINT, payload, sizeof(payload), &payload_size));
+}
+
 TEST_F(WpcCddApiTest, gettingEndpointsListShouldFailIfBufferIsTooSmall)
 {
     const uint8_t TEST_PAYLOAD[] = { 0x10 };
