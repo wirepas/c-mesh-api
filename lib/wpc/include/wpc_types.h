@@ -67,6 +67,7 @@ typedef struct __attribute__((__packed__))
         msap_image_block_read_req_pl_t msap_image_block_read_request_payload;
         msap_config_data_item_set_req_pl_t msap_config_data_item_set_request_payload;
         msap_config_data_item_get_req_pl_t msap_config_data_item_get_request_payload;
+        msap_config_data_item_list_items_req_pl_t msap_config_data_item_list_items_request_payload;
         // Indication
         dsap_data_tx_ind_pl_t dsap_data_tx_indication_payload;
         dsap_data_rx_ind_pl_t dsap_data_rx_indication_payload;
@@ -88,6 +89,7 @@ typedef struct __attribute__((__packed__))
         msap_scratchpad_target_read_conf_pl_t msap_scratchpad_target_read_confirm_payload;
         msap_image_block_read_conf_pl_t msap_image_block_read_confirm_payload;
         msap_config_data_item_get_conf_pl_t msap_config_data_item_get_confirm_payload;
+        msap_config_data_item_list_items_conf_pl_t msap_config_data_item_list_items_confirm_payload;
         // Response
         sap_resp_pl_t sap_response_payload;
     } payload;
