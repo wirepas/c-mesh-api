@@ -532,6 +532,36 @@ int msap_config_data_item_get_request(const uint16_t endpoint,
     return confirm.payload.sap_generic_confirm_payload.result;
 }
 
+int msap_config_data_item_list_items_request(const uint8_t command,
+                                             msap_config_data_item_list_items_conf_pl_t *const response)
+{
+    wpc_frame_t request = {
+        .primitive_id = MSAP_CONFIG_DATA_ITEM_LIST_ITEMS_REQUEST,
+        .payload_length = sizeof(msap_config_data_item_list_items_req_pl_t),
+        .payload = {
+            .msap_config_data_item_list_items_request_payload = {
+                .command = command
+            }
+        }
+    };
+
+    wpc_frame_t confirm;
+    const int res = WPC_Int_send_request(&request, &confirm);
+    if (res < 0)
+    {
+        return res;
+    }
+
+    if (confirm.payload.sap_generic_confirm_payload.result == 0)
+    {
+        memcpy(response,
+               &confirm.payload.msap_config_data_item_list_items_confirm_payload,
+               sizeof(msap_config_data_item_list_items_conf_pl_t));
+    }
+
+    return confirm.payload.sap_generic_confirm_payload.result;
+}
+
 void msap_stack_state_indication_handler(msap_stack_state_ind_pl_t * payload)
 {
     LOGI("Status is 0x%02x\n", payload->status);
