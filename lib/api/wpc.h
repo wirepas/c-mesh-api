@@ -961,6 +961,21 @@ app_res_e WPC_get_config_data_item(const uint16_t endpoint,
                                    uint8_t *const size);
 
 /**
+ * \brief   Get a list of endpoints of existing optional config data items
+ * \param   endpoints
+ *          Pointer to read config data item endpoints into
+ * \param   endpoints_capacity
+ *          Allocated size of the given endpoints buffer (bytes). If received
+ *          endpoints list is larger, the function fails.
+ * \param   endpoints_count
+ *          Number of endpoints written to the given endpoints buffer
+ * \return  Return code of the operation
+ */
+app_res_e WPC_get_config_data_item_list(uint16_t *const endpoints,
+                                        const size_t endpoints_capacity,
+                                        uint8_t *const endpoints_count);
+
+/**
  * \brief   Callback definition to register for received data
  * \param   bytes
  *          Buffer of received data

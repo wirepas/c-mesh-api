@@ -213,6 +213,18 @@ typedef struct __attribute__((__packed__))
 
 typedef struct __attribute__((__packed__))
 {
+    uint8_t command;
+} msap_config_data_item_list_items_req_pl_t;
+
+typedef struct __attribute__((__packed__))
+{
+    uint8_t result;
+    uint8_t amount_endpoints;
+    uint8_t endpoints_list[MAXIMUM_CDC_ITEM_LIST_BYTE_COUNT];
+} msap_config_data_item_list_items_conf_pl_t;
+
+typedef struct __attribute__((__packed__))
+{
     uint8_t indication_status;
     uint16_t endpoint;
     uint8_t payload_length;
@@ -508,6 +520,18 @@ int msap_config_data_item_get_request(const uint16_t endpoint,
                                       uint8_t *const payload,
                                       const size_t payload_capacity,
                                       uint8_t *const payload_size);
+
+/**
+ * \brief    Request to get config data item list
+ * \param    command
+ *           Reserved for future use. Currently only value 0 is used.
+ * \param    response
+ *           Pointer to the read response.
+ * \return   Negative value upon internal error, otherwise result code returned
+ *           by the DualMCU API
+ */
+int msap_config_data_item_list_items_request(const uint8_t command,
+                                             msap_config_data_item_list_items_conf_pl_t *const response);
 
 /**
  * \brief   Handler for stack state indication

@@ -313,3 +313,43 @@ TEST_F(WpcCddApiTest, settingTooManyOptionalItemsShouldFail)
     ASSERT_GT(detected_max_item_count, 0);
 }
 
+TEST_F(WpcCddApiTest, gettingEndpointsListShouldFailIfBufferIsTooSmall)
+{
+    const uint8_t TEST_PAYLOAD[] = { 0x10 };
+    ASSERT_EQ(APP_RES_OK, WPC_set_config_data_item(100, TEST_PAYLOAD, sizeof(TEST_PAYLOAD)));
+    ASSERT_EQ(APP_RES_OK, WPC_set_config_data_item(200, TEST_PAYLOAD, sizeof(TEST_PAYLOAD)));
+
+    uint16_t endpoints_list[1] = { 0 };
+    uint8_t endpoints_count = 0xFF;
+    ASSERT_EQ(APP_RES_INTERNAL_ERROR,
+              WPC_get_config_data_item_list(endpoints_list, sizeof(endpoints_list), &endpoints_count));
+}
+
+TEST_F(WpcCddApiTest, shouldReturnEmptyListIfNoOptionalItemIsSet)
+{
+    uint16_t endpoints_list[10] = { 0 };
+    uint8_t endpoints_count = 0xFF;
+    ASSERT_EQ(APP_RES_OK,
+              WPC_get_config_data_item_list(endpoints_list, sizeof(endpoints_list), &endpoints_count));
+    ASSERT_EQ(0, endpoints_count);
+}
+
+TEST_F(WpcCddApiTest, gettingListOfOptionalEndpointsShouldWork)
+{
+    const std::set<uint16_t> endpoints = { 0xAABB, 0x1234, 0xD0B0 };
+    for (const auto& endpoint : endpoints) {
+        const uint8_t TEST_PAYLOAD[] = { 0x10 };
+        ASSERT_EQ(APP_RES_OK, WPC_set_config_data_item(endpoint, TEST_PAYLOAD, sizeof(TEST_PAYLOAD)));
+    }
+
+    uint16_t endpoints_list[3] = { 0 };
+    uint8_t endpoints_count = 0xFF;
+    ASSERT_EQ(APP_RES_OK,
+              WPC_get_config_data_item_list(endpoints_list, sizeof(endpoints_list), &endpoints_count));
+
+    ASSERT_EQ(endpoints.size(), endpoints_count);
+    for (uint8_t i = 0; i < endpoints_count; i++){
+        ASSERT_EQ(1, endpoints.count(endpoints_list[i]));
+    }
+}
+
