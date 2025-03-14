@@ -106,7 +106,7 @@ static bool onDataReceived(const uint8_t * bytes,
     }
     else
 	{
-		LOGI("Msg size %d\n", stream.bytes_written);
+		LOGD("Msg size %d\n", stream.bytes_written);
         if (m_rx_event_cb != NULL)
         {
             m_rx_event_cb(encoded_message_p, stream.bytes_written,
