@@ -53,10 +53,10 @@ static const wp_ErrorCode APP_ERROR_CODE_LUT[] = {
  *          Enforce null termination for strings stored
  * \return  True if successful, False otherwise
  */
-bool Common_init(char * gateway_id,
-                 char * gateway_model,
-                 char * gateway_version,
-                 char * sink_id)
+bool Common_init(const char * gateway_id,
+                 const char * gateway_model,
+                 const char * gateway_version,
+                 const char * sink_id)
 {
     strncpy(m_gateway_id, gateway_id, GATEWAY_ID_MAX_SIZE);
     m_gateway_id[GATEWAY_ID_MAX_SIZE - 1]='\0';
