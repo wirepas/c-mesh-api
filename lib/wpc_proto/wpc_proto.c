@@ -54,10 +54,10 @@ static int open_and_check_connection(unsigned long baudrate, const char * port_n
 
 app_proto_res_e WPC_Proto_initialize(const char * port_name,
                                      unsigned long bitrate,
-                                     char * gateway_id,
-                                     char * gateway_model,
-                                     char * gateway_version,
-                                     char * sink_id)
+                                     const char * gateway_id,
+                                     const char * gateway_model,
+                                     const char * gateway_version,
+                                     const char * sink_id)
 {
     _Static_assert(WPC_PROTO_MAX_RESPONSE_SIZE >= (wp_GetConfigsResp_size + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD),
                    "Max proto size too low");

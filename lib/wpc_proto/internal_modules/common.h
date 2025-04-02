@@ -23,10 +23,10 @@
  * \brief   Intialize the common module
  * \return  True if successful, False otherwise
  */
-bool Common_init(char * gateway_id,
-                 char * gateway_model,
-                 char * gateway_version,
-                 char * sink_id);
+bool Common_init(const char * gateway_id,
+                 const char * gateway_model,
+                 const char * gateway_version,
+                 const char * sink_id);
 
 char * Common_get_gateway_id(void);
 
