@@ -192,6 +192,45 @@ typedef struct __attribute__((__packed__))
     uint8_t bytes[MAXIMUM_SCRATCHPAD_BLOCK_SIZE];
 } msap_image_block_read_conf_pl_t;
 
+typedef struct __attribute__((__packed__))
+{
+    uint16_t endpoint;
+    uint8_t payload_length;
+    uint8_t payload[MAXIMUM_CDC_ITEM_PAYLOAD_SIZE];
+} msap_config_data_item_set_req_pl_t;
+
+typedef struct __attribute__((__packed__))
+{
+    uint16_t endpoint;
+} msap_config_data_item_get_req_pl_t;
+
+typedef struct __attribute__((__packed__))
+{
+    uint8_t result;
+    uint8_t payload_length;
+    uint8_t payload[MAXIMUM_CDC_ITEM_PAYLOAD_SIZE];
+} msap_config_data_item_get_conf_pl_t;
+
+typedef struct __attribute__((__packed__))
+{
+    uint8_t command;
+} msap_config_data_item_list_items_req_pl_t;
+
+typedef struct __attribute__((__packed__))
+{
+    uint8_t result;
+    uint8_t amount_endpoints;
+    uint8_t endpoints_list[MAXIMUM_CDC_ITEM_LIST_BYTE_COUNT];
+} msap_config_data_item_list_items_conf_pl_t;
+
+typedef struct __attribute__((__packed__))
+{
+    uint8_t indication_status;
+    uint16_t endpoint;
+    uint8_t payload_length;
+    uint8_t payload[MAXIMUM_CDC_ITEM_PAYLOAD_SIZE];
+} msap_config_data_item_rx_ind_pl_t;
+
 static inline void
 convert_internal_to_app_scratchpad_status(app_scratchpad_status_t * status_p,
                                           msap_scratchpad_status_conf_pl_t * internal_status_p)
@@ -449,6 +488,52 @@ static inline int msap_attribute_read_request(uint16_t attribute_id,
 }
 
 /**
+ * \brief    Request to set config data item
+ * \param    endpoint
+ *           Endpoint address of the config data item
+ * \param    payload
+ *           Pointer to the new config data payload
+ * \param    payload_size
+ *           Size of the new payload to write (bytes)
+ * \return   Negative value upon internal error, otherwise result code returned
+ *           by the DualMCU API
+ */
+int msap_config_data_item_set_request(const uint16_t endpoint,
+                                      const uint8_t *const payload,
+                                      const uint8_t payload_size);
+
+/**
+ * \brief    Request to get config data item
+ * \param    endpoint
+ *           Endpoint address of the config data item to get
+ * \param    payload
+ *           Pointer to the read config data payload
+ * \param    payload_capacity
+ *           Allocated size of the given payload buffer (bytes). If received
+ *           payload is larger, the function fails.
+ * \param    payload_size
+ *           Size of the payload that was read (bytes)
+ * \return   Negative value upon internal error, otherwise result code returned
+ *           by the DualMCU API
+ */
+int msap_config_data_item_get_request(const uint16_t endpoint,
+                                      uint8_t *const payload,
+                                      const size_t payload_capacity,
+                                      uint8_t *const payload_size);
+
+/**
+ * \brief    Request to get config data item list
+ * \param    command
+ *           Reserved for future use. Currently only value 0 is used.
+ * \param    response
+ *           Pointer to the read response.
+ * \return   Negative value upon internal error, otherwise result code returned
+ *           by the DualMCU API
+ */
+int msap_config_data_item_list_items_request(const uint8_t command,
+                                             msap_config_data_item_list_items_conf_pl_t *const response);
+
+/**
  * \brief   Handler for stack state indication
  * \param   payload
  *          pointer to payload
@@ -468,6 +553,13 @@ void msap_app_config_data_rx_indication_handler(msap_app_config_data_rx_ind_pl_t
  *          pointer to payload
  */
 void msap_scan_nbors_indication_handler(msap_scan_nbors_ind_pl_t * payload);
+
+/**
+ * \brief   Handler for config data item receive
+ * \param   payload
+ *          pointer to payload
+ */
+void msap_config_data_item_rx_indication_handler(msap_config_data_item_rx_ind_pl_t * payload);
 
 /**
  * \brief   Register for app config data
@@ -510,5 +602,19 @@ bool msap_register_for_stack_status(onStackStatusReceived_cb_f cb);
  * \return  True if unregistered successfully, false otherwise
  */
 bool msap_unregister_from_stack_status();
+
+/**
+ * \brief   Register for config data item
+ * \param   cb
+ *          Callback to invoke when config data item is received
+ * \return  True if registered successfully, false otherwise
+ */
+bool msap_register_for_config_data_item(onConfigDataItemReceived_cb_f cb);
+
+/**
+ * \brief   Unregister for config data item
+ * \return  True if unregistered successfully, false otherwise
+ */
+bool msap_unregister_from_config_data_item();
 
 #endif /* MSAP_H_ */

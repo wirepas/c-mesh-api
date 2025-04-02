@@ -22,6 +22,9 @@ An example on how to use and extend the library is available from:
 To run the tests you will to connect a device running WM's dual mcu api on
 your host machine.
 
+Tests require Google Test. On Debian and Ununtu, you can install the package
+libgtest-dev.
+
 Build the tests with
 
 ```shell
@@ -29,10 +32,11 @@ Build the tests with
     make
 ```
 
-Execute the test suite with
+When executing the tests, environment variables WPC_SERIAL_PORT and
+WPC_WPC_BAUD_RATE should be set. For example:
 
 ```shell
-    ./build/meshAPItest
+    WPC_SERIAL_PORT=/dev/ttyACM0 WPC_BAUD_RATE=125000 ./build/meshAPItest
 ```
 
 ## Contributing
