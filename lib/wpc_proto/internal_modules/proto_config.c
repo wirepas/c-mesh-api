@@ -1076,7 +1076,8 @@ app_proto_res_e Proto_config_handle_set_scratchpad_target_and_action_request(
     return APP_RES_PROTO_OK;
 }
 
-app_proto_res_e Proto_config_get_current_event_status(bool online,
+app_proto_res_e Proto_config_get_current_event_status(bool gw_online,
+                                                      bool sink_online,
                                                       uint8_t * event_status_p,
                                                       size_t * event_status_size_p)
 {
@@ -1096,8 +1097,8 @@ app_proto_res_e Proto_config_get_current_event_status(bool online,
     message_wirepas.status_event = message_StatusEvent_p;
 
     fill_status_event(message_StatusEvent_p,
-                      online ? wp_OnOffState_ON : wp_OnOffState_OFF,
-                      online ? 1 : 0);
+                      gw_online ? wp_OnOffState_ON : wp_OnOffState_OFF,
+                      sink_online ? 1 : 0);
 
     // Using the module static buffer
     pb_ostream_t stream = pb_ostream_from_buffer(event_status_p, *event_status_size_p);

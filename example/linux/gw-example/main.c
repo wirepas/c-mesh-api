@@ -281,7 +281,7 @@ static bool reconnect(uint32_t timeout_s)
 
     // Setup last will
     proto_size = WPC_PROTO_MAX_EVENTSTATUS_SIZE;
-    if (WPC_Proto_get_current_event_status(false, event_status_p, &proto_size) == APP_RES_PROTO_OK)
+    if (WPC_Proto_get_current_event_status(false, false, event_status_p, &proto_size) == APP_RES_PROTO_OK)
     {
         will_options.topicName = topic_status;
         will_options.qos = 1;
@@ -319,7 +319,7 @@ static bool reconnect(uint32_t timeout_s)
 
     // Set our current status
     proto_size = WPC_PROTO_MAX_EVENTSTATUS_SIZE;
-    if (WPC_Proto_get_current_event_status(true, event_status_p, &proto_size) == APP_RES_PROTO_OK)
+    if (WPC_Proto_get_current_event_status(true, true, event_status_p, &proto_size) == APP_RES_PROTO_OK)
     {
         MQTT_publish(topic_status, event_status_p, proto_size, true);
     }

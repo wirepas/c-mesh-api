@@ -79,6 +79,8 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
     _Static_assert(WPC_PROTO_MAX_EVENTSTATUS_SIZE >= (wp_StatusEvent_size + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD),
                    "Max proto size too low");
 
+    Common_init(gateway_id, gateway_model, gateway_version, sink_id);
+
     if (open_and_check_connection(bitrate, port_name) != 0)
     {
         return APP_RES_PROTO_WPC_NOT_INITIALIZED;
@@ -95,7 +97,6 @@ app_proto_res_e WPC_Proto_initialize(const char * port_name,
         return APP_RES_PROTO_WRONG_PARAMETER;
     }
 
-    Common_init(gateway_id, gateway_model, gateway_version, sink_id);
     Proto_data_init();
     Proto_config_init();
     Proto_otap_init();
@@ -352,11 +353,13 @@ app_proto_res_e WPC_Proto_handle_request(const uint8_t * request_p,
 
 }
 
-app_proto_res_e WPC_Proto_get_current_event_status(bool online,
+app_proto_res_e WPC_Proto_get_current_event_status(bool gw_online,
+                                                   bool sink_online,
                                                    uint8_t * event_status_p,
                                                    size_t * event_status_size_p)
 {
-    return Proto_config_get_current_event_status(online,
+    return Proto_config_get_current_event_status(gw_online,
+                                                 sink_online,
                                                  event_status_p,
                                                  event_status_size_p);
 }

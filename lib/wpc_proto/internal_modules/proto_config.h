@@ -84,8 +84,8 @@ app_proto_res_e Proto_config_handle_set_scratchpad_target_and_action_request(
                                             wp_SetScratchpadTargetAndActionReq *req,
                                             wp_SetScratchpadTargetAndActionResp *resp);
 
-
-app_proto_res_e Proto_config_get_current_event_status(bool online,
+app_proto_res_e Proto_config_get_current_event_status(bool gw_online,
+                                                      bool sink_online,
                                                       uint8_t * event_status_p,
                                                       size_t * event_status_size_p);
 
