@@ -542,7 +542,7 @@ static void onStackStatusReceived(uint8_t status)
 	}
 	else
 	{
-        LOGI("Msg size %d\n", stream.bytes_written);
+        LOGD("Msg size %d\n", stream.bytes_written);
         if (m_onProtoEventStatus_cb != NULL)
         {
             m_onProtoEventStatus_cb(encoded_message_p, stream.bytes_written);
@@ -1115,7 +1115,7 @@ app_proto_res_e Proto_config_get_current_event_status(bool gw_online,
         return APP_RES_PROTO_CANNOT_GENERATE_RESPONSE;
     }
 
-    LOGI("Msg size %d\n", stream.bytes_written);
+    LOGD("Msg size %d\n", stream.bytes_written);
     *event_status_size_p = stream.bytes_written;
     return APP_RES_PROTO_OK;
 }
