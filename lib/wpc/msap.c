@@ -30,6 +30,11 @@ static onScanNeighborsDone_cb_f m_scan_neighbor_cb = NULL;
 static onStackStatusReceived_cb_f m_stack_status_cb = NULL;
 
 /**
+ * \brief   Registered callback for config data item
+ */
+static onConfigDataItemReceived_cb_f m_config_data_item_cb = NULL;
+
+/**
  * \brief   Time to wait for scratchpad start request confirm
  *          It can be long because the start triggers an erase of
  *          scratchpad area that can be long if external memory used
@@ -448,6 +453,85 @@ int msap_scratchpad_block_read_request(uint32_t start_address, uint8_t number_of
     return confirm.payload.msap_image_block_read_confirm_payload.result;
 }
 
+int msap_config_data_item_set_request(const uint16_t endpoint,
+                                      const uint8_t *const payload,
+                                      const uint8_t payload_size)
+{
+    if (payload_size > MAXIMUM_CDC_ITEM_PAYLOAD_SIZE)
+    {
+        LOGE("Too large payload size (%d) for config data item\n", payload_size);
+        return WPC_INT_WRONG_PARAM_ERROR;
+    }
+
+    wpc_frame_t request = {
+        .primitive_id = MSAP_CONFIG_DATA_ITEM_SET_REQUEST,
+        .payload_length = sizeof(msap_config_data_item_set_req_pl_t),
+        .payload = {
+            .msap_config_data_item_set_request_payload = {
+                .endpoint = endpoint,
+                .payload_length = payload_size,
+                .payload = {0}
+            }
+        }
+    };
+
+    memcpy(request.payload.msap_config_data_item_set_request_payload.payload,
+           payload,
+           payload_size);
+
+    wpc_frame_t confirm;
+    const int res = WPC_Int_send_request(&request, &confirm);
+    if (res < 0)
+    {
+        return res;
+    }
+
+    return confirm.payload.sap_generic_confirm_payload.result;
+}
+
+int msap_config_data_item_get_request(const uint16_t endpoint,
+                                      uint8_t *const payload,
+                                      const size_t payload_capacity,
+                                      uint8_t *const payload_size)
+{
+    wpc_frame_t request = {
+        .primitive_id = MSAP_CONFIG_DATA_ITEM_GET_REQUEST,
+        .payload_length = sizeof(msap_config_data_item_get_req_pl_t),
+        .payload = {
+            .msap_config_data_item_get_request_payload = {
+                .endpoint = endpoint,
+            }
+        }
+    };
+
+    wpc_frame_t confirm;
+    const int res = WPC_Int_send_request(&request, &confirm);
+    if (res < 0)
+    {
+        return res;
+    }
+
+    if (confirm.payload.sap_generic_confirm_payload.result == 0)
+    {
+        const uint8_t payload_length = confirm.payload.msap_config_data_item_get_confirm_payload.payload_length;
+        if (payload_length > payload_capacity)
+        {
+            return WPC_INT_WRONG_BUFFER_SIZE;
+        }
+        if (payload_length > sizeof(confirm.payload.msap_config_data_item_get_confirm_payload.payload))
+        {
+            return WPC_INT_WRONG_PARAM_ERROR;
+        }
+
+        memcpy(payload,
+               &confirm.payload.msap_config_data_item_get_confirm_payload.payload,
+               payload_length);
+        *payload_size = payload_length;
+    }
+
+    return confirm.payload.sap_generic_confirm_payload.result;
+}
+
 void msap_stack_state_indication_handler(msap_stack_state_ind_pl_t * payload)
 {
     LOGI("Status is 0x%02x\n", payload->status);
@@ -476,6 +560,20 @@ void msap_scan_nbors_indication_handler(msap_scan_nbors_ind_pl_t * payload)
     if (m_scan_neighbor_cb != NULL)
     {
         m_scan_neighbor_cb(payload->scan_ready);
+    }
+}
+
+void msap_config_data_item_rx_indication_handler(msap_config_data_item_rx_ind_pl_t * payload)
+{
+    LOGD("Received configuration data item indication for endpoint: 0x%04X\n",
+         payload->endpoint);
+
+    if (m_config_data_item_cb != NULL)
+    {
+        m_config_data_item_cb(payload->endpoint,
+                              payload->payload,
+                              payload->payload_length);
+
     }
 }
 
@@ -536,4 +634,14 @@ bool msap_register_for_stack_status(onStackStatusReceived_cb_f cb)
 bool msap_unregister_from_stack_status()
 {
     return UNREGISTER_CB(m_stack_status_cb);
+}
+
+bool msap_register_for_config_data_item(onConfigDataItemReceived_cb_f cb)
+{
+    return REGISTER_CB(cb, m_config_data_item_cb);
+}
+
+bool msap_unregister_from_config_data_item()
+{
+    return UNREGISTER_CB(m_config_data_item_cb);
 }

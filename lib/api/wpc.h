@@ -926,6 +926,41 @@ app_res_e WPC_send_data(const uint8_t * bytes,
 app_res_e WPC_send_data_with_options(const app_message_t * message_p);
 
 /**
+ * \brief   Set config data item
+ * \param   endpoint
+ *          Endpoint address of the config data item
+ * \param   payload
+ *          Pointer to the new config data payload
+ * \param   size
+ *          Size of the new payload to write (bytes)
+ * \return  Return code of the operation
+ * \note    This call can only be made from a sink node.
+ *          An optional config data item can be removed by setting a zero-size
+ *          payload.
+ */
+app_res_e WPC_set_config_data_item(const uint16_t endpoint,
+                                   const uint8_t *const payload,
+                                   const uint8_t size);
+
+/**
+ * \brief   Get config data item
+ * \param   endpoint
+ *          Endpoint address of the config data item to get
+ * \param   payload
+ *          Pointer to read config data item payload into
+ * \param   payload_capacity
+ *          Allocated size of the given payload buffer (bytes). If received
+ *          payload is larger, the function fails.
+ * \param   size
+ *          Size of the payload that was written to the above pointer (bytes)
+ * \return  Return code of the operation
+ */
+app_res_e WPC_get_config_data_item(const uint16_t endpoint,
+                                   uint8_t *const payload,
+                                   const size_t payload_capacity,
+                                   uint8_t *const size);
+
+/**
  * \brief   Callback definition to register for received data
  * \param   bytes
  *          Buffer of received data
@@ -1044,5 +1079,34 @@ app_res_e WPC_register_for_stack_status(onStackStatusReceived_cb_f onStackStatus
  * \return  Return code of the operation
  */
 app_res_e WPC_unregister_from_stack_status();
+
+/**
+ * \brief   Callback definition to register for config data item notification
+ * \param   endpoint
+ *          Endpoint address of the configuration data item
+ * \param   payload
+ *          Pointer to the configuration data
+ * \param   size
+ *          Size of the configuration data (bytes)
+ */
+typedef void (*onConfigDataItemReceived_cb_f)(const uint16_t endpoint,
+                                              const uint8_t *const payload,
+                                              const uint8_t size);
+
+/**
+ * \brief   Register for receiving config data item
+ * \param   onConfigDataItemReceived
+ *          The callback to call when config data item is received
+ * \note    All the registered callback share the same thread,
+ *          so the handling of it must be kept as simple
+ *          as possible or dispatched to another thread for long operations.
+ */
+app_res_e WPC_register_for_config_data_item(onConfigDataItemReceived_cb_f onConfigDataItemReceived);
+
+/**
+ * \brief   Unregister for receiving config data item
+ * \return  Return code of the operation
+ */
+app_res_e WPC_unregister_from_config_data_item();
 
 #endif
