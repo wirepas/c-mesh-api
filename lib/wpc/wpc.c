@@ -1178,7 +1178,7 @@ app_res_e WPC_send_data(const uint8_t * bytes,
 
 static const app_res_e CDC_ITEM_SET_ERROR_CODE_LUT[] = {
     APP_RES_OK,              // 0
-    APP_RES_NOT_A_SINK,      // 1
+    APP_RES_NODE_NOT_A_SINK, // 1
     APP_RES_INVALID_VALUE,   // 2 invalid endpoint
     APP_RES_OUT_OF_MEMORY,   // 3 too many optional items
     APP_RES_DATA_ERROR,      // 4 invalid payload contents
