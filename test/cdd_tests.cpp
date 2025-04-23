@@ -203,7 +203,7 @@ TEST_F(WpcCddApiTest, settingItemShouldFailOnNonSinkNode)
     ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_HEADNODE));
 
     const uint8_t PAYLOAD[] = { 0xAA, 0xBB };
-    ASSERT_EQ(APP_RES_NOT_A_SINK, WPC_set_config_data_item(100, PAYLOAD, sizeof(PAYLOAD)));
+    ASSERT_EQ(APP_RES_NODE_NOT_A_SINK, WPC_set_config_data_item(100, PAYLOAD, sizeof(PAYLOAD)));
 }
 
 TEST_F(WpcCddApiTest, gettingItemShouldWorkOnNonSinkNode)
