@@ -137,9 +137,10 @@ int msap_app_config_data_read_request(uint8_t * seq, uint16_t * interval, uint8_
     {
         *seq = confirm.payload.msap_app_config_data_read_confirm_payload.sequence_number;
         *interval = confirm.payload.msap_app_config_data_read_confirm_payload.diag_data_interval;
+        const size_t size_to_read = size > MAXIMUM_APP_CONFIG_SIZE ? MAXIMUM_APP_CONFIG_SIZE : size;
         memcpy(config_p,
                confirm.payload.msap_app_config_data_read_confirm_payload.app_config_data,
-               size);
+               size_to_read);
 
         LOGD("App config : seq=%d, interval=%d\n", *seq, *interval);
     }
