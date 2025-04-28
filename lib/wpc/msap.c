@@ -479,9 +479,12 @@ int msap_config_data_item_set_request(const uint16_t endpoint,
         }
     };
 
-    memcpy(request.payload.msap_config_data_item_set_request_payload.payload,
-           payload,
-           payload_size);
+    if (payload_size > 0)
+    {
+        memcpy(request.payload.msap_config_data_item_set_request_payload.payload,
+            payload,
+            payload_size);
+    }
 
     wpc_frame_t confirm;
     const int res = WPC_Int_send_request(&request, &confirm);
