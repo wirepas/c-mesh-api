@@ -463,9 +463,12 @@ int msap_config_data_item_set_request(const uint16_t endpoint,
         return WPC_INT_WRONG_PARAM_ERROR;
     }
 
+    const uint8_t frame_payload_size = sizeof(msap_config_data_item_set_req_pl_t)
+                                       - MAXIMUM_CDC_ITEM_PAYLOAD_SIZE
+                                       + payload_size;
     wpc_frame_t request = {
         .primitive_id = MSAP_CONFIG_DATA_ITEM_SET_REQUEST,
-        .payload_length = sizeof(msap_config_data_item_set_req_pl_t),
+        .payload_length = frame_payload_size,
         .payload = {
             .msap_config_data_item_set_request_payload = {
                 .endpoint = endpoint,
