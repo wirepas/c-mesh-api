@@ -34,6 +34,8 @@
 
 #define DEFAULT_TIMEOUT_AFTER_STOP_STACK_S 60
 
+static onScratchpadBlockReceived_cb_f m_scratchpad_block_cb = NULL;
+
 /** \brief   Timeout to get a valid stack response after
  *           a stop stack. It can be quite long in case of
  *           the bootloader is processing a scratchpad
@@ -968,6 +970,12 @@ app_res_e WPC_upload_local_block_scratchpad(uint32_t len, const uint8_t * bytes,
 
         loaded += block_size;
     }
+
+    if (m_scratchpad_block_cb)
+    {
+        m_scratchpad_block_cb(len, bytes, start);
+    }
+    
     return APP_RES_OK;
 }
 
@@ -1265,4 +1273,16 @@ app_res_e WPC_register_downlink_data_hook(onDownlinkTrafficReceived_cb_f onDownl
 app_res_e WPC_unregister_downlink_data_hook()
 {
     return dsap_unregister_downlink_data_hook() ? APP_RES_OK : APP_RES_INVALID_VALUE;
+}
+
+app_res_e WPC_register_scratchpad_block_hook(onScratchpadBlockReceived_cb_f onScratchpadBlockCb)
+{
+    m_scratchpad_block_cb = onScratchpadBlockCb;
+    return APP_RES_OK;
+}
+
+app_res_e WPC_unregister_scratchpad_block_hook()
+{
+    m_scratchpad_block_cb = NULL;
+    return APP_RES_OK;
 }

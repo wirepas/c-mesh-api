@@ -1079,4 +1079,27 @@ app_res_e WPC_register_downlink_data_hook(onDownlinkTrafficReceived_cb_f onDownl
 
 app_res_e WPC_unregister_downlink_data_hook();
 
+/**
+ * \brief   Callback definition to register for scratchpad data event
+ * \param    start_address
+ *           Start address of block (relative to beginning of scratchpad)
+ * \param    number_of_bytes
+ *           Number of bytes in the block
+ *           Between 1 and 112
+ * \param    bytes
+ *           Bytes of scratchpad datac
+ * \return  True if data was intercepted, false otherwise
+ */
+typedef bool (*onScratchpadBlockReceived_cb_f)(uint32_t len, const uint8_t * bytes, uint32_t start);
+
+/**
+ * \brief   Register for being able to intercept scratchpad block
+ *          before being sent to the sink
+ * \param   onScratchpadBlockCb
+ *          The callback to be called when scratchpad block is received
+ */
+app_res_e WPC_register_scratchpad_block_hook(onScratchpadBlockReceived_cb_f onScratchpadBlockCb);
+
+app_res_e WPC_unregister_scratchpad_block_hook();
+
 #endif
