@@ -1178,7 +1178,7 @@ app_res_e WPC_send_data(const uint8_t * bytes,
 
 static const app_res_e CDC_ITEM_SET_ERROR_CODE_LUT[] = {
     APP_RES_OK,              // 0
-    APP_RES_NOT_A_SINK,      // 1
+    APP_RES_NODE_NOT_A_SINK, // 1
     APP_RES_INVALID_VALUE,   // 2 invalid endpoint
     APP_RES_OUT_OF_MEMORY,   // 3 too many optional items
     APP_RES_DATA_ERROR,      // 4 invalid payload contents
@@ -1216,6 +1216,46 @@ app_res_e WPC_get_config_data_item(const uint16_t endpoint,
     }
 
     return convert_error_code(CDC_ITEM_GET_ERROR_CODE_LUT, res);
+}
+
+static const app_res_e CDC_GET_ITEM_LIST_ERROR_CODE_LUT[] = {
+    APP_RES_OK, // 0
+};
+
+app_res_e WPC_get_config_data_item_list(uint16_t *const endpoints,
+                                        const size_t endpoints_capacity,
+                                        uint8_t *const endpoints_count)
+{
+    msap_config_data_item_list_items_conf_pl_t response = { 0 };
+    const int msap_res = msap_config_data_item_list_items_request(0, &response);
+    if (msap_res < 0)
+    {
+        LOGE("Error getting config data item list: %d\n", msap_res);
+        return APP_RES_INTERNAL_ERROR;
+    }
+
+    const app_res_e res = convert_error_code(CDC_GET_ITEM_LIST_ERROR_CODE_LUT, msap_res);
+    if (res == APP_RES_OK)
+    {
+        if (response.amount_endpoints * 2 > endpoints_capacity)
+        {
+            LOGE("Endpoints list buffer size is too small: %d\n", endpoints_capacity);
+            return APP_RES_INTERNAL_ERROR;
+        }
+        if (response.amount_endpoints * 2 > sizeof(response.endpoints_list))
+        {
+            LOGE("Invalid amount of endpoints received: %d\n", response.amount_endpoints);
+            return APP_RES_INTERNAL_ERROR;
+        }
+
+        _Static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__, "");
+        memcpy(endpoints,
+               &response.endpoints_list,
+               response.amount_endpoints * 2);
+        *endpoints_count = response.amount_endpoints;
+    }
+
+    return res;
 }
 
 #ifdef REGISTER_DATA_PER_ENDPOINT

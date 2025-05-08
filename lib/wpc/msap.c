@@ -463,9 +463,12 @@ int msap_config_data_item_set_request(const uint16_t endpoint,
         return WPC_INT_WRONG_PARAM_ERROR;
     }
 
+    const uint8_t frame_payload_size = sizeof(msap_config_data_item_set_req_pl_t)
+                                       - MAXIMUM_CDC_ITEM_PAYLOAD_SIZE
+                                       + payload_size;
     wpc_frame_t request = {
         .primitive_id = MSAP_CONFIG_DATA_ITEM_SET_REQUEST,
-        .payload_length = sizeof(msap_config_data_item_set_req_pl_t),
+        .payload_length = frame_payload_size,
         .payload = {
             .msap_config_data_item_set_request_payload = {
                 .endpoint = endpoint,
@@ -527,6 +530,36 @@ int msap_config_data_item_get_request(const uint16_t endpoint,
                &confirm.payload.msap_config_data_item_get_confirm_payload.payload,
                payload_length);
         *payload_size = payload_length;
+    }
+
+    return confirm.payload.sap_generic_confirm_payload.result;
+}
+
+int msap_config_data_item_list_items_request(const uint8_t command,
+                                             msap_config_data_item_list_items_conf_pl_t *const response)
+{
+    wpc_frame_t request = {
+        .primitive_id = MSAP_CONFIG_DATA_ITEM_LIST_ITEMS_REQUEST,
+        .payload_length = sizeof(msap_config_data_item_list_items_req_pl_t),
+        .payload = {
+            .msap_config_data_item_list_items_request_payload = {
+                .command = command
+            }
+        }
+    };
+
+    wpc_frame_t confirm;
+    const int res = WPC_Int_send_request(&request, &confirm);
+    if (res < 0)
+    {
+        return res;
+    }
+
+    if (confirm.payload.sap_generic_confirm_payload.result == 0)
+    {
+        memcpy(response,
+               &confirm.payload.msap_config_data_item_list_items_confirm_payload,
+               sizeof(msap_config_data_item_list_items_conf_pl_t));
     }
 
     return confirm.payload.sap_generic_confirm_payload.result;
