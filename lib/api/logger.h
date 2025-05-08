@@ -56,6 +56,18 @@ extern void Platform_LOG(char level, char * module, char * format, va_list args)
 extern void Platform_print_buffer(uint8_t * buffer, int size);
 
 /**
+ * \brief   Changes the current log level
+ * \param   level
+ *          Log level as defined with macros below (for example INFO_LOG_LEVEL)
+ * \return  Non-negative value upon success,
+ *          a negative value otherwise.
+ * \note    This function is optional and might not be supported on some
+ *          platforms. If it is not implemented, a negative value should be
+ *          returned.
+ */
+extern int Platform_set_log_level(const int level);
+
+/**
  * Macros to define several level of Log: Debug(3), Info(2), Warning(1),
  * Error(0)
  */
@@ -64,6 +76,17 @@ extern void Platform_print_buffer(uint8_t * buffer, int size);
 #define WARNING_LOG_LEVEL 1
 #define ERROR_LOG_LEVEL 0
 #define NO_LOG_LEVEL -1
+
+/**
+ * Optionally can be set to override MAX_LOG_LEVEL values
+ *
+ * Example use case is to set it as a compiler parameter to globally override
+ * the MAX_LOG_LEVEL definitions in all of the modules.
+ */
+#ifdef OVERRIDE_MAX_LOG_LEVEL
+#   undef MAX_LOG_LEVEL
+#   define MAX_LOG_LEVEL OVERRIDE_MAX_LOG_LEVEL
+#endif
 
 /**
  * Only logs with a level lower or equal to MAX_LOG_LEVEL will be printed

@@ -8,11 +8,16 @@
 
 #include <time.h>
 
+#define LOG_MODULE_NAME "logger"
+#include "logger.h"
+
 /* Full log level string  */
 static char DEBUG[] = "DEBUG";
 static char INFO[] = "INFO";
 static char WARNING[] = "WARNING";
 static char ERROR[] = "ERROR";
+
+static int m_log_level = DEBUG_LOG_LEVEL;
 
 static inline void get_timestamp(char * timestamp)
 {
@@ -69,10 +74,46 @@ static inline void print_prefix(char level, char * module)
     printf("%s | [%s] %s:", timestamp, full_level, module);
 }
 
+static int get_log_level(const char level_letter)
+{
+    switch (level_letter)
+    {
+        case ('D'):
+            return DEBUG_LOG_LEVEL;
+        case ('I'):
+            return INFO_LOG_LEVEL;
+        case ('W'):
+            return WARNING_LOG_LEVEL;
+        case ('E'):
+            return ERROR_LOG_LEVEL;
+        default:
+            return NO_LOG_LEVEL;
+    }
+}
+
 void Platform_LOG(char level, char * module, char * format, va_list args)
 {
-    print_prefix(level, module);
-    vprintf(format, args);
+    if (NO_LOG_LEVEL != m_log_level && get_log_level(level) <= m_log_level)
+    {
+        print_prefix(level, module);
+        vprintf(format, args);
+    }
+}
+
+int Platform_set_log_level(const int level)
+{
+    switch (level)
+    {
+        case DEBUG_LOG_LEVEL:
+        case INFO_LOG_LEVEL:
+        case WARNING_LOG_LEVEL:
+        case ERROR_LOG_LEVEL:
+        case NO_LOG_LEVEL:
+            m_log_level = level;
+            return 0;
+        default:
+            return -1;
+    }
 }
 
 void Platform_print_buffer(uint8_t * buffer, int size)
