@@ -432,6 +432,36 @@ app_res_e WPC_set_reserved_channels(const uint8_t * channels_p, uint8_t size)
     return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
 }
 
+
+static app_res_e set_key_pair(uint16_t attribute_id, const uint8_t * value)
+{
+    int res = csap_attribute_write_request(attribute_id, sizeof(wpc_key_pair_t), value);
+    return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
+} 
+
+
+app_res_e WPC_set_network_key_pair(const wpc_key_pair_t * key_pair)
+{
+    if (key_pair != NULL)
+    {
+        return set_key_pair(C_NETWORK_KEY_PAIR_ID, (const uint8_t *)key_pair);
+    }
+
+    return APP_RES_INTERNAL_ERROR;
+}
+
+
+app_res_e WPC_set_management_key_pair(const wpc_key_pair_t * key_pair)
+{
+    if (key_pair != NULL)
+    {
+        return set_key_pair(C_MANAGEMENT_KEY_PAIR_ID, (const uint8_t *)key_pair);
+    }
+
+    return APP_RES_INTERNAL_ERROR;
+}
+
+
 /* Error code LUT for app_config read */
 static const app_res_e APP_CONFIG_READ_ERROR_CODE_LUT[] = {
     APP_RES_OK,            // 0
