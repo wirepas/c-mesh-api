@@ -203,6 +203,17 @@ typedef struct
     bool is_unack_csma_ca;            //!< If true, only sent to CB-MAC nodes
 } app_message_t;
 
+// structure to hold security key pair
+typedef struct __attribute__((packed))
+{
+    struct
+    {
+        const uint8_t encryption[16];
+        const uint8_t authentication[16];
+    } key_pair;
+    uint8_t sequence_number; /**< Sequence number, 1-255 */
+} wpc_key_pair_t;
+
 /**
  * \brief   Maximum number of neighbors (defined in protocol)
  */
@@ -384,6 +395,24 @@ app_res_e WPC_remove_cipher_key();
  * \return  Return code of the operation
  */
 app_res_e WPC_set_authentication_key(const uint8_t key[16]);
+
+
+/**
+ * \brief   Set the network key pair
+ * \param   keypair
+ *          The new keypair to set
+ * \return  Return code of the operation
+ */
+app_res_e WPC_set_network_key_pair(const wpc_key_pair_t * key_pair);
+
+/**
+ * \brief   Set the management key pair
+ * \param   keypair
+ *          The new keypair to set
+ * \return  Return code of the operation
+ */
+app_res_e WPC_set_management_key_pair(const wpc_key_pair_t * key_pair);
+
 
 /**
  * \brief   Check if authentication key is set

@@ -34,6 +34,9 @@
 #define C_FEATURE_LOCK_BITS 22
 #define C_FEATURE_LOCK_KEY 23
 #define C_RESERVED_CHANNELS 25
+#define C_NETWORK_KEY_PAIR_ID 26
+#define C_MANAGEMENT_KEY_PAIR_ID 27
+
 
 typedef struct __attribute__((__packed__))
 {
