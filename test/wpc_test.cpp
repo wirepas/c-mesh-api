@@ -1,5 +1,10 @@
 #include "wpc_test.hpp"
 
+extern "C" {
+  #define LOG_MODULE_NAME (char*) "wpc_test"
+  #include <logger.h>
+}
+
 std::string WpcTestEnvironment::GetSerialPort() const
 {
     const auto envVar = std::getenv("WPC_SERIAL_PORT");
@@ -24,6 +29,8 @@ void WpcTestEnvironment::SetUp()
 {
     const auto& serial_port = GetSerialPort();
     const auto baud_rate = GetBaudRate();
+
+    Platform_set_log_level(NO_LOG_LEVEL);
 
     if (WPC_initialize(serial_port.c_str(), baud_rate) != APP_RES_OK) {
         std::cerr << "Could not initialize WPC with port: " << serial_port
