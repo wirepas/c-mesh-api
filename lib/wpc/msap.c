@@ -137,9 +137,10 @@ int msap_app_config_data_read_request(uint8_t * seq, uint16_t * interval, uint8_
     {
         *seq = confirm.payload.msap_app_config_data_read_confirm_payload.sequence_number;
         *interval = confirm.payload.msap_app_config_data_read_confirm_payload.diag_data_interval;
+        const size_t size_to_read = size > MAXIMUM_APP_CONFIG_SIZE ? MAXIMUM_APP_CONFIG_SIZE : size;
         memcpy(config_p,
                confirm.payload.msap_app_config_data_read_confirm_payload.app_config_data,
-               size);
+               size_to_read);
 
         LOGD("App config : seq=%d, interval=%d\n", *seq, *interval);
     }
@@ -478,9 +479,12 @@ int msap_config_data_item_set_request(const uint16_t endpoint,
         }
     };
 
-    memcpy(request.payload.msap_config_data_item_set_request_payload.payload,
-           payload,
-           payload_size);
+    if (payload_size > 0)
+    {
+        memcpy(request.payload.msap_config_data_item_set_request_payload.payload,
+            payload,
+            payload_size);
+    }
 
     wpc_frame_t confirm;
     const int res = WPC_Int_send_request(&request, &confirm);
