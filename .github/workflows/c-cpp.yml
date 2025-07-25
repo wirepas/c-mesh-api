@@ -62,3 +62,14 @@ jobs:
           cmake --build cbuild
       working-directory: test
 
+    - name: Build stubbed tests
+      working-directory: stubbed_tests
+      run: |
+          mkdir build && cd build
+          CC=clang CXX=clang++ cmake -DCMAKE_BUILD_TYPE=RelWithDebug ..
+          cmake --build . -j $(nproc)
+
+    - name: Run stubbed tests
+      working-directory: stubbed_tests/build
+      run: ./stubbed_tests
+
