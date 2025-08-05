@@ -246,7 +246,7 @@ int Slip_get_buffer(uint8_t * buffer, uint32_t len, uint16_t timeout_ms)
     // Allocate the receiving buffer.
     uint8_t receiving_buffer[MAX_SIZE_ENCODED_BUFFER(len)];
     unsigned char read = 0;
-    int size = 0;
+    size_t size = 0;
     int decoded_size, res;
     bool start_of_frame_detected = false;
 
@@ -317,7 +317,7 @@ int Slip_get_buffer(uint8_t * buffer, uint32_t len, uint16_t timeout_ms)
 
     // Now, decode the frame
     decoded_size = Slip_decode(receiving_buffer, size);
-    if (decoded_size > 0 && decoded_size <= len)
+    if (decoded_size > 0 && (unsigned int) decoded_size <= len)
     {
         memcpy(buffer, receiving_buffer, decoded_size);
     }
