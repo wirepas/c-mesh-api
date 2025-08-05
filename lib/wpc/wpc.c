@@ -233,7 +233,7 @@ app_res_e WPC_get_firmware_version(uint16_t version[4])
     app_res_e ret;
     const uint8_t IDs[4] = {C_FIRMWARE_MAJOR_ID, C_FIRMWARE_MINOR_ID, C_FIRMWARE_MAINT_ID, C_FIRMWARE_DEV_ID};
 
-    for (int i = 0; i < sizeof(IDs); i++)
+    for (size_t i = 0; i < sizeof(IDs); i++)
     {
         uint8_t att[2];
         int res = csap_attribute_read_request(IDs[i], 2, att);
