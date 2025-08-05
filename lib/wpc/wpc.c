@@ -22,14 +22,14 @@
  *          Dual mcu return code are not harmonized so
  *          a different LUT must be used per fonction
  */
-#define convert_error_code(LUT, error)          \
-    ({                                          \
-        app_res_e ret = APP_RES_INTERNAL_ERROR; \
-        if (error >= 0 && error < sizeof(LUT))  \
-        {                                       \
-            ret = LUT[error];                   \
-        }                                       \
-        ret;                                    \
+#define convert_error_code(LUT, error)                  \
+    ({                                                  \
+        app_res_e ret = APP_RES_INTERNAL_ERROR;         \
+        if (error >= 0 && (size_t) error < sizeof(LUT)) \
+        {                                               \
+            ret = LUT[error];                           \
+        }                                               \
+        ret;                                            \
     })
 
 #define DEFAULT_TIMEOUT_AFTER_STOP_STACK_S 60
