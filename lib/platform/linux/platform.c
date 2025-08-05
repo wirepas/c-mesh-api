@@ -97,6 +97,7 @@ static pthread_cond_t m_queue_not_empty_cond = PTHREAD_COND_INITIALIZER;
  */
 static void * dispatch_indication(void * unused)
 {
+    (void) unused;
     struct timespec ts;
 
     pthread_mutex_lock(&m_queue_mutex);
@@ -182,6 +183,7 @@ static void onIndicationReceivedLocked(wpc_frame_t * frame, unsigned long long t
  */
 static void * poll_for_indication(void * unused)
 {
+    (void) unused;
     unsigned int max_num_indication, free_buffer_room;
     int get_ind_res;
     // Initially wait for 500ms before any polling
@@ -333,6 +335,7 @@ void * Platform_malloc(size_t size)
 
 void Platform_free(void *ptr, size_t size)
 {
+    (void) size;
     free(ptr);
     LOGD("F: %d\n", size);
 }
