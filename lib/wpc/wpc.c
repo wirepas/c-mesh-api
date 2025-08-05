@@ -966,7 +966,6 @@ static const app_res_e SCRATCHPAD_LOCAL_BLOCK_ERROR_CODE_LUT[] = {
 app_res_e WPC_upload_local_block_scratchpad(uint32_t len, const uint8_t * bytes, uint32_t start)
 {
     app_res_e app_res;
-    uint8_t res;
     uint32_t loaded = 0;
     uint8_t max_block_size, block_size;
 
@@ -984,8 +983,8 @@ app_res_e WPC_upload_local_block_scratchpad(uint32_t len, const uint8_t * bytes,
         uint32_t addr_le;
         uint32_encode_le(start + loaded, (uint8_t *) &addr_le);
 
-        res = msap_scratchpad_block_request(addr_le, block_size, bytes + loaded);
-        if (res > 1)
+        const int res = msap_scratchpad_block_request(addr_le, block_size, bytes + loaded);
+        if (res > 1 || res < 0)
         {
             LOGE("Error in loading scratchpad block -> %d\n", res);
             return convert_error_code(SCRATCHPAD_LOCAL_BLOCK_ERROR_CODE_LUT, res);
@@ -1070,7 +1069,6 @@ static const app_res_e SCRATCHPAD_LOCAL_BLOCK_READ_ERROR_CODE_LUT[] = {
 app_res_e WPC_download_local_scratchpad(uint32_t len, uint8_t * bytes, uint32_t start)
 {
     app_res_e app_res;
-    uint8_t res;
     uint32_t loaded = 0;
     uint8_t max_block_size, block_size;
 
@@ -1088,8 +1086,8 @@ app_res_e WPC_download_local_scratchpad(uint32_t len, uint8_t * bytes, uint32_t 
         uint32_t addr_le;
         uint32_encode_le(start + loaded, (uint8_t *) &addr_le);
 
-        res = msap_scratchpad_block_read_request(addr_le, block_size, bytes + loaded);
-        if (res > 1)
+        const int res = msap_scratchpad_block_read_request(addr_le, block_size, bytes + loaded);
+        if (res > 1 || res < 0)
         {
             LOGE("Error in reading scratchpad block -> %d\n", res);
             return convert_error_code(SCRATCHPAD_LOCAL_BLOCK_READ_ERROR_CODE_LUT, res);
