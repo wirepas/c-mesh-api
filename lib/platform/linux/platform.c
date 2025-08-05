@@ -19,7 +19,7 @@
 #include "wpc_proto.h"
 
 // Maximum number of indication to be retrieved from a single poll
-#define MAX_NUMBER_INDICATION 30
+#define MAX_NUMBER_INDICATION 30U
 
 // Polling interval to check for indication
 #define POLLING_INTERVAL_MS 20
