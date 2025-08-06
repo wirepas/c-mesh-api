@@ -29,3 +29,36 @@ jobs:
     - name: make test
       run: make
       working-directory: test
+
+  build-with-cmake:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: build example
+      run: |
+          cmake -S . -B cbuild
+          cmake --build cbuild
+      working-directory: example
+    - name: make proto example
+      run: |
+          cmake -S . -B cbuild
+          cmake --build cbuild
+      working-directory: example/linux/proto-api
+    - name: install needed packages libpaho-mqtt
+      run: sudo apt-get update && sudo apt-get install -y libpaho-mqtt-dev
+    - name: build gateway example
+      run: |
+          cmake -S . -B cbuild
+          cmake --build cbuild
+      working-directory: example/linux/gw-example
+    - name: build test
+      run: |
+          cmake -S . -B cbuild
+          cmake --build cbuild
+      working-directory: test
+
