@@ -11,14 +11,11 @@ set(WPC_LIB_DIR "${CMAKE_CURRENT_LIST_DIR}/../lib/")
 
 include(FetchContent)
 FetchContent_Declare(
-  wpc-lib
-  SOURCE_DIR ${WPC_LIB_DIR}
+    wpc-lib
+    SOURCE_DIR ${WPC_LIB_DIR}
 )
 FetchContent_MakeAvailable(wpc-lib)
 
 add_executable(${CMAKE_PROJECT_NAME} main.c)
-target_link_libraries(${CMAKE_PROJECT_NAME}
-    wpc
-    wpc_platform
-)
+target_link_libraries(${CMAKE_PROJECT_NAME} wpc)
 

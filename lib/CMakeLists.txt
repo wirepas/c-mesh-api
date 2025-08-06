@@ -8,10 +8,12 @@ option(WPC_BUILD_PROTO_API "Build wpc_proto library" OFF)
 add_subdirectory(wpc)
 
 if(${WPC_PLATFORM} STREQUAL "linux")
-  add_subdirectory(platform/${WPC_PLATFORM})
+    add_subdirectory(platform/${WPC_PLATFORM})
+    target_link_libraries(wpc wpc_platform)
 endif()
 
 if(WPC_BUILD_PROTO_API)
   add_subdirectory(wpc_proto)
+  target_link_libraries(wpc_proto wpc)
 endif()
 
