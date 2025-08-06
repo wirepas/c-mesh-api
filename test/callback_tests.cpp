@@ -166,7 +166,7 @@ protected:
         scan_neighbors_cb.status = status;
     }
 
-    static void onAppConfigDataReceived(uint8_t seq, uint16_t interval, uint8_t* config)
+    static void onAppConfigDataReceived(uint8_t /* seq */, uint16_t interval, uint8_t* config)
     {
         std::lock_guard<std::mutex> lock(app_config_cb.mutex);
         app_config_cb.callback_called = true;
@@ -175,7 +175,7 @@ protected:
         std::memcpy(app_config_cb.config, config, app_config_cb.app_config_size);
     }
 
-    static void onDataSent(uint16_t pduid, uint32_t buffering_delay, uint8_t result)
+    static void onDataSent(uint16_t pduid, uint32_t /* buffering_delay */, uint8_t result)
     {
         std::lock_guard<std::mutex> lock(data_sent_cb.mutex);
         data_sent_cb.callback_called = true;
@@ -191,9 +191,9 @@ protected:
                                app_qos_e qos,
                                uint8_t src_ep,
                                uint8_t dst_ep,
-                               uint32_t travel_time,
-                               uint8_t hop_count,
-                               unsigned long long timestamp_ms_epoch)
+                               uint32_t /* travel_time */,
+                               uint8_t /* hop_count */,
+                               unsigned long long /* timestamp_ms_epoch */)
     {
         if (src_ep != data_received_cb.expected_src_ep || dst_ep != data_received_cb.expected_dst_ep) {
             return false;
