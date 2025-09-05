@@ -1211,6 +1211,7 @@ static const app_res_e CDC_ITEM_SET_ERROR_CODE_LUT[] = {
     APP_RES_INVALID_VALUE,   // 2 invalid endpoint
     APP_RES_OUT_OF_MEMORY,   // 3 too many optional items
     APP_RES_DATA_ERROR,      // 4 invalid payload contents
+    APP_RES_NO_CONFIG,       // 5 feature not supported
 };
 
 app_res_e WPC_set_config_data_item(const uint16_t endpoint,
@@ -1230,6 +1231,7 @@ app_res_e WPC_set_config_data_item(const uint16_t endpoint,
 static const app_res_e CDC_ITEM_GET_ERROR_CODE_LUT[] = {
     APP_RES_OK,            // 0
     APP_RES_INVALID_VALUE, // 1 invalid endpoint
+    APP_RES_NO_CONFIG,     // 2 feature not supported
 };
 
 app_res_e WPC_get_config_data_item(const uint16_t endpoint,
@@ -1248,7 +1250,8 @@ app_res_e WPC_get_config_data_item(const uint16_t endpoint,
 }
 
 static const app_res_e CDC_GET_ITEM_LIST_ERROR_CODE_LUT[] = {
-    APP_RES_OK, // 0
+    APP_RES_OK,        // 0
+    APP_RES_NO_CONFIG, // 1 feature not supported
 };
 
 app_res_e WPC_get_config_data_item_list(uint16_t *const endpoints,
