@@ -132,7 +132,8 @@ typedef enum
     APP_RES_INVALID_NUMBER_OF_BYTES,  //!< Invalid number of bytes
     APP_RES_INVALID_SCRATCHPAD,       //!< Scratchpad is not valid
     APP_RES_INVALID_REBOOT_DELAY,     //!< Invalid reboot delay
-    APP_RES_INTERNAL_ERROR            //!< WPC internal error
+    APP_RES_INTERNAL_ERROR,           //!< WPC internal error
+    APP_RES_OPERATION_NOT_SUPPORTED   //!< Operation not supported
 } app_res_e;
 
 /**
