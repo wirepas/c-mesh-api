@@ -1291,6 +1291,17 @@ app_res_e WPC_get_config_data_item_list(uint16_t *const endpoints,
     return res;
 }
 
+app_res_e WPC_send_proprietary_message(const uint8_t * payload,
+                                       const size_t size,
+                                       uint8_t * resp,
+                                       size_t * resp_size_p)
+{
+    return msap_proprietary_message_request(payload,
+                                            size,
+                                            resp,
+                                            resp_size_p);
+}
+
 #ifdef REGISTER_DATA_PER_ENDPOINT
 app_res_e WPC_register_for_data(uint8_t dst_ep, onDataReceived_cb_f onDataReceived)
 {
@@ -1388,4 +1399,14 @@ app_res_e WPC_register_downlink_data_hook(onDownlinkTrafficReceived_cb_f onDownl
 app_res_e WPC_unregister_downlink_data_hook()
 {
     return dsap_unregister_downlink_data_hook() ? APP_RES_OK : APP_RES_INVALID_VALUE;
+}
+
+app_res_e WPC_register_for_proprietary_protocol(onProprietaryMessage_cb_f onProprietaryMessage)
+{
+    return msap_register_for_proprietary_protocol(onProprietaryMessage) ? APP_RES_OK : APP_RES_INVALID_VALUE;
+}
+
+app_res_e WPC_unregister_from_proprietary_protocol()
+{
+    return msap_unregister_from_proprietary_protocol() ? APP_RES_OK : APP_RES_INVALID_VALUE;
 }
