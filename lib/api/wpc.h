@@ -1006,6 +1006,24 @@ app_res_e WPC_get_config_data_item_list(uint16_t *const endpoints,
                                         uint8_t *const endpoints_count);
 
 /**
+ * \brief   Send a proprietary message to the sink over the DualMCU protocol
+ * \param   payload
+ *          Buffer containing the message (at most MSAP_CUSTOM_PAYLOAD_MAX_LEN bytes)
+ * \param   size
+ *          Length of payload
+ * \param   resp
+ *          Buffer to receive the confirmation payload from the sink
+ * \param   resp_size_p
+ *          In: capacity of resp. Out: number of bytes written.
+ *          Set to 0 if the confirmation payload exceeds the buffer capacity.
+ * \return  APP_RES_OK on success, an error code otherwise
+ */
+app_res_e WPC_send_proprietary_message(const uint8_t * payload,
+                                       const size_t size,
+                                       uint8_t * resp,
+                                       size_t * resp_size_p);
+
+/**
  * \brief   Callback definition to register for received data
  * \param   bytes
  *          Buffer of received data
@@ -1139,6 +1157,16 @@ typedef void (*onConfigDataItemReceived_cb_f)(const uint16_t endpoint,
                                               const uint8_t size);
 
 /**
+ * \brief   Callback definition to register for proprietary protocol
+ * \param   buffer
+ *          Buffer containing the proprietary protocol
+ * \param   size
+ *          Size of the buffer
+ */
+typedef void (*onProprietaryMessage_cb_f)(const uint8_t *const buffer,
+                                          const size_t size);
+
+/**
  * \brief   Register for receiving config data item
  * \param   onConfigDataItemReceived
  *          The callback to call when config data item is received
@@ -1187,5 +1215,21 @@ typedef bool (*onDownlinkTrafficReceived_cb_f)(app_message_t * data_p);
 app_res_e WPC_register_downlink_data_hook(onDownlinkTrafficReceived_cb_f onDownlinkDataCb);
 
 app_res_e WPC_unregister_downlink_data_hook();
+
+/**
+ * \brief   Register for receiving custom protocol message
+ * \param   onProprietaryMessage
+ *          The callback to call when proprietary message is received
+ * \note    All the registered callback share the same thread,
+ *          so the handling of it must be kept as simple
+ *          as possible or dispatched to another thread for long operations.
+ */
+app_res_e WPC_register_for_proprietary_protocol(onProprietaryMessage_cb_f onProprietaryMessage);
+
+/**
+ * \brief   Unregister for receiving config data item
+ * \return  Return code of the operation
+ */
+app_res_e WPC_unregister_from_proprietary_protocol();
 
 #endif

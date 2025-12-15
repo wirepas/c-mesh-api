@@ -35,6 +35,11 @@ static onStackStatusReceived_cb_f m_stack_status_cb = NULL;
 static onConfigDataItemReceived_cb_f m_config_data_item_cb = NULL;
 
 /**
+ * \brief   Registered callback for proprietary protocol
+ */
+static onProprietaryMessage_cb_f m_proprietary_cb = NULL;
+
+/**
  * \brief   Time to wait for scratchpad start request confirm
  *          It can be long because the start triggers an erase of
  *          scratchpad area that can be long if external memory used
@@ -614,6 +619,64 @@ void msap_config_data_item_rx_indication_handler(msap_config_data_item_rx_ind_pl
     }
 }
 
+void msap_proprietary_message_indication_handler(msap_custom_ind_pl_t * payload, size_t payload_size)
+{
+    LOGD("Proprietary message of size %d\n", payload_size);
+    if (m_proprietary_cb != NULL)
+    {
+        m_proprietary_cb(payload->payload, payload_size);
+    }
+    else
+    {
+        LOGW("Proprietary message but no handler set\n");
+    }
+}
+
+int msap_proprietary_message_request(const uint8_t * payload,
+                                     const size_t size,
+                                     uint8_t * resp,
+                                     size_t * resp_size_p)
+{
+    if (size > MSAP_CUSTOM_PAYLOAD_MAX_LEN)
+    {
+        LOGE("Too large payload size (%d) for proprietary message item\n", size);
+        return WPC_INT_WRONG_PARAM_ERROR;
+    }
+
+    wpc_frame_t request = {
+        .primitive_id = MSAP_CUSTOM_PROTO_REQUEST,
+        .payload_length = size,
+    };
+
+    if (size > 0)
+    {
+        memcpy((uint8_t *)&request.payload,
+               payload,
+               size);
+    }
+
+    wpc_frame_t confirm;
+    const int res = WPC_Int_send_request(&request, &confirm);
+    if (res < 0)
+    {
+        return res;
+    }
+
+    LOGD("Proprietary response of len %d\n", confirm.payload_length);
+
+    if (confirm.payload_length <= *resp_size_p)
+    {
+        memcpy(resp, confirm.payload.msap_custom_confirm_payload.payload, confirm.payload_length);
+        *resp_size_p = confirm.payload_length;
+    }
+    else
+    {
+        *resp_size_p = 0;
+    }
+
+    return 0;
+}
+
 // Macro to avoid code duplication
 #define REGISTER_CB(cb, internal_cb)   \
     ({                                 \
@@ -681,4 +744,14 @@ bool msap_register_for_config_data_item(onConfigDataItemReceived_cb_f cb)
 bool msap_unregister_from_config_data_item()
 {
     return UNREGISTER_CB(m_config_data_item_cb);
+}
+
+bool msap_register_for_proprietary_protocol(onProprietaryMessage_cb_f cb)
+{
+    return REGISTER_CB(cb, m_proprietary_cb);
+}
+
+bool msap_unregister_from_proprietary_protocol()
+{
+    return UNREGISTER_CB(m_proprietary_cb);
 }

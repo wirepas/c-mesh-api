@@ -77,6 +77,7 @@ typedef struct __attribute__((__packed__))
         msap_scan_nbors_ind_pl_t msap_scan_nbors_indication_payload;
         generic_ind_pl_t generic_indication_payload;
         msap_config_data_item_rx_ind_pl_t msap_config_data_item_rx_indication_payload;
+        msap_custom_ind_pl_t msap_custom_indication_payload;
         // Confirm
         sap_generic_conf_pl_t sap_generic_confirm_payload;
         dsap_data_tx_conf_pl_t dsap_data_tx_confirm_payload;
@@ -90,6 +91,7 @@ typedef struct __attribute__((__packed__))
         msap_image_block_read_conf_pl_t msap_image_block_read_confirm_payload;
         msap_config_data_item_get_conf_pl_t msap_config_data_item_get_confirm_payload;
         msap_config_data_item_list_items_conf_pl_t msap_config_data_item_list_items_confirm_payload;
+        msap_custom_conf_pl_t msap_custom_confirm_payload;
         // Response
         sap_resp_pl_t sap_response_payload;
     } payload;

@@ -262,6 +262,21 @@ static void dispatch_indication(wpc_frame_t * frame, unsigned long long timestam
         case MSAP_CONFIG_DATA_ITEM_RX_INDICATION:
             msap_config_data_item_rx_indication_handler(&frame->payload.msap_config_data_item_rx_indication_payload);
             break;
+        case MSAP_CUSTOM_PROTO_INDICATION:
+            // payload_length includes the 1-byte indication_status header consumed here
+            if (frame->payload_length >= 1 &&
+                frame->payload_length - 1 <= MSAP_CUSTOM_PAYLOAD_MAX_LEN)
+            {
+                msap_proprietary_message_indication_handler(
+                    &frame->payload.msap_custom_indication_payload,
+                    frame->payload_length - 1);
+            }
+            else
+            {
+                LOGE("Malformed proprietary indication: payload_length=%d\n",
+                     frame->payload_length);
+            }
+            break;
         default:
             LOGE("Unknown indication 0x%02x\n", frame->primitive_id);
             LOG_PRINT_BUFFER((uint8_t *) frame, FRAME_SIZE(frame));

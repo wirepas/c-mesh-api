@@ -223,6 +223,17 @@ typedef struct __attribute__((__packed__))
     uint8_t endpoints_list[MAXIMUM_CDC_ITEM_LIST_BYTE_COUNT];
 } msap_config_data_item_list_items_conf_pl_t;
 
+/** Maximum number of bytes in a custom protocol request/confirm
++ *  Lower than existing request/confirm so it doesn't change max buffer
++ *  allocation
++ */
+#define MSAP_CUSTOM_PAYLOAD_MAX_LEN 116
+
+typedef struct __attribute__((__packed__))
+{
+    uint8_t payload[MSAP_CUSTOM_PAYLOAD_MAX_LEN];
+} msap_custom_conf_pl_t;
+
 typedef struct __attribute__((__packed__))
 {
     uint8_t indication_status;
@@ -230,6 +241,12 @@ typedef struct __attribute__((__packed__))
     uint8_t payload_length;
     uint8_t payload[MAXIMUM_CDC_ITEM_PAYLOAD_SIZE];
 } msap_config_data_item_rx_ind_pl_t;
+
+typedef struct __attribute__((__packed__))
+{
+    uint8_t indication_status;
+    uint8_t payload[MSAP_CUSTOM_PAYLOAD_MAX_LEN];
+} msap_custom_ind_pl_t;
 
 static inline void
 convert_internal_to_app_scratchpad_status(app_scratchpad_status_t * status_p,
@@ -562,6 +579,29 @@ void msap_scan_nbors_indication_handler(msap_scan_nbors_ind_pl_t * payload);
 void msap_config_data_item_rx_indication_handler(msap_config_data_item_rx_ind_pl_t * payload);
 
 /**
+ * \brief   Handler for proprietary message
+ * \param   payload
+ *          pointer to payload
+ * \param   payload_size
+ *          size of the payload
+ */
+void msap_proprietary_message_indication_handler(msap_custom_ind_pl_t * payload, size_t payload_size);
+
+/**
+ * \brief    Request to send a proprietary request
+ * \param    payload
+ *           Proprietary message to send
+ * \param    size
+ *           Message size
+ * \return   Negative value upon internal error, otherwise result code returned
+ *           by the DualMCU API
+ */
+int msap_proprietary_message_request(const uint8_t * payload,
+                                     const size_t size,
+                                     uint8_t * resp,
+                                     size_t * resp_size_p);
+
+/**
  * \brief   Register for app config data
  * \param   cb
  *          Callback to invoke when app config is received
@@ -616,5 +656,20 @@ bool msap_register_for_config_data_item(onConfigDataItemReceived_cb_f cb);
  * \return  True if unregistered successfully, false otherwise
  */
 bool msap_unregister_from_config_data_item();
+
+/**
+ * \brief   Register for proprietary protocol
+ * \param   cb
+ *          Callback to invoke when proprietary protocol is received
+ * \return  True if registered successfully, false otherwise
+ */
+bool msap_register_for_proprietary_protocol(onProprietaryMessage_cb_f cb);
+
+/**
+ * \brief   Unregister from proprietary protocol
+ * \return  True if unregistered successfully, false otherwise
+ */
+bool msap_unregister_from_proprietary_protocol();
+
 
 #endif /* MSAP_H_ */
