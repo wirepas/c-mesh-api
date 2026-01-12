@@ -115,9 +115,9 @@ extern int *Platform_get_logging_module_level(const char *const module_name, con
 #    error "No module name set for logger"
 #endif
 
+#ifndef NO_DYNAMIC_LOGS
 // Static pointer to this module's log level - initialized on first use
 static int *__module_log_level = NULL;
-
 // Get the module's log level, initializing the module if needed
 static inline int __get_module_log_level(void)
 {
@@ -127,6 +127,12 @@ static inline int __get_module_log_level(void)
     }
     return *__module_log_level;
 }
+#else
+static inline int __get_module_log_level(void)
+{
+    return MAX_LOG_LEVEL;
+}
+#endif
 
 /**
  * Macro to generate logging functions
