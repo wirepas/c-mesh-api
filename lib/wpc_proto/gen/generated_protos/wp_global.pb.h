@@ -54,6 +54,20 @@ typedef enum _wp_ProcessingDelay {
     wp_ProcessingDelay_FIVE_DAYS = 7
 } wp_ProcessingDelay;
 
+typedef enum _wp_GatewayFeature {
+    wp_GatewayFeature_UNKNOWN = 0,
+    /* Support for uploading a scratchpad in chunks */
+    wp_GatewayFeature_SCRATCHPAD_CHUNK_V1 = 1,
+    /* Configuration Data Distribution API, allows modifying of the
+ configuration data content. */
+    wp_GatewayFeature_CONFIGURATION_DATA_V1 = 2,
+    /* Support for setting key management parameters of the sink */
+    wp_GatewayFeature_SINK_KEY_MANAGEMENT_V1 = 3,
+    /* Gateway has a virtualnode. This concept is present in some usecases
+ where the gateway code run the same logic as a normal mesh node */
+    wp_GatewayFeature_VIRTUAL_NODE_V1 = 4
+} wp_GatewayFeature;
+
 /* Struct definitions */
 /* Global request header
  NB: Gateway id is not present in header as gateway will only subscribe to their id */
@@ -147,6 +161,10 @@ extern "C" {
 #define _wp_ProcessingDelay_MIN wp_ProcessingDelay_UNKNOWN_DELAY
 #define _wp_ProcessingDelay_MAX wp_ProcessingDelay_FIVE_DAYS
 #define _wp_ProcessingDelay_ARRAYSIZE ((wp_ProcessingDelay)(wp_ProcessingDelay_FIVE_DAYS+1))
+
+#define _wp_GatewayFeature_MIN wp_GatewayFeature_UNKNOWN
+#define _wp_GatewayFeature_MAX wp_GatewayFeature_VIRTUAL_NODE_V1
+#define _wp_GatewayFeature_ARRAYSIZE ((wp_GatewayFeature)(wp_GatewayFeature_VIRTUAL_NODE_V1+1))
 
 
 #define wp_ResponseHeader_res_ENUMTYPE wp_ErrorCode

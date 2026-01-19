@@ -32,6 +32,14 @@ typedef struct _wp_WirepasMessage {
     struct _wp_GetGwInfoResp *get_gateway_info_resp;
     struct _wp_SetScratchpadTargetAndActionReq *set_scratchpad_target_and_action_req;
     struct _wp_SetScratchpadTargetAndActionResp *set_scratchpad_target_and_action_resp;
+    bool has_set_configuration_data_item_req;
+    wp_SetConfigurationDataItemReq set_configuration_data_item_req;
+    bool has_set_configuration_data_item_resp;
+    wp_SetConfigurationDataItemResp set_configuration_data_item_resp;
+    bool has_get_configuration_data_item_req;
+    wp_GetConfigurationDataItemReq get_configuration_data_item_req;
+    bool has_get_configuration_data_item_resp;
+    wp_GetConfigurationDataItemResp get_configuration_data_item_resp;
 } wp_WirepasMessage;
 
 typedef struct _wp_CustomerMessage {
@@ -50,10 +58,10 @@ extern "C" {
 #endif
 
 /* Initializer values for message structs */
-#define wp_WirepasMessage_init_default           {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}
+#define wp_WirepasMessage_init_default           {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, wp_SetConfigurationDataItemReq_init_default, false, wp_SetConfigurationDataItemResp_init_default, false, wp_GetConfigurationDataItemReq_init_default, false, wp_GetConfigurationDataItemResp_init_default}
 #define wp_CustomerMessage_init_default          {""}
 #define wp_GenericMessage_init_default           {NULL, NULL}
-#define wp_WirepasMessage_init_zero              {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}
+#define wp_WirepasMessage_init_zero              {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, wp_SetConfigurationDataItemReq_init_zero, false, wp_SetConfigurationDataItemResp_init_zero, false, wp_GetConfigurationDataItemReq_init_zero, false, wp_GetConfigurationDataItemResp_init_zero}
 #define wp_CustomerMessage_init_zero             {""}
 #define wp_GenericMessage_init_zero              {NULL, NULL}
 
@@ -76,6 +84,10 @@ extern "C" {
 #define wp_WirepasMessage_get_gateway_info_resp_tag 16
 #define wp_WirepasMessage_set_scratchpad_target_and_action_req_tag 17
 #define wp_WirepasMessage_set_scratchpad_target_and_action_resp_tag 18
+#define wp_WirepasMessage_set_configuration_data_item_req_tag 19
+#define wp_WirepasMessage_set_configuration_data_item_resp_tag 20
+#define wp_WirepasMessage_get_configuration_data_item_req_tag 21
+#define wp_WirepasMessage_get_configuration_data_item_resp_tag 22
 #define wp_CustomerMessage_customer_name_tag     1
 #define wp_GenericMessage_wirepas_tag            1
 #define wp_GenericMessage_customer_tag           2
@@ -99,7 +111,11 @@ X(a, POINTER,  OPTIONAL, MESSAGE,  process_scratchpad_resp,  14) \
 X(a, POINTER,  OPTIONAL, MESSAGE,  get_gateway_info_req,  15) \
 X(a, POINTER,  OPTIONAL, MESSAGE,  get_gateway_info_resp,  16) \
 X(a, POINTER,  OPTIONAL, MESSAGE,  set_scratchpad_target_and_action_req,  17) \
-X(a, POINTER,  OPTIONAL, MESSAGE,  set_scratchpad_target_and_action_resp,  18)
+X(a, POINTER,  OPTIONAL, MESSAGE,  set_scratchpad_target_and_action_resp,  18) \
+X(a, STATIC,   OPTIONAL, MESSAGE,  set_configuration_data_item_req,  19) \
+X(a, STATIC,   OPTIONAL, MESSAGE,  set_configuration_data_item_resp,  20) \
+X(a, STATIC,   OPTIONAL, MESSAGE,  get_configuration_data_item_req,  21) \
+X(a, STATIC,   OPTIONAL, MESSAGE,  get_configuration_data_item_resp,  22)
 #define wp_WirepasMessage_CALLBACK NULL
 #define wp_WirepasMessage_DEFAULT NULL
 #define wp_WirepasMessage_status_event_MSGTYPE wp_StatusEvent
@@ -120,6 +136,10 @@ X(a, POINTER,  OPTIONAL, MESSAGE,  set_scratchpad_target_and_action_resp,  18)
 #define wp_WirepasMessage_get_gateway_info_resp_MSGTYPE wp_GetGwInfoResp
 #define wp_WirepasMessage_set_scratchpad_target_and_action_req_MSGTYPE wp_SetScratchpadTargetAndActionReq
 #define wp_WirepasMessage_set_scratchpad_target_and_action_resp_MSGTYPE wp_SetScratchpadTargetAndActionResp
+#define wp_WirepasMessage_set_configuration_data_item_req_MSGTYPE wp_SetConfigurationDataItemReq
+#define wp_WirepasMessage_set_configuration_data_item_resp_MSGTYPE wp_SetConfigurationDataItemResp
+#define wp_WirepasMessage_get_configuration_data_item_req_MSGTYPE wp_GetConfigurationDataItemReq
+#define wp_WirepasMessage_get_configuration_data_item_resp_MSGTYPE wp_GetConfigurationDataItemResp
 
 #define wp_CustomerMessage_FIELDLIST(X, a) \
 X(a, STATIC,   REQUIRED, STRING,   customer_name,     1)

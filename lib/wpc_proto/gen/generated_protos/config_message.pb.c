@@ -21,10 +21,16 @@ PB_BIND(wp_AppConfigData, wp_AppConfigData, AUTO)
 PB_BIND(wp_NetworkKeys, wp_NetworkKeys, AUTO)
 
 
+PB_BIND(wp_SecurityKeys, wp_SecurityKeys, AUTO)
+
+
+PB_BIND(wp_ConfigurationDataItem, wp_ConfigurationDataItem, AUTO)
+
+
 PB_BIND(wp_SinkReadConfig, wp_SinkReadConfig, 2)
 
 
-PB_BIND(wp_SinkNewConfig, wp_SinkNewConfig, AUTO)
+PB_BIND(wp_SinkNewConfig, wp_SinkNewConfig, 2)
 
 
 PB_BIND(wp_GatewayInfo, wp_GatewayInfo, AUTO)
@@ -49,6 +55,18 @@ PB_BIND(wp_GetGwInfoReq, wp_GetGwInfoReq, AUTO)
 
 
 PB_BIND(wp_GetGwInfoResp, wp_GetGwInfoResp, AUTO)
+
+
+PB_BIND(wp_SetConfigurationDataItemReq, wp_SetConfigurationDataItemReq, AUTO)
+
+
+PB_BIND(wp_SetConfigurationDataItemResp, wp_SetConfigurationDataItemResp, AUTO)
+
+
+PB_BIND(wp_GetConfigurationDataItemReq, wp_GetConfigurationDataItemReq, AUTO)
+
+
+PB_BIND(wp_GetConfigurationDataItemResp, wp_GetConfigurationDataItemResp, AUTO)
 
 
 

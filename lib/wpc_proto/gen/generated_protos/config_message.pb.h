@@ -51,6 +51,18 @@ typedef struct _wp_NetworkKeys {
     pb_byte_t authentication[16];
 } wp_NetworkKeys;
 
+typedef struct _wp_SecurityKeys {
+    pb_byte_t cipher[16];
+    pb_byte_t authentication[16];
+    uint32_t sequence;
+} wp_SecurityKeys;
+
+typedef PB_BYTES_ARRAY_T(128) wp_ConfigurationDataItem_payload_t;
+typedef struct _wp_ConfigurationDataItem {
+    uint32_t endpoint;
+    wp_ConfigurationDataItem_payload_t payload;
+} wp_ConfigurationDataItem;
+
 typedef struct _wp_SinkReadConfig {
     /* Local id to uniquely identify a sink on gateway */
     char sink_id[16];
@@ -67,6 +79,7 @@ typedef struct _wp_SinkReadConfig {
     wp_AppConfigData app_config;
     bool has_channel_map;
     uint32_t channel_map;
+    /* Indicates if network keys are set */
     bool has_are_keys_set;
     bool are_keys_set;
     bool has_current_ac_range;
@@ -102,6 +115,9 @@ typedef struct _wp_SinkReadConfig {
     uint32_t firmware_area_id;
     bool has_target_and_action;
     wp_TargetScratchpadAndAction target_and_action; /* Unset if sink doesn't support it */
+    /* Only present if CDD_API feature flag is set */
+    pb_size_t configuration_data_content_count;
+    wp_ConfigurationDataItem configuration_data_content[0];
 } wp_SinkReadConfig;
 
 typedef struct _wp_SinkNewConfig {
@@ -120,6 +136,7 @@ typedef struct _wp_SinkNewConfig {
     wp_AppConfigData app_config;
     bool has_channel_map;
     uint32_t channel_map;
+    /* Sets the network keys using the legacy API */
     bool has_keys;
     wp_NetworkKeys keys;
     bool has_current_ac_range;
@@ -127,6 +144,12 @@ typedef struct _wp_SinkNewConfig {
     /* State of sink */
     bool has_sink_state;
     wp_OnOffState sink_state;
+    /* Key management parameters for the sink.
+ Only processed if SINK_KEY_MANAGEMENT_V1 feature flag is set. */
+    bool has_network_keys;
+    wp_SecurityKeys network_keys;
+    bool has_management_keys;
+    wp_SecurityKeys management_keys;
 } wp_SinkNewConfig;
 
 typedef struct _wp_GatewayInfo {
@@ -154,6 +177,8 @@ typedef struct _wp_GatewayInfo {
  scratchpad can be sent in a single request */
     bool has_max_scratchpad_size;
     uint32_t max_scratchpad_size;
+    pb_size_t gw_features_count;
+    wp_GatewayFeature gw_features[2];
 } wp_GatewayInfo;
 
 /* Commands definition */
@@ -179,6 +204,8 @@ typedef struct _wp_StatusEvent {
     /* See GatewayInfo for details of this field */
     bool has_max_scratchpad_size;
     uint32_t max_scratchpad_size;
+    pb_size_t gw_features_count;
+    wp_GatewayFeature gw_features[2];
 } wp_StatusEvent;
 
 typedef struct _wp_GetConfigsReq {
@@ -211,6 +238,27 @@ typedef struct _wp_GetGwInfoResp {
     wp_GatewayInfo info;
 } wp_GetGwInfoResp;
 
+typedef struct _wp_SetConfigurationDataItemReq {
+    wp_RequestHeader header;
+    /* 0-length payloads are used to clear an entry */
+    wp_ConfigurationDataItem configuration_data_item;
+} wp_SetConfigurationDataItemReq;
+
+typedef struct _wp_SetConfigurationDataItemResp {
+    wp_ResponseHeader header;
+} wp_SetConfigurationDataItemResp;
+
+typedef struct _wp_GetConfigurationDataItemReq {
+    wp_RequestHeader header;
+    uint32_t endpoint;
+} wp_GetConfigurationDataItemReq;
+
+typedef struct _wp_GetConfigurationDataItemResp {
+    wp_ResponseHeader header;
+    bool has_configuration_data_item;
+    wp_ConfigurationDataItem configuration_data_item;
+} wp_GetConfigurationDataItemResp;
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -232,14 +280,22 @@ extern "C" {
 
 
 
+
+
 #define wp_SinkReadConfig_sink_state_ENUMTYPE wp_OnOffState
 #define wp_SinkReadConfig_stored_status_ENUMTYPE wp_ScratchpadStatus
 #define wp_SinkReadConfig_stored_type_ENUMTYPE wp_ScratchpadType
 
 #define wp_SinkNewConfig_sink_state_ENUMTYPE wp_OnOffState
 
+#define wp_GatewayInfo_gw_features_ENUMTYPE wp_GatewayFeature
 
 #define wp_StatusEvent_state_ENUMTYPE wp_OnOffState
+#define wp_StatusEvent_gw_features_ENUMTYPE wp_GatewayFeature
+
+
+
+
 
 
 
@@ -254,31 +310,43 @@ extern "C" {
 #define wp_ChannelRange_init_default             {0, 0}
 #define wp_AppConfigData_init_default            {0, {0, {0}}, 0}
 #define wp_NetworkKeys_init_default              {{0}, {0}}
-#define wp_SinkReadConfig_init_default           {"", false, wp_NodeRole_init_default, false, 0, false, 0, false, 0, false, wp_AppConfigData_init_default, false, 0, false, 0, false, wp_AccessCycleRange_init_default, false, wp_AccessCycleRange_init_default, false, 0, false, wp_ChannelRange_init_default, false, 0, false, 0, false, 0, false, wp_FirmwareVersion_init_default, false, _wp_OnOffState_MIN, false, wp_ScratchpadInfo_init_default, false, _wp_ScratchpadStatus_MIN, false, _wp_ScratchpadType_MIN, false, wp_ScratchpadInfo_init_default, false, 0, false, wp_TargetScratchpadAndAction_init_default}
-#define wp_SinkNewConfig_init_default            {"", false, wp_NodeRole_init_default, false, 0, false, 0, false, 0, false, wp_AppConfigData_init_default, false, 0, false, wp_NetworkKeys_init_default, false, wp_AccessCycleRange_init_default, false, _wp_OnOffState_MIN}
-#define wp_GatewayInfo_init_default              {0, false, "", false, "", false, 0, false, 0}
-#define wp_StatusEvent_init_default              {wp_EventHeader_init_default, 0, _wp_OnOffState_MIN, 0, {wp_SinkReadConfig_init_default}, false, "", false, "", false, 0}
+#define wp_SecurityKeys_init_default             {{0}, {0}, 0}
+#define wp_ConfigurationDataItem_init_default    {0, {0, {0}}}
+#define wp_SinkReadConfig_init_default           {"", false, wp_NodeRole_init_default, false, 0, false, 0, false, 0, false, wp_AppConfigData_init_default, false, 0, false, 0, false, wp_AccessCycleRange_init_default, false, wp_AccessCycleRange_init_default, false, 0, false, wp_ChannelRange_init_default, false, 0, false, 0, false, 0, false, wp_FirmwareVersion_init_default, false, _wp_OnOffState_MIN, false, wp_ScratchpadInfo_init_default, false, _wp_ScratchpadStatus_MIN, false, _wp_ScratchpadType_MIN, false, wp_ScratchpadInfo_init_default, false, 0, false, wp_TargetScratchpadAndAction_init_default, 0, {}}
+#define wp_SinkNewConfig_init_default            {"", false, wp_NodeRole_init_default, false, 0, false, 0, false, 0, false, wp_AppConfigData_init_default, false, 0, false, wp_NetworkKeys_init_default, false, wp_AccessCycleRange_init_default, false, _wp_OnOffState_MIN, false, wp_SecurityKeys_init_default, false, wp_SecurityKeys_init_default}
+#define wp_GatewayInfo_init_default              {0, false, "", false, "", false, 0, false, 0, 0, {_wp_GatewayFeature_MIN, _wp_GatewayFeature_MIN}}
+#define wp_StatusEvent_init_default              {wp_EventHeader_init_default, 0, _wp_OnOffState_MIN, 0, {wp_SinkReadConfig_init_default}, false, "", false, "", false, 0, 0, {_wp_GatewayFeature_MIN, _wp_GatewayFeature_MIN}}
 #define wp_GetConfigsReq_init_default            {wp_RequestHeader_init_default}
 #define wp_GetConfigsResp_init_default           {wp_ResponseHeader_init_default, 0, {wp_SinkReadConfig_init_default}}
 #define wp_SetConfigReq_init_default             {wp_RequestHeader_init_default, wp_SinkNewConfig_init_default}
 #define wp_SetConfigResp_init_default            {wp_ResponseHeader_init_default, wp_SinkReadConfig_init_default}
 #define wp_GetGwInfoReq_init_default             {wp_RequestHeader_init_default}
 #define wp_GetGwInfoResp_init_default            {wp_ResponseHeader_init_default, wp_GatewayInfo_init_default}
+#define wp_SetConfigurationDataItemReq_init_default {wp_RequestHeader_init_default, wp_ConfigurationDataItem_init_default}
+#define wp_SetConfigurationDataItemResp_init_default {wp_ResponseHeader_init_default}
+#define wp_GetConfigurationDataItemReq_init_default {wp_RequestHeader_init_default, 0}
+#define wp_GetConfigurationDataItemResp_init_default {wp_ResponseHeader_init_default, false, wp_ConfigurationDataItem_init_default}
 #define wp_NodeRole_init_zero                    {_wp_NodeRole_BaseRole_MIN, 0, {_wp_NodeRole_RoleFlags_MIN, _wp_NodeRole_RoleFlags_MIN}}
 #define wp_AccessCycleRange_init_zero            {0, 0}
 #define wp_ChannelRange_init_zero                {0, 0}
 #define wp_AppConfigData_init_zero               {0, {0, {0}}, 0}
 #define wp_NetworkKeys_init_zero                 {{0}, {0}}
-#define wp_SinkReadConfig_init_zero              {"", false, wp_NodeRole_init_zero, false, 0, false, 0, false, 0, false, wp_AppConfigData_init_zero, false, 0, false, 0, false, wp_AccessCycleRange_init_zero, false, wp_AccessCycleRange_init_zero, false, 0, false, wp_ChannelRange_init_zero, false, 0, false, 0, false, 0, false, wp_FirmwareVersion_init_zero, false, _wp_OnOffState_MIN, false, wp_ScratchpadInfo_init_zero, false, _wp_ScratchpadStatus_MIN, false, _wp_ScratchpadType_MIN, false, wp_ScratchpadInfo_init_zero, false, 0, false, wp_TargetScratchpadAndAction_init_zero}
-#define wp_SinkNewConfig_init_zero               {"", false, wp_NodeRole_init_zero, false, 0, false, 0, false, 0, false, wp_AppConfigData_init_zero, false, 0, false, wp_NetworkKeys_init_zero, false, wp_AccessCycleRange_init_zero, false, _wp_OnOffState_MIN}
-#define wp_GatewayInfo_init_zero                 {0, false, "", false, "", false, 0, false, 0}
-#define wp_StatusEvent_init_zero                 {wp_EventHeader_init_zero, 0, _wp_OnOffState_MIN, 0, {wp_SinkReadConfig_init_zero}, false, "", false, "", false, 0}
+#define wp_SecurityKeys_init_zero                {{0}, {0}, 0}
+#define wp_ConfigurationDataItem_init_zero       {0, {0, {0}}}
+#define wp_SinkReadConfig_init_zero              {"", false, wp_NodeRole_init_zero, false, 0, false, 0, false, 0, false, wp_AppConfigData_init_zero, false, 0, false, 0, false, wp_AccessCycleRange_init_zero, false, wp_AccessCycleRange_init_zero, false, 0, false, wp_ChannelRange_init_zero, false, 0, false, 0, false, 0, false, wp_FirmwareVersion_init_zero, false, _wp_OnOffState_MIN, false, wp_ScratchpadInfo_init_zero, false, _wp_ScratchpadStatus_MIN, false, _wp_ScratchpadType_MIN, false, wp_ScratchpadInfo_init_zero, false, 0, false, wp_TargetScratchpadAndAction_init_zero, 0, {}}
+#define wp_SinkNewConfig_init_zero               {"", false, wp_NodeRole_init_zero, false, 0, false, 0, false, 0, false, wp_AppConfigData_init_zero, false, 0, false, wp_NetworkKeys_init_zero, false, wp_AccessCycleRange_init_zero, false, _wp_OnOffState_MIN, false, wp_SecurityKeys_init_zero, false, wp_SecurityKeys_init_zero}
+#define wp_GatewayInfo_init_zero                 {0, false, "", false, "", false, 0, false, 0, 0, {_wp_GatewayFeature_MIN, _wp_GatewayFeature_MIN}}
+#define wp_StatusEvent_init_zero                 {wp_EventHeader_init_zero, 0, _wp_OnOffState_MIN, 0, {wp_SinkReadConfig_init_zero}, false, "", false, "", false, 0, 0, {_wp_GatewayFeature_MIN, _wp_GatewayFeature_MIN}}
 #define wp_GetConfigsReq_init_zero               {wp_RequestHeader_init_zero}
 #define wp_GetConfigsResp_init_zero              {wp_ResponseHeader_init_zero, 0, {wp_SinkReadConfig_init_zero}}
 #define wp_SetConfigReq_init_zero                {wp_RequestHeader_init_zero, wp_SinkNewConfig_init_zero}
 #define wp_SetConfigResp_init_zero               {wp_ResponseHeader_init_zero, wp_SinkReadConfig_init_zero}
 #define wp_GetGwInfoReq_init_zero                {wp_RequestHeader_init_zero}
 #define wp_GetGwInfoResp_init_zero               {wp_ResponseHeader_init_zero, wp_GatewayInfo_init_zero}
+#define wp_SetConfigurationDataItemReq_init_zero {wp_RequestHeader_init_zero, wp_ConfigurationDataItem_init_zero}
+#define wp_SetConfigurationDataItemResp_init_zero {wp_ResponseHeader_init_zero}
+#define wp_GetConfigurationDataItemReq_init_zero {wp_RequestHeader_init_zero, 0}
+#define wp_GetConfigurationDataItemResp_init_zero {wp_ResponseHeader_init_zero, false, wp_ConfigurationDataItem_init_zero}
 
 /* Field tags (for use in manual encoding/decoding) */
 #define wp_NodeRole_role_tag                     1
@@ -292,6 +360,11 @@ extern "C" {
 #define wp_AppConfigData_seq_tag                 3
 #define wp_NetworkKeys_cipher_tag                1
 #define wp_NetworkKeys_authentication_tag        2
+#define wp_SecurityKeys_cipher_tag               1
+#define wp_SecurityKeys_authentication_tag       2
+#define wp_SecurityKeys_sequence_tag             3
+#define wp_ConfigurationDataItem_endpoint_tag    1
+#define wp_ConfigurationDataItem_payload_tag     2
 #define wp_SinkReadConfig_sink_id_tag            1
 #define wp_SinkReadConfig_node_role_tag          2
 #define wp_SinkReadConfig_node_address_tag       3
@@ -315,6 +388,7 @@ extern "C" {
 #define wp_SinkReadConfig_processed_scratchpad_tag 21
 #define wp_SinkReadConfig_firmware_area_id_tag   22
 #define wp_SinkReadConfig_target_and_action_tag  23
+#define wp_SinkReadConfig_configuration_data_content_tag 24
 #define wp_SinkNewConfig_sink_id_tag             1
 #define wp_SinkNewConfig_node_role_tag           2
 #define wp_SinkNewConfig_node_address_tag        3
@@ -325,11 +399,14 @@ extern "C" {
 #define wp_SinkNewConfig_keys_tag                8
 #define wp_SinkNewConfig_current_ac_range_tag    9
 #define wp_SinkNewConfig_sink_state_tag          10
+#define wp_SinkNewConfig_network_keys_tag        11
+#define wp_SinkNewConfig_management_keys_tag     12
 #define wp_GatewayInfo_current_time_s_epoch_tag  1
 #define wp_GatewayInfo_gw_model_tag              2
 #define wp_GatewayInfo_gw_version_tag            3
 #define wp_GatewayInfo_implemented_api_version_tag 4
 #define wp_GatewayInfo_max_scratchpad_size_tag   5
+#define wp_GatewayInfo_gw_features_tag           6
 #define wp_StatusEvent_header_tag                1
 #define wp_StatusEvent_version_tag               2
 #define wp_StatusEvent_state_tag                 3
@@ -337,6 +414,7 @@ extern "C" {
 #define wp_StatusEvent_gw_model_tag              5
 #define wp_StatusEvent_gw_version_tag            6
 #define wp_StatusEvent_max_scratchpad_size_tag   7
+#define wp_StatusEvent_gw_features_tag           8
 #define wp_GetConfigsReq_header_tag              1
 #define wp_GetConfigsResp_header_tag             1
 #define wp_GetConfigsResp_configs_tag            2
@@ -347,6 +425,13 @@ extern "C" {
 #define wp_GetGwInfoReq_header_tag               1
 #define wp_GetGwInfoResp_header_tag              1
 #define wp_GetGwInfoResp_info_tag                2
+#define wp_SetConfigurationDataItemReq_header_tag 1
+#define wp_SetConfigurationDataItemReq_configuration_data_item_tag 2
+#define wp_SetConfigurationDataItemResp_header_tag 1
+#define wp_GetConfigurationDataItemReq_header_tag 1
+#define wp_GetConfigurationDataItemReq_endpoint_tag 2
+#define wp_GetConfigurationDataItemResp_header_tag 1
+#define wp_GetConfigurationDataItemResp_configuration_data_item_tag 2
 
 /* Struct field encoding specification for nanopb */
 #define wp_NodeRole_FIELDLIST(X, a) \
@@ -380,6 +465,19 @@ X(a, STATIC,   REQUIRED, FIXED_LENGTH_BYTES, authentication,    2)
 #define wp_NetworkKeys_CALLBACK NULL
 #define wp_NetworkKeys_DEFAULT NULL
 
+#define wp_SecurityKeys_FIELDLIST(X, a) \
+X(a, STATIC,   REQUIRED, FIXED_LENGTH_BYTES, cipher,            1) \
+X(a, STATIC,   REQUIRED, FIXED_LENGTH_BYTES, authentication,    2) \
+X(a, STATIC,   REQUIRED, UINT32,   sequence,          3)
+#define wp_SecurityKeys_CALLBACK NULL
+#define wp_SecurityKeys_DEFAULT NULL
+
+#define wp_ConfigurationDataItem_FIELDLIST(X, a) \
+X(a, STATIC,   REQUIRED, UINT32,   endpoint,          1) \
+X(a, STATIC,   REQUIRED, BYTES,    payload,           2)
+#define wp_ConfigurationDataItem_CALLBACK NULL
+#define wp_ConfigurationDataItem_DEFAULT NULL
+
 #define wp_SinkReadConfig_FIELDLIST(X, a) \
 X(a, STATIC,   REQUIRED, STRING,   sink_id,           1) \
 X(a, STATIC,   OPTIONAL, MESSAGE,  node_role,         2) \
@@ -403,7 +501,8 @@ X(a, STATIC,   OPTIONAL, UENUM,    stored_status,    19) \
 X(a, STATIC,   OPTIONAL, UENUM,    stored_type,      20) \
 X(a, STATIC,   OPTIONAL, MESSAGE,  processed_scratchpad,  21) \
 X(a, STATIC,   OPTIONAL, UINT32,   firmware_area_id,  22) \
-X(a, STATIC,   OPTIONAL, MESSAGE,  target_and_action,  23)
+X(a, STATIC,   OPTIONAL, MESSAGE,  target_and_action,  23) \
+X(a, STATIC,   REPEATED, MESSAGE,  configuration_data_content,  24)
 #define wp_SinkReadConfig_CALLBACK NULL
 #define wp_SinkReadConfig_DEFAULT (const pb_byte_t*)"\x88\x01\x01\x98\x01\x01\xa0\x01\x01\x00"
 #define wp_SinkReadConfig_node_role_MSGTYPE wp_NodeRole
@@ -415,6 +514,7 @@ X(a, STATIC,   OPTIONAL, MESSAGE,  target_and_action,  23)
 #define wp_SinkReadConfig_stored_scratchpad_MSGTYPE wp_ScratchpadInfo
 #define wp_SinkReadConfig_processed_scratchpad_MSGTYPE wp_ScratchpadInfo
 #define wp_SinkReadConfig_target_and_action_MSGTYPE wp_TargetScratchpadAndAction
+#define wp_SinkReadConfig_configuration_data_content_MSGTYPE wp_ConfigurationDataItem
 
 #define wp_SinkNewConfig_FIELDLIST(X, a) \
 X(a, STATIC,   REQUIRED, STRING,   sink_id,           1) \
@@ -426,20 +526,25 @@ X(a, STATIC,   OPTIONAL, MESSAGE,  app_config,        6) \
 X(a, STATIC,   OPTIONAL, UINT32,   channel_map,       7) \
 X(a, STATIC,   OPTIONAL, MESSAGE,  keys,              8) \
 X(a, STATIC,   OPTIONAL, MESSAGE,  current_ac_range,   9) \
-X(a, STATIC,   OPTIONAL, UENUM,    sink_state,       10)
+X(a, STATIC,   OPTIONAL, UENUM,    sink_state,       10) \
+X(a, STATIC,   OPTIONAL, MESSAGE,  network_keys,     11) \
+X(a, STATIC,   OPTIONAL, MESSAGE,  management_keys,  12)
 #define wp_SinkNewConfig_CALLBACK NULL
 #define wp_SinkNewConfig_DEFAULT (const pb_byte_t*)"\x50\x01\x00"
 #define wp_SinkNewConfig_node_role_MSGTYPE wp_NodeRole
 #define wp_SinkNewConfig_app_config_MSGTYPE wp_AppConfigData
 #define wp_SinkNewConfig_keys_MSGTYPE wp_NetworkKeys
 #define wp_SinkNewConfig_current_ac_range_MSGTYPE wp_AccessCycleRange
+#define wp_SinkNewConfig_network_keys_MSGTYPE wp_SecurityKeys
+#define wp_SinkNewConfig_management_keys_MSGTYPE wp_SecurityKeys
 
 #define wp_GatewayInfo_FIELDLIST(X, a) \
 X(a, STATIC,   REQUIRED, UINT64,   current_time_s_epoch,   1) \
 X(a, STATIC,   OPTIONAL, STRING,   gw_model,          2) \
 X(a, STATIC,   OPTIONAL, STRING,   gw_version,        3) \
 X(a, STATIC,   OPTIONAL, UINT32,   implemented_api_version,   4) \
-X(a, STATIC,   OPTIONAL, UINT32,   max_scratchpad_size,   5)
+X(a, STATIC,   OPTIONAL, UINT32,   max_scratchpad_size,   5) \
+X(a, STATIC,   REPEATED, UENUM,    gw_features,       6)
 #define wp_GatewayInfo_CALLBACK NULL
 #define wp_GatewayInfo_DEFAULT NULL
 
@@ -450,7 +555,8 @@ X(a, STATIC,   REQUIRED, UENUM,    state,             3) \
 X(a, STATIC,   REPEATED, MESSAGE,  configs,           4) \
 X(a, STATIC,   OPTIONAL, STRING,   gw_model,          5) \
 X(a, STATIC,   OPTIONAL, STRING,   gw_version,        6) \
-X(a, STATIC,   OPTIONAL, UINT32,   max_scratchpad_size,   7)
+X(a, STATIC,   OPTIONAL, UINT32,   max_scratchpad_size,   7) \
+X(a, STATIC,   REPEATED, UENUM,    gw_features,       8)
 #define wp_StatusEvent_CALLBACK NULL
 #define wp_StatusEvent_DEFAULT (const pb_byte_t*)"\x18\x01\x00"
 #define wp_StatusEvent_header_MSGTYPE wp_EventHeader
@@ -500,11 +606,42 @@ X(a, STATIC,   REQUIRED, MESSAGE,  info,              2)
 #define wp_GetGwInfoResp_header_MSGTYPE wp_ResponseHeader
 #define wp_GetGwInfoResp_info_MSGTYPE wp_GatewayInfo
 
+#define wp_SetConfigurationDataItemReq_FIELDLIST(X, a) \
+X(a, STATIC,   REQUIRED, MESSAGE,  header,            1) \
+X(a, STATIC,   REQUIRED, MESSAGE,  configuration_data_item,   2)
+#define wp_SetConfigurationDataItemReq_CALLBACK NULL
+#define wp_SetConfigurationDataItemReq_DEFAULT NULL
+#define wp_SetConfigurationDataItemReq_header_MSGTYPE wp_RequestHeader
+#define wp_SetConfigurationDataItemReq_configuration_data_item_MSGTYPE wp_ConfigurationDataItem
+
+#define wp_SetConfigurationDataItemResp_FIELDLIST(X, a) \
+X(a, STATIC,   REQUIRED, MESSAGE,  header,            1)
+#define wp_SetConfigurationDataItemResp_CALLBACK NULL
+#define wp_SetConfigurationDataItemResp_DEFAULT NULL
+#define wp_SetConfigurationDataItemResp_header_MSGTYPE wp_ResponseHeader
+
+#define wp_GetConfigurationDataItemReq_FIELDLIST(X, a) \
+X(a, STATIC,   REQUIRED, MESSAGE,  header,            1) \
+X(a, STATIC,   REQUIRED, UINT32,   endpoint,          2)
+#define wp_GetConfigurationDataItemReq_CALLBACK NULL
+#define wp_GetConfigurationDataItemReq_DEFAULT NULL
+#define wp_GetConfigurationDataItemReq_header_MSGTYPE wp_RequestHeader
+
+#define wp_GetConfigurationDataItemResp_FIELDLIST(X, a) \
+X(a, STATIC,   REQUIRED, MESSAGE,  header,            1) \
+X(a, STATIC,   OPTIONAL, MESSAGE,  configuration_data_item,   2)
+#define wp_GetConfigurationDataItemResp_CALLBACK NULL
+#define wp_GetConfigurationDataItemResp_DEFAULT NULL
+#define wp_GetConfigurationDataItemResp_header_MSGTYPE wp_ResponseHeader
+#define wp_GetConfigurationDataItemResp_configuration_data_item_MSGTYPE wp_ConfigurationDataItem
+
 extern const pb_msgdesc_t wp_NodeRole_msg;
 extern const pb_msgdesc_t wp_AccessCycleRange_msg;
 extern const pb_msgdesc_t wp_ChannelRange_msg;
 extern const pb_msgdesc_t wp_AppConfigData_msg;
 extern const pb_msgdesc_t wp_NetworkKeys_msg;
+extern const pb_msgdesc_t wp_SecurityKeys_msg;
+extern const pb_msgdesc_t wp_ConfigurationDataItem_msg;
 extern const pb_msgdesc_t wp_SinkReadConfig_msg;
 extern const pb_msgdesc_t wp_SinkNewConfig_msg;
 extern const pb_msgdesc_t wp_GatewayInfo_msg;
@@ -515,6 +652,10 @@ extern const pb_msgdesc_t wp_SetConfigReq_msg;
 extern const pb_msgdesc_t wp_SetConfigResp_msg;
 extern const pb_msgdesc_t wp_GetGwInfoReq_msg;
 extern const pb_msgdesc_t wp_GetGwInfoResp_msg;
+extern const pb_msgdesc_t wp_SetConfigurationDataItemReq_msg;
+extern const pb_msgdesc_t wp_SetConfigurationDataItemResp_msg;
+extern const pb_msgdesc_t wp_GetConfigurationDataItemReq_msg;
+extern const pb_msgdesc_t wp_GetConfigurationDataItemResp_msg;
 
 /* Defines for backwards compatibility with code written before nanopb-0.4.0 */
 #define wp_NodeRole_fields &wp_NodeRole_msg
@@ -522,6 +663,8 @@ extern const pb_msgdesc_t wp_GetGwInfoResp_msg;
 #define wp_ChannelRange_fields &wp_ChannelRange_msg
 #define wp_AppConfigData_fields &wp_AppConfigData_msg
 #define wp_NetworkKeys_fields &wp_NetworkKeys_msg
+#define wp_SecurityKeys_fields &wp_SecurityKeys_msg
+#define wp_ConfigurationDataItem_fields &wp_ConfigurationDataItem_msg
 #define wp_SinkReadConfig_fields &wp_SinkReadConfig_msg
 #define wp_SinkNewConfig_fields &wp_SinkNewConfig_msg
 #define wp_GatewayInfo_fields &wp_GatewayInfo_msg
@@ -532,24 +675,34 @@ extern const pb_msgdesc_t wp_GetGwInfoResp_msg;
 #define wp_SetConfigResp_fields &wp_SetConfigResp_msg
 #define wp_GetGwInfoReq_fields &wp_GetGwInfoReq_msg
 #define wp_GetGwInfoResp_fields &wp_GetGwInfoResp_msg
+#define wp_SetConfigurationDataItemReq_fields &wp_SetConfigurationDataItemReq_msg
+#define wp_SetConfigurationDataItemResp_fields &wp_SetConfigurationDataItemResp_msg
+#define wp_GetConfigurationDataItemReq_fields &wp_GetConfigurationDataItemReq_msg
+#define wp_GetConfigurationDataItemResp_fields &wp_GetConfigurationDataItemResp_msg
 
 /* Maximum encoded size of messages (where known) */
 #define WP_CONFIG_MESSAGE_PB_H_MAX_SIZE          wp_StatusEvent_size
 #define wp_AccessCycleRange_size                 12
 #define wp_AppConfigData_size                    94
 #define wp_ChannelRange_size                     12
-#define wp_GatewayInfo_size                      121
+#define wp_ConfigurationDataItem_size            137
+#define wp_GatewayInfo_size                      125
 #define wp_GetConfigsReq_size                    41
 #define wp_GetConfigsResp_size                   415
+#define wp_GetConfigurationDataItemReq_size      47
+#define wp_GetConfigurationDataItemResp_size     225
 #define wp_GetGwInfoReq_size                     41
-#define wp_GetGwInfoResp_size                    208
+#define wp_GetGwInfoResp_size                    212
 #define wp_NetworkKeys_size                      36
 #define wp_NodeRole_size                         6
-#define wp_SetConfigReq_size                     248
+#define wp_SecurityKeys_size                     42
+#define wp_SetConfigReq_size                     336
 #define wp_SetConfigResp_size                    414
-#define wp_SinkNewConfig_size                    204
+#define wp_SetConfigurationDataItemReq_size      181
+#define wp_SetConfigurationDataItemResp_size     85
+#define wp_SinkNewConfig_size                    292
 #define wp_SinkReadConfig_size                   326
-#define wp_StatusEvent_size                      516
+#define wp_StatusEvent_size                      520
 
 #ifdef __cplusplus
 } /* extern "C" */
