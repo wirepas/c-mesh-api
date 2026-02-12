@@ -3,8 +3,15 @@ cmake_minimum_required(VERSION 3.18)
 project(meshAPItest LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE RelWithDebInfo)
+endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+set(TEST_EXTRA_CFLAGS "" CACHE STRING "Extra compiler flags for WPC library and test code. For example '--coverage'.")
+set(TEST_EXTRA_LDFLAGS "" CACHE STRING "Extra linker flags for the test executable. For example '--coverage'.")
+separate_arguments(TEST_EXTRA_CFLAGS)
+separate_arguments(TEST_EXTRA_LDFLAGS)
 
 add_compile_options(-Wall -Werror -Wextra)
 
@@ -41,4 +48,9 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 
 include(GoogleTest)
 gtest_discover_tests(${CMAKE_PROJECT_NAME})
+
+target_compile_options(wpc                   PRIVATE ${TEST_EXTRA_CFLAGS})
+target_compile_options(wpc_platform          PRIVATE ${TEST_EXTRA_CFLAGS})
+target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE ${TEST_EXTRA_CFLAGS})
+target_link_options(${CMAKE_PROJECT_NAME} PRIVATE ${TEST_EXTRA_LDFLAGS})
 
