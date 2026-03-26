@@ -952,6 +952,8 @@ app_res_e WPC_send_data(const uint8_t * bytes,
  * \param   message_p
  *          The message to send
  * \return  Return code of the operation
+ * \note    If the node role is sink and a valid SSR first-hop is available
+ *          for the destination, SSR routing is used automatically.
  */
 app_res_e WPC_send_data_with_options(const app_message_t * message_p);
 

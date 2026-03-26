@@ -142,6 +142,313 @@ static void fill_tx_frag_request(wpc_frame_t * request,
     memcpy(&payload->apdu, buffer, len);
 }
 
+static void fill_tx_ssr_request(wpc_frame_t * request,
+                                const uint8_t * buffer,
+                                size_t len,
+                                uint16_t pdu_id,
+                                uint32_t dest_add,
+                                uint8_t qos,
+                                uint8_t src_ep,
+                                uint8_t dest_ep,
+                                uint8_t tx_options,
+                                uint32_t buffering_delay,
+                                uint8_t hop_count,
+                                const uint32_t * hops)
+{
+    dsap_data_tx_ssr_req_pl_t * payload = &request->payload.dsap_data_tx_ssr_request_payload;
+
+    payload->pdu_id = pdu_id;
+    payload->src_endpoint = src_ep;
+    payload->dest_add = dest_add;
+    payload->dest_endpoint = dest_ep;
+    payload->qos = qos;
+    payload->tx_options = tx_options;
+    payload->buffering_delay = buffering_delay;
+    payload->hop_count = hop_count;
+    memcpy(payload->hops, hops, hop_count * sizeof(payload->hops[0]));
+    payload->apdu_length = (uint8_t) len;
+    memcpy(payload->apdu, buffer, len);
+}
+
+static void fill_tx_ssr_frag_request(wpc_frame_t * request,
+                                     const uint8_t * buffer,
+                                     size_t len,
+                                     uint16_t pdu_id,
+                                     uint32_t dest_add,
+                                     uint8_t qos,
+                                     uint8_t src_ep,
+                                     uint8_t dest_ep,
+                                     uint8_t tx_options,
+                                     uint32_t buffering_delay,
+                                     uint16_t full_packet_id,
+                                     uint16_t frag_offset,
+                                     bool last_frag,
+                                     uint8_t hop_count,
+                                     const uint32_t * hops)
+{
+    dsap_data_tx_ssr_frag_req_pl_t * payload = &request->payload.dsap_data_tx_ssr_frag_request_payload;
+    uint16_t frag_flag = 0;
+
+    if (last_frag)
+    {
+        frag_flag = DSAP_FRAG_LAST_FLAG_MASK;
+    }
+    else
+    {
+        // Never track intermediate fragment so clear first bit
+        tx_options &= 0xFE;
+    }
+
+    *payload = (dsap_data_tx_ssr_frag_req_pl_t) {
+        .pdu_id = pdu_id,
+        .src_endpoint = src_ep,
+        .dest_add = dest_add,
+        .dest_endpoint = dest_ep,
+        .qos = qos,
+        .tx_options = tx_options,
+        .buffering_delay = buffering_delay,
+        .full_packet_id = full_packet_id,
+        .fragment_offset_flag = (frag_offset & DSAP_FRAG_LENGTH_MASK) | frag_flag,
+        .hop_count = hop_count,
+        .apdu_length = len,
+    };
+
+    memcpy(payload->hops, hops, hop_count * sizeof(payload->hops[0]));
+    memcpy(payload->apdu, buffer, len);
+}
+
+static uint8_t build_tx_options(onDataSent_cb_f on_data_sent_cb,
+                                bool is_unack_csma_ca,
+                                uint8_t hop_limit)
+{
+    uint8_t tx_options = 0;
+
+    if (on_data_sent_cb != NULL)
+    {
+        tx_options |= 0x1;
+    }
+
+    if (is_unack_csma_ca)
+    {
+        tx_options |= 0x2;
+    }
+
+    tx_options |= (hop_limit & 0xf) << 2;
+
+    return tx_options;
+}
+
+static int dsap_data_tx_request_internal(const uint8_t * buffer,
+                                         size_t len,
+                                         uint16_t pdu_id,
+                                         uint32_t dest_add,
+                                         uint8_t qos,
+                                         uint8_t src_ep,
+                                         uint8_t dest_ep,
+                                         onDataSent_cb_f on_data_sent_cb,
+                                         uint32_t buffering_delay,
+                                         bool is_unack_csma_ca,
+                                         uint8_t hop_limit,
+                                         uint8_t hop_count,
+                                         const uint32_t * hops)
+{
+    wpc_frame_t request, confirm;
+    int res;
+    uint8_t confirm_res;
+    uint8_t tx_options = build_tx_options(on_data_sent_cb, is_unack_csma_ca, hop_limit);
+    size_t fragments = 0;
+    size_t last_fragment_size = 0;
+    // Packet ID used for fragmented packets.
+    static uint16_t packet_id = 0;
+    uint8_t max_data_pdu_size = WPC_Int_get_mtu();
+    bool use_ssr = hop_count != 0;
+
+    if (len > MAX_FULL_PACKET_SIZE)
+    {
+        // Not very clean, but reuse dualmcu 6 error code for sending data
+        // to generate a INVALID_PARAM at gateway level instead of INTERNAL_ERROR
+        return 6;
+    }
+
+    if (use_ssr && (hop_count > SSR_MAX_HOPS || hops == NULL))
+    {
+        return 6;
+    }
+
+    if (len > max_data_pdu_size)
+    {
+        // Packet must be fragmented.
+        fragments = (len + max_data_pdu_size - 1) / max_data_pdu_size;
+        last_fragment_size = len % max_data_pdu_size;
+        if (last_fragment_size == 0)
+        {
+            last_fragment_size = max_data_pdu_size;
+        }
+        LOGI("%spacket of size %d must be split in %d fragments (last is %d bytes)\n",
+             use_ssr ? "SSR " : "",
+             len,
+             fragments,
+             last_fragment_size);
+    }
+
+    if (fragments == 0)
+    {
+        if (use_ssr)
+        {
+            fill_tx_ssr_request(&request,
+                                buffer,
+                                len,
+                                pdu_id,
+                                dest_add,
+                                qos,
+                                src_ep,
+                                dest_ep,
+                                tx_options,
+                                buffering_delay,
+                                hop_count,
+                                hops);
+            request.primitive_id = DSAP_DATA_TX_SSR_REQUEST;
+            request.payload_length = (uint8_t)(sizeof(dsap_data_tx_ssr_req_pl_t)
+                                               - (SSR_MAX_HOPS - hop_count) * sizeof(uint32_t)
+                                               - (MAX_APDU_DSAP_SIZE - len));
+        }
+        else
+        {
+            // Full packet in a single frame. Even with buffering_delay of 0,
+            // TX_TT_REQUEST can be used.
+            fill_tx_tt_request(&request,
+                               buffer,
+                               len,
+                               pdu_id,
+                               dest_add,
+                               qos,
+                               src_ep,
+                               dest_ep,
+                               tx_options,
+                               buffering_delay);
+            request.primitive_id = DSAP_DATA_TX_TT_REQUEST;
+            request.payload_length = sizeof(dsap_data_tx_tt_req_pl_t) - (MAX_APDU_DSAP_SIZE - len);
+        }
+
+        // Do the sending.
+        res = WPC_Int_send_request(&request, &confirm);
+    }
+    else
+    {
+        // Packet ID is encoded on 12 bits.
+        uint16_t p_id = packet_id++ & 0xfff;
+
+        request.primitive_id = use_ssr ? DSAP_DATA_TX_SSR_FRAG_REQUEST : DSAP_DATA_TX_FRAG_REQUEST;
+        for (size_t i = 0; i < fragments; i++)
+        {
+            uint16_t offset = i * max_data_pdu_size;
+            bool last = false;
+            size_t frag_len = max_data_pdu_size;
+
+            if (i == (fragments - 1))
+            {
+                last = true;
+                frag_len = last_fragment_size;
+            }
+
+            // Send all fragments, including the last one.
+            LOGI("Sending %sfrag %d/%d for id = %d\n",
+                 use_ssr ? "SSR " : "",
+                 i,
+                 fragments,
+                 p_id);
+
+            if (use_ssr)
+            {
+                fill_tx_ssr_frag_request(&request,
+                                         buffer + offset,
+                                         frag_len,
+                                         pdu_id,
+                                         dest_add,
+                                         qos,
+                                         src_ep,
+                                         dest_ep,
+                                         tx_options,
+                                         buffering_delay,
+                                         p_id,
+                                         offset,
+                                         last,
+                                         hop_count,
+                                         hops);
+                request.payload_length = (uint8_t)(sizeof(dsap_data_tx_ssr_frag_req_pl_t)
+                                                   - (SSR_MAX_HOPS - hop_count) * sizeof(uint32_t)
+                                                   - (MAX_APDU_DSAP_SIZE - frag_len));
+            }
+            else
+            {
+                fill_tx_frag_request(&request,
+                                     buffer + offset,
+                                     frag_len,
+                                     pdu_id,
+                                     dest_add,
+                                     qos,
+                                     src_ep,
+                                     dest_ep,
+                                     tx_options,
+                                     buffering_delay,
+                                     p_id,
+                                     offset,
+                                     last);
+                request.payload_length = sizeof(dsap_data_tx_frag_req_pl_t) - (MAX_APDU_DSAP_SIZE - frag_len);
+            }
+
+            // Do the sending.
+            res = WPC_Int_send_request(&request, &confirm);
+            if (res < 0)
+            {
+                // No way to recall previous fragments once sent.
+                LOGE("Cannot send %sfrag %d/%d for dst=%d id=%d size=%d\n",
+                     use_ssr ? "SSR " : "",
+                     i,
+                     fragments,
+                     dest_add,
+                     p_id,
+                     frag_len);
+                return res;
+            }
+
+            // Check stack return code.
+            confirm_res = confirm.payload.dsap_data_tx_confirm_payload.result;
+            if (confirm_res != 0)
+            {
+                // No way to recall previous fragments once sent.
+                LOGE("Stack refused (res=%d) %sfrag %d/%d for dst=%d id=%d size=%d\n",
+                     confirm_res,
+                     use_ssr ? "SSR " : "",
+                     i,
+                     fragments,
+                     dest_add,
+                     p_id,
+                     frag_len);
+                return confirm_res;
+            }
+        }
+    }
+
+    if (res < 0)
+        return res;
+
+    confirm_res = confirm.payload.dsap_data_tx_confirm_payload.result;
+
+    // If success, register the callback.
+    if (confirm_res == 0 && on_data_sent_cb != NULL)
+    {
+        set_indication_cb(on_data_sent_cb, pdu_id);
+    }
+
+    LOGI("%ssend data result = 0x%02x capacity = %d \n",
+         use_ssr ? "SSR " : "",
+         confirm_res,
+         confirm.payload.dsap_data_tx_confirm_payload.capacity);
+
+    return confirm_res;
+}
+
 
 int dsap_data_tx_request(const uint8_t * buffer,
                          size_t len,
@@ -155,137 +462,48 @@ int dsap_data_tx_request(const uint8_t * buffer,
                          bool is_unack_csma_ca,
                          uint8_t hop_limit)
 {
-    wpc_frame_t request, confirm;
-    int res;
-    uint8_t confirm_res;
-    uint8_t tx_options = 0;
-    size_t fragments = 0;
-    size_t last_fragment_size = 0;
-    // Packet id used for fragmented packet
-    static uint16_t packet_id = 0;
-    uint8_t max_data_pdu_size = WPC_Int_get_mtu();
+    return dsap_data_tx_request_internal(buffer,
+                                         len,
+                                         pdu_id,
+                                         dest_add,
+                                         qos,
+                                         src_ep,
+                                         dest_ep,
+                                         on_data_sent_cb,
+                                         buffering_delay,
+                                         is_unack_csma_ca,
+                                         hop_limit,
+                                         0,
+                                         NULL);
+}
 
-    if (len > MAX_FULL_PACKET_SIZE)
-    {
-        // Not very clean, but reuse dualmcu 6 error code for sending data
-        // to generate a INVALID_PARAM at gateway level instead of INTERNAL_ERROR
-        return 6;
-    }
-
-    if (len > max_data_pdu_size)
-    {
-        // Packet must be fragmented
-        fragments = (len + max_data_pdu_size - 1)  / max_data_pdu_size;
-        last_fragment_size = len % max_data_pdu_size;
-        if (last_fragment_size == 0)
-        {
-            last_fragment_size = max_data_pdu_size;
-        }
-        LOGI("Packet of size %d must be splitted in %d fragments (last is %d bytes)\n", len, fragments, last_fragment_size);
-    }
-
-    // Fill the tx options
-    if (on_data_sent_cb != NULL)
-    {
-        tx_options |= 0x1;
-    }
-
-    // Is it a unack_csma_ca transmission
-    if (is_unack_csma_ca)
-    {
-        tx_options |= 0x2;
-    }
-
-    // Add hop limit (on 4 bits)
-    tx_options |= (hop_limit & 0xf) << 2;
-
-    // Create the frame
-    if (fragments == 0)
-    {
-        // Full packet in a single frame
-        // Even with buffering_delay of 0, TX_TT_REQUEST can be used
-        request.primitive_id = DSAP_DATA_TX_TT_REQUEST;
-        fill_tx_tt_request(&request, buffer, len, pdu_id, dest_add, qos, src_ep, dest_ep, tx_options, buffering_delay);
-        request.payload_length =
-            sizeof(dsap_data_tx_tt_req_pl_t) - (MAX_APDU_DSAP_SIZE - len);
-
-        // Do the sending
-        res = WPC_Int_send_request(&request, &confirm);
-    }
-    else
-    {
-        // id is on 12 bits
-        uint16_t p_id = packet_id++ & 0xfff;
-        // Packet must be fragmented
-        request.primitive_id = DSAP_DATA_TX_FRAG_REQUEST;
-        // Send all fragment except last
-        for (size_t i = 0; i < fragments; i++)
-        {
-            uint16_t offset = i * max_data_pdu_size;
-            bool last = false;
-            size_t frag_len = max_data_pdu_size;
-
-            if (i == (fragments -1))
-            {
-                last = true;
-                frag_len= last_fragment_size;
-            }
-            LOGI("Sending frag %d/%d for id = %d\n", i, fragments, p_id);
-
-            fill_tx_frag_request(&request,
-                                 buffer + offset,
-                                 frag_len,
-                                 pdu_id,
-                                 dest_add,
-                                 qos,
-                                 src_ep,
-                                 dest_ep,
-                                 tx_options,
-                                 buffering_delay,
-                                 p_id,
-                                 offset,
-                                 last);
-
-            request.payload_length =
-            sizeof(dsap_data_tx_frag_req_pl_t) - (MAX_APDU_DSAP_SIZE - frag_len);
-
-            // Do the sending
-            res = WPC_Int_send_request(&request, &confirm);
-            if (res < 0)
-            {
-                // No way to recall previous fragment, they will be sent
-                LOGE("Cannot send frag %d/%d for dst=%d id=%d size=%d\n", i, fragments, dest_add, p_id, frag_len);
-                return res;
-            }
-
-            // Check stack return code
-            confirm_res = confirm.payload.dsap_data_tx_confirm_payload.result;
-
-            if (confirm_res != 0)
-            {
-                // No way to recall previous fragment, they will be sent
-                LOGE("Stack refused (res=%d) intermediate frag %d/%d for dst=%d id=%d size=%d\n", confirm_res, i, fragments, dest_add, p_id, frag_len);
-                return confirm_res;
-            }
-        }
-    }
-
-    if (res < 0)
-        return res;
-
-    confirm_res = confirm.payload.dsap_data_tx_confirm_payload.result;
-
-    // If success, register the callback
-    if (confirm_res == 0 && on_data_sent_cb != NULL)
-    {
-        set_indication_cb(on_data_sent_cb, pdu_id);
-    }
-
-    LOGI("Send data result = 0x%02x capacity = %d \n",
-         confirm_res,
-         confirm.payload.dsap_data_tx_confirm_payload.capacity);
-
-    return confirm_res;
+int dsap_data_tx_ssr_request(const uint8_t * buffer,
+                             size_t len,
+                             uint16_t pdu_id,
+                             uint32_t dest_add,
+                             uint8_t qos,
+                             uint8_t src_ep,
+                             uint8_t dest_ep,
+                             onDataSent_cb_f on_data_sent_cb,
+                             uint32_t buffering_delay,
+                             bool is_unack_csma_ca,
+                             uint8_t hop_limit,
+                             uint8_t hop_count,
+                             const uint32_t * hops)
+{
+    return dsap_data_tx_request_internal(buffer,
+                                         len,
+                                         pdu_id,
+                                         dest_add,
+                                         qos,
+                                         src_ep,
+                                         dest_ep,
+                                         on_data_sent_cb,
+                                         buffering_delay,
+                                         is_unack_csma_ca,
+                                         hop_limit,
+                                         hop_count,
+                                         hops);
 }
 
 void dsap_data_tx_indication_handler(dsap_data_tx_ind_pl_t * payload)
