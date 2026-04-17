@@ -1,15 +1,18 @@
 #include <gtest/gtest.h>
 
-#include <cstdarg>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
+#include <cstdarg>
 #include <vector>
 
 #define _Static_assert static_assert
 extern "C"
 {
 #include "dsap.h"
-#include "reassembly.h"
+#include "fht.h"
+#include "msap.h"
+#include "ssr.h"
 #include "util.h"
 #include "wpc_constants.h"
 #include "wpc_types.h"
@@ -40,6 +43,9 @@ struct SendRequestStub
     std::vector<uint8_t> confirm_results;
     uint8_t mtu = 102;
     uint8_t confirm_capacity = 7;
+    unsigned long long now_ms = 0;
+    int malloc_call_count = 0;
+    int fail_on_malloc_call = -1;
 
     void reset()
     {
@@ -48,6 +54,9 @@ struct SendRequestStub
         confirm_results.clear();
         mtu = 102;
         confirm_capacity = 7;
+        now_ms = 0;
+        malloc_call_count = 0;
+        fail_on_malloc_call = -1;
     }
 };
 
@@ -61,20 +70,51 @@ void on_data_sent(uint16_t pdu_id, uint32_t buffering_delay_ms, uint8_t result)
     g_tx_cb.result = result;
     g_tx_cb.calls++;
 }
+
+enum MirrorSlotState
+{
+    MirrorSlotEmpty = 0,
+    MirrorSlotOccupied = 1,
+    MirrorSlotTombstone = 2,
+};
+
+struct MirrorFhtSlot
+{
+    uint32_t node_id;
+    uint32_t first_hop_id;
+    uint32_t last_refresh;
+    MirrorSlotState state;
+};
+
+struct MirrorFht
+{
+    MirrorFhtSlot * slots;
+    size_t capacity;
+    size_t count;
+    size_t tombstones;
+    uint32_t validity_s;
+};
 } // namespace
 
-extern "C" bool Platform_lock_request(void)
+extern "C" void * Platform_malloc(size_t size)
 {
-    return true;
+    g_stub.malloc_call_count++;
+    if (g_stub.fail_on_malloc_call == g_stub.malloc_call_count)
+    {
+        return nullptr;
+    }
+    return std::malloc(size);
 }
 
-extern "C" void Platform_unlock_request(void)
+extern "C" void Platform_free(void * ptr, size_t size)
 {
+    (void) size;
+    std::free(ptr);
 }
 
 extern "C" unsigned long long Platform_get_timestamp_ms_monotonic(void)
 {
-    return 0;
+    return g_stub.now_ms;
 }
 
 extern "C" void Platform_LOG(char level, char * module, char * format, va_list args)
@@ -113,6 +153,15 @@ extern "C" int * Platform_get_logging_module_level(const char * const module_nam
     return &level;
 }
 
+extern "C" bool Platform_lock_ssr(void)
+{
+    return true;
+}
+
+extern "C" void Platform_unlock_ssr(void)
+{
+}
+
 extern "C" uint8_t WPC_Int_get_mtu(void)
 {
     return g_stub.mtu;
@@ -137,32 +186,12 @@ extern "C" int WPC_Int_send_request(wpc_frame_t * frame, wpc_frame_t * confirm)
     return transport_result;
 }
 
-extern "C" bool reassembly_add_fragment(reassembly_fragment_t * frag, size_t * full_size_p)
+extern "C" int WPC_Int_send_request_timeout(wpc_frame_t * frame,
+                                            wpc_frame_t * confirm,
+                                            uint16_t timeout_ms)
 {
-    (void) frag;
-    *full_size_p = 0;
-    return false;
-}
-
-extern "C" bool reassembly_get_full_message(uint32_t src_add,
-                                            uint16_t packet_id,
-                                            uint8_t * buffer_p,
-                                            size_t * size)
-{
-    (void) src_add;
-    (void) packet_id;
-    (void) buffer_p;
-    (void) size;
-    return false;
-}
-
-extern "C" void reassembly_garbage_collect(void)
-{
-}
-
-extern "C" void reassembly_set_max_fragment_duration(unsigned int fragment_max_duration_s)
-{
-    (void) fragment_max_duration_s;
+    (void) timeout_ms;
+    return WPC_Int_send_request(frame, confirm);
 }
 
 class SsrRoutingUnitTest : public ::testing::Test
@@ -172,7 +201,12 @@ protected:
     {
         g_stub.reset();
         g_tx_cb.reset();
-        dsap_init();
+        ssr_deinit();
+    }
+
+    void TearDown() override
+    {
+        ssr_deinit();
     }
 };
 
@@ -368,10 +402,8 @@ TEST_F(SsrRoutingUnitTest, LegacyFragmentedRequestUsesTraditionalFragmentPrimiti
     EXPECT_EQ(g_stub.frames[0].primitive_id, DSAP_DATA_TX_FRAG_REQUEST);
     EXPECT_EQ(g_stub.frames[1].primitive_id, DSAP_DATA_TX_FRAG_REQUEST);
 
-    const dsap_data_tx_frag_req_pl_t & first =
-        g_stub.frames[0].payload.dsap_data_tx_frag_request_payload;
-    const dsap_data_tx_frag_req_pl_t & last =
-        g_stub.frames[1].payload.dsap_data_tx_frag_request_payload;
+    const dsap_data_tx_frag_req_pl_t & first = g_stub.frames[0].payload.dsap_data_tx_frag_request_payload;
+    const dsap_data_tx_frag_req_pl_t & last = g_stub.frames[1].payload.dsap_data_tx_frag_request_payload;
 
     EXPECT_EQ(first.tx_options, static_cast<uint8_t>(6u << 2));
     EXPECT_EQ(first.apdu_length, 3u);
@@ -473,4 +505,203 @@ TEST_F(SsrRoutingUnitTest, FragmentedSsrRequestStopsOnStackRefusal)
                                        &hop),
               5);
     EXPECT_EQ(g_stub.frames.size(), 2u);
+}
+
+TEST_F(SsrRoutingUnitTest, MappedSsrRegistrationIgnoresOlderGeneratedTimestamp)
+{
+    ssr_init();
+    ssr_set_sink_address(0xBBBB0001u);
+    g_stub.now_ms = 100u * 1000u;
+
+    msap_ssr_registration_ind_pl_t payload = {};
+    payload.source_address = 0x1234u;
+    payload.source_routing_id = 0xAAAAu;
+    payload.sink_address = 0xBBBB0001u;
+    payload.delay_hp = 0;
+    msap_ssr_registration_indication_handler(&payload);
+
+    payload.source_routing_id = 0xCCCCu;
+    payload.delay_hp = 2048;
+    msap_ssr_registration_indication_handler(&payload);
+
+    uint32_t hop = 0;
+    ASSERT_TRUE(ssr_get_first_hop(0x1234u, &hop));
+    EXPECT_EQ(hop, 0xAAAAu);
+}
+
+TEST_F(SsrRoutingUnitTest, SsrDiscardedUntilSinkAddressIsConfigured)
+{
+    ssr_init();
+    g_stub.now_ms = 10u * 1000u;
+
+    ssr_on_registration(0x1111u, 0x2222u, 0x3333u, 0);
+
+    uint32_t hop = 0xFFFFFFFFu;
+    EXPECT_FALSE(ssr_get_first_hop(0x1111u, &hop));
+    EXPECT_EQ(hop, 0u);
+}
+
+TEST_F(SsrRoutingUnitTest, SsrApiGracefullyHandlesUseBeforeInit)
+{
+    uint32_t hop = 0xFFFFFFFFu;
+
+    EXPECT_FALSE(ssr_get_first_hop(0x1234u, &hop));
+    EXPECT_EQ(hop, 0u);
+    EXPECT_NO_FATAL_FAILURE(ssr_on_registration(0x1234u, 0x5678u, 0x9ABCu, 0));
+    EXPECT_NO_FATAL_FAILURE(ssr_purge_expired());
+}
+
+TEST_F(SsrRoutingUnitTest, SsrInitHandlesFirstHopTableAllocationFailure)
+{
+    g_stub.fail_on_malloc_call = 1;
+
+    ssr_init();
+
+    uint32_t hop = 0xFFFFFFFFu;
+    EXPECT_FALSE(ssr_get_first_hop(0x1111u, &hop));
+    EXPECT_EQ(hop, 0u);
+}
+
+TEST_F(SsrRoutingUnitTest, SsrPurgeExpiredRemovesRoute)
+{
+    ssr_init();
+    ssr_set_sink_address(0xAAAAu);
+    g_stub.now_ms = 50u * 1000u;
+    ssr_on_registration(0x2000u, 0x3000u, 0xAAAAu, 0);
+
+    g_stub.now_ms = (50u + 2400u) * 1000u;
+    ssr_purge_expired();
+
+    uint32_t hop = 123u;
+    EXPECT_FALSE(ssr_get_first_hop(0x2000u, &hop));
+    EXPECT_EQ(hop, 0u);
+}
+
+TEST_F(SsrRoutingUnitTest, ChangingSinkAddressFlushesExistingRoutes)
+{
+    ssr_init();
+    ssr_set_sink_address(0xAAAAu);
+    g_stub.now_ms = 10u * 1000u;
+    ssr_on_registration(0x2000u, 0x3000u, 0xAAAAu, 0);
+
+    ssr_set_sink_address(0xBBBBu);
+
+    uint32_t hop = 123u;
+    EXPECT_FALSE(ssr_get_first_hop(0x2000u, &hop));
+    EXPECT_EQ(hop, 0u);
+}
+
+TEST_F(SsrRoutingUnitTest, RegistrationDelayLargerThanUptimeDoesNotPoisonRoute)
+{
+    ssr_init();
+    ssr_set_sink_address(0xAAAAu);
+
+    g_stub.now_ms = 5u * 1000u;
+    ssr_on_registration(0x2000u, 0x3000u, 0xAAAAu, 10u * 1024u);
+
+    g_stub.now_ms = 6u * 1000u;
+    ssr_on_registration(0x2000u, 0x4000u, 0xAAAAu, 0);
+
+    uint32_t hop = 0;
+    ASSERT_TRUE(ssr_get_first_hop(0x2000u, &hop));
+    EXPECT_EQ(hop, 0x4000u);
+}
+
+TEST_F(SsrRoutingUnitTest, FhtCreateReturnsNullWhenInitialAllocationFails)
+{
+    g_stub.fail_on_malloc_call = 1;
+    EXPECT_EQ(fht_create(), nullptr);
+}
+
+TEST_F(SsrRoutingUnitTest, FhtCreateReturnsNullWhenSlotAllocationFails)
+{
+    g_stub.fail_on_malloc_call = 2;
+    EXPECT_EQ(fht_create(), nullptr);
+}
+
+TEST_F(SsrRoutingUnitTest, FhtUpdateRouteReturnsErrorWhenResizeAllocationFails)
+{
+    fht_t * table = fht_create();
+    ASSERT_NE(table, nullptr);
+    fht_set_validity(table, UINT32_MAX / 2);
+
+    for (uint32_t node = 1; node <= 45; node++)
+    {
+        ASSERT_EQ(fht_update_route(table, node, node + 1000u, 1u), 0);
+    }
+
+    g_stub.fail_on_malloc_call = g_stub.malloc_call_count + 1;
+    EXPECT_EQ(fht_update_route(table, 46u, 1046u, 1u), -1);
+    fht_destroy(table);
+}
+
+TEST_F(SsrRoutingUnitTest, FhtLookupTraversesTombstoneWhenPurgeRehashFails)
+{
+    fht_t * table = fht_create();
+    ASSERT_NE(table, nullptr);
+    fht_set_validity(table, 1u);
+    ASSERT_EQ(fht_update_route(table, 0x55u, 0x66u, 0u), 0);
+
+    g_stub.fail_on_malloc_call = g_stub.malloc_call_count + 1;
+    fht_purge_expired(table, 1u);
+
+    uint32_t hop = 0xFFFFFFFFu;
+    fht_get_first_hop(table, 0x55u, 1u, &hop);
+    EXPECT_EQ(hop, 0u);
+    fht_destroy(table);
+}
+
+TEST_F(SsrRoutingUnitTest, FhtUpdateRouteReusesTombstoneWhenPurgeRehashFails)
+{
+    fht_t * table = fht_create();
+    ASSERT_NE(table, nullptr);
+    fht_set_validity(table, 1u);
+    ASSERT_EQ(fht_update_route(table, 0x55u, 0x66u, 0u), 0);
+
+    g_stub.fail_on_malloc_call = g_stub.malloc_call_count + 1;
+    fht_purge_expired(table, 1u);
+
+    ASSERT_EQ(fht_update_route(table, 0x55u, 0x77u, 2u), 0);
+
+    uint32_t hop = 0u;
+    fht_get_first_hop(table, 0x55u, 2u, &hop);
+    EXPECT_EQ(hop, 0x77u);
+    fht_destroy(table);
+}
+
+TEST_F(SsrRoutingUnitTest, FhtLookupReturnsZeroWhenTableHasNoEmptySlot)
+{
+    fht_t * table = fht_create();
+    ASSERT_NE(table, nullptr);
+
+    MirrorFht * mirror = reinterpret_cast<MirrorFht *>(table);
+    for (size_t i = 0; i < mirror->capacity; i++)
+    {
+        mirror->slots[i].node_id = static_cast<uint32_t>(i + 1);
+        mirror->slots[i].first_hop_id = static_cast<uint32_t>(1000 + i);
+        mirror->slots[i].last_refresh = 0u;
+        mirror->slots[i].state = MirrorSlotOccupied;
+    }
+    mirror->count = mirror->capacity;
+    mirror->tombstones = 0u;
+
+    uint32_t hop = 0xFFFFFFFFu;
+    fht_get_first_hop(table, UINT32_MAX, 1u, &hop);
+    EXPECT_EQ(hop, 0u);
+    fht_destroy(table);
+}
+
+TEST_F(SsrRoutingUnitTest, FhtPurgeWithoutExpiredEntriesKeepsRoute)
+{
+    fht_t * table = fht_create();
+    ASSERT_NE(table, nullptr);
+    fht_set_validity(table, 100u);
+    ASSERT_EQ(fht_update_route(table, 0x55u, 0x66u, 1000u), 0);
+
+    fht_purge_expired(table, 1050u);
+
+    uint32_t hop = 0;
+    fht_get_first_hop(table, 0x55u, 1050u, &hop);
+    EXPECT_EQ(hop, 0x66u);
+    fht_destroy(table);
 }

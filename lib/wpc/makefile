@@ -9,5 +9,7 @@ SOURCES += $(WPC_MODULE)msap.c
 SOURCES += $(WPC_MODULE)csap.c
 SOURCES += $(WPC_MODULE)attribute.c
 SOURCES += $(WPC_MODULE)reassembly/reassembly.c
+SOURCES += $(WPC_MODULE)ssr/fht.c
+SOURCES += $(WPC_MODULE)ssr/ssr.c
 
 CFLAGS  += -I$(WPC_MODULE)include/

@@ -16,6 +16,7 @@
 #include "logger.h"
 #include "platform.h"
 #include "reassembly.h"
+#include "ssr.h"
 #include "wpc_proto.h"
 
 // Maximum number of indication to be retrieved from a single poll
@@ -29,6 +30,8 @@
 
 // Mutex for sending, ie serial access
 static pthread_mutex_t sending_mutex;
+// Mutex for the in-process SSR routing state.
+static pthread_mutex_t ssr_mutex;
 
 // This thread is used to poll for indication
 static pthread_t thread_polling;
@@ -309,6 +312,30 @@ void Platform_unlock_request()
     pthread_mutex_unlock(&sending_mutex);
 }
 
+bool Platform_lock_ssr()
+{
+    int res = pthread_mutex_lock(&ssr_mutex);
+    if (res != 0)
+    {
+        if (res == EINVAL)
+        {
+            LOGW("SSR mutex no longer exists (destroyed)\n");
+        }
+        else
+        {
+            LOGE("SSR mutex lock failed %d\n", res);
+        }
+        return false;
+    }
+
+    return true;
+}
+
+void Platform_unlock_ssr()
+{
+    pthread_mutex_unlock(&ssr_mutex);
+}
+
 unsigned long long Platform_get_timestamp_ms_epoch()
 {
     struct timespec spec;
@@ -377,11 +404,17 @@ bool Platform_init(Platform_get_indication_f get_indication_f,
         goto error2;
     }
 
+    if (pthread_mutex_init(&ssr_mutex, &attr) != 0)
+    {
+        LOGE("SSR Mutex init failed\n");
+        goto error3;
+    }
+
     // Start a thread to poll for indication
     if (pthread_create(&thread_polling, NULL, poll_for_indication, NULL) != 0)
     {
         LOGE("Cannot create polling thread\n");
-        goto error3;
+        goto error4;
     }
 
     m_dispatch_thread_running = true;
@@ -389,13 +422,15 @@ bool Platform_init(Platform_get_indication_f get_indication_f,
     if (pthread_create(&thread_dispatch, NULL, dispatch_indication, NULL) != 0)
     {
         LOGE("Cannot create dispatch thread\n");
-        goto error4;
+        goto error5;
     }
 
     return true;
 
-error4:
+error5:
     pthread_kill(thread_polling, SIGKILL);
+error4:
+    pthread_mutex_destroy(&ssr_mutex);
 error3:
     pthread_mutex_destroy(&m_queue_mutex);
 error2:
@@ -431,6 +466,7 @@ void Platform_close()
     }
 
     // Destroy our mutexes
+    pthread_mutex_destroy(&ssr_mutex);
     pthread_mutex_destroy(&m_queue_mutex);
     pthread_mutex_destroy(&sending_mutex);
 }
