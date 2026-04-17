@@ -7,6 +7,7 @@ set(CMAKE_BUILD_TYPE RelWithDebInfo)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_compile_options(-Wall -Werror -Wextra)
+option(WPC_ENABLE_COVERAGE "Enable coverage instrumentation for unit-test builds" OFF)
 
 set(WPC_LIB_DIR "${CMAKE_CURRENT_LIST_DIR}/../lib/")
 set(WPC_INTERNAL_INCLUDE_DIRS
@@ -14,6 +15,19 @@ set(WPC_INTERNAL_INCLUDE_DIRS
     ${WPC_LIB_DIR}/platform
     ${WPC_LIB_DIR}/wpc/include
 )
+
+function(enable_coverage_if_requested target_name)
+    if(NOT WPC_ENABLE_COVERAGE)
+        return()
+    endif()
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(${target_name} PRIVATE -O0 -g --coverage)
+        target_link_options(${target_name} PRIVATE --coverage)
+    else()
+        message(WARNING "WPC_ENABLE_COVERAGE is only supported with GCC or Clang")
+    endif()
+endfunction()
 
 include(FetchContent)
 FetchContent_Declare(
@@ -27,6 +41,9 @@ FetchContent_Declare(
     GIT_TAG        v1.17.0
 )
 FetchContent_MakeAvailable(wpc-lib googletest)
+
+enable_coverage_if_requested(wpc)
+enable_coverage_if_requested(wpc_platform)
 
 enable_testing()
 
@@ -75,25 +92,8 @@ target_include_directories(meshAPI_ssr_unit PRIVATE
 target_compile_options(meshAPI_ssr_unit PRIVATE -ffunction-sections -fdata-sections)
 target_link_options(meshAPI_ssr_unit PRIVATE -Wl,--gc-sections)
 
+enable_coverage_if_requested(meshAPI_ssr_unit)
 gtest_discover_tests(meshAPI_ssr_unit)
-
-add_executable(meshAPI_wpc_internal_unit
-    ${WPC_LIB_DIR}/wpc/wpc_internal.c
-    ${CMAKE_CURRENT_LIST_DIR}/wpc_internal_ssr_unit_tests.cpp
-)
-
-target_link_libraries(meshAPI_wpc_internal_unit
-    GTest::gtest_main
-)
-
-target_include_directories(meshAPI_wpc_internal_unit PRIVATE
-    ${WPC_INTERNAL_INCLUDE_DIRS}
-)
-
-target_compile_options(meshAPI_wpc_internal_unit PRIVATE -ffunction-sections -fdata-sections)
-target_link_options(meshAPI_wpc_internal_unit PRIVATE -Wl,--gc-sections)
-
-gtest_discover_tests(meshAPI_wpc_internal_unit)
 
 add_executable(meshAPI_wpc_unit
     ${WPC_LIB_DIR}/wpc/wpc.c
@@ -112,4 +112,40 @@ target_include_directories(meshAPI_wpc_unit PRIVATE
 target_compile_options(meshAPI_wpc_unit PRIVATE -ffunction-sections -fdata-sections)
 target_link_options(meshAPI_wpc_unit PRIVATE -Wl,--gc-sections)
 
+enable_coverage_if_requested(meshAPI_wpc_unit)
 gtest_discover_tests(meshAPI_wpc_unit)
+
+add_executable(meshAPI_platform_unit
+    ${CMAKE_CURRENT_LIST_DIR}/platform_ssr_unit_tests.cpp
+)
+
+target_link_libraries(meshAPI_platform_unit
+    GTest::gtest_main
+    wpc_platform
+)
+
+target_include_directories(meshAPI_platform_unit PRIVATE
+    ${WPC_INTERNAL_INCLUDE_DIRS}
+)
+
+enable_coverage_if_requested(meshAPI_platform_unit)
+gtest_discover_tests(meshAPI_platform_unit)
+
+add_executable(meshAPI_wpc_internal_unit
+    ${WPC_LIB_DIR}/wpc/wpc_internal.c
+    ${CMAKE_CURRENT_LIST_DIR}/wpc_internal_ssr_unit_tests.cpp
+)
+
+target_link_libraries(meshAPI_wpc_internal_unit
+    GTest::gtest_main
+)
+
+target_include_directories(meshAPI_wpc_internal_unit PRIVATE
+    ${WPC_INTERNAL_INCLUDE_DIRS}
+)
+
+target_compile_options(meshAPI_wpc_internal_unit PRIVATE -ffunction-sections -fdata-sections)
+target_link_options(meshAPI_wpc_internal_unit PRIVATE -Wl,--gc-sections)
+
+enable_coverage_if_requested(meshAPI_wpc_internal_unit)
+gtest_discover_tests(meshAPI_wpc_internal_unit)
