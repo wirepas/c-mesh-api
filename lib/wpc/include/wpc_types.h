@@ -53,6 +53,8 @@ typedef struct __attribute__((__packed__))
         dsap_data_tx_req_pl_t dsap_data_tx_request_payload;
         dsap_data_tx_tt_req_pl_t dsap_data_tx_tt_request_payload;
         dsap_data_tx_frag_req_pl_t dsap_data_tx_frag_request_payload;
+        dsap_data_tx_ssr_req_pl_t dsap_data_tx_ssr_request_payload;
+        dsap_data_tx_ssr_frag_req_pl_t dsap_data_tx_ssr_frag_request_payload;
         msap_stack_start_req_pl_t msap_stack_start_request_payload;
         msap_app_config_data_write_req_pl_t msap_app_config_data_write_request_payload;
         msap_attribute_write_req_pl_t sap_attribute_write_request_payload;
