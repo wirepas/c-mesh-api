@@ -1291,6 +1291,16 @@ app_res_e WPC_send_data(const uint8_t * bytes,
     return WPC_send_data_with_options(&message);
 }
 
+app_res_e WPC_set_ssr_enabled(uint8_t enable)
+{
+    return wpc_ssr_set_enabled(enable != 0) ? APP_RES_OK : APP_RES_INTERNAL_ERROR;
+}
+
+app_res_e WPC_flush_ssr_routes(void)
+{
+    return wpc_ssr_reset_routes() ? APP_RES_OK : APP_RES_INTERNAL_ERROR;
+}
+
 static const app_res_e CDC_ITEM_SET_ERROR_CODE_LUT[] = {
     APP_RES_OK,                      // 0
     APP_RES_NODE_NOT_A_SINK,         // 1

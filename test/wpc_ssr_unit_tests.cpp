@@ -221,21 +221,29 @@ extern "C" void ssr_set_sink_address_locked(uint32_t sink_address)
 extern "C" void ssr_clear_sink_address(void)
 {
     g_stub.ssr_clear_sink_address_calls++;
+    g_stub.ssr_has_route = false;
+    g_stub.ssr_first_hop = 0;
 }
 
 extern "C" void ssr_clear_sink_address_locked(void)
 {
     g_stub.ssr_clear_sink_address_calls++;
+    g_stub.ssr_has_route = false;
+    g_stub.ssr_first_hop = 0;
 }
 
 extern "C" void ssr_reset_routes(void)
 {
     g_stub.ssr_reset_routes_calls++;
+    g_stub.ssr_has_route = false;
+    g_stub.ssr_first_hop = 0;
 }
 
 extern "C" void ssr_reset_routes_locked(void)
 {
     g_stub.ssr_reset_routes_calls++;
+    g_stub.ssr_has_route = false;
+    g_stub.ssr_first_hop = 0;
 }
 
 extern "C" bool ssr_get_first_hop(uint32_t dest, uint32_t * first_hop_id)
@@ -546,6 +554,38 @@ TEST_F(WpcSsrUnitTest, StopStackResetsSsrRoutesWhenStopTriggersReboot)
     EXPECT_FALSE(g_stub.poll_request_states[1]);
 }
 
+TEST_F(WpcSsrUnitTest, FlushSsrRoutesClearsLearnedRoutesButKeepsSsrEnabled)
+{
+    static const uint8_t bytes[] = { 0x10, 0x20 };
+    ASSERT_EQ(WPC_set_node_address(0x01020304u), APP_RES_OK);
+    ASSERT_EQ(WPC_set_role(APP_ROLE_SINK), APP_RES_OK);
+    g_stub.ssr_has_route = true;
+    g_stub.ssr_first_hop = 0x0A0B0C0Du;
+
+    EXPECT_EQ(WPC_flush_ssr_routes(), APP_RES_OK);
+    EXPECT_EQ(g_stub.ssr_reset_routes_calls, 1);
+    EXPECT_FALSE(g_stub.ssr_has_route);
+
+    app_message_t message = {};
+    message.bytes = bytes;
+    message.num_bytes = sizeof(bytes);
+    message.pdu_id = 0x1234u;
+    message.dst_addr = 0x11223344u;
+
+    EXPECT_EQ(WPC_send_data_with_options(&message), APP_RES_OK);
+    EXPECT_EQ(g_stub.ssr_lookup_calls, 1);
+    EXPECT_TRUE(g_stub.dsap_called);
+    EXPECT_FALSE(g_stub.dsap_ssr_called);
+}
+
+TEST_F(WpcSsrUnitTest, FlushSsrRoutesReturnsInternalErrorWhenSsrLockFails)
+{
+    g_stub.ssr_lock_result = false;
+
+    EXPECT_EQ(WPC_flush_ssr_routes(), APP_RES_INTERNAL_ERROR);
+    EXPECT_EQ(g_stub.ssr_reset_routes_calls, 0);
+}
+
 TEST_F(WpcSsrUnitTest, SetNodeAddressPropagatesSuccessfulWriteToSsr)
 {
     g_stub.node_address = 0x01020304u;
@@ -624,6 +664,82 @@ TEST_F(WpcSsrUnitTest, SetRoleClearsSsrWhenNodeStopsBeingSink)
     EXPECT_EQ(WPC_set_role(APP_ROLE_HEADNODE), APP_RES_OK);
     EXPECT_TRUE(g_stub.sink_addresses.empty());
     EXPECT_EQ(g_stub.ssr_clear_sink_address_calls, 1);
+}
+
+TEST_F(WpcSsrUnitTest, SetSsrEnabledDisablesSsrAndClearsLearnedRoutes)
+{
+    static const uint8_t bytes[] = { 0xCC, 0xDD };
+    ASSERT_EQ(WPC_set_node_address(0x01020304u), APP_RES_OK);
+    ASSERT_EQ(WPC_set_role(APP_ROLE_SINK), APP_RES_OK);
+    g_stub.ssr_has_route = true;
+    g_stub.ssr_first_hop = 0x11111111u;
+
+    EXPECT_EQ(WPC_set_ssr_enabled(0), APP_RES_OK);
+    EXPECT_FALSE(g_stub.ssr_has_route);
+
+    app_message_t message = {};
+    message.bytes = bytes;
+    message.num_bytes = sizeof(bytes);
+    message.pdu_id = 0x4321u;
+    message.dst_addr = 0x55667788u;
+
+    EXPECT_EQ(WPC_send_data_with_options(&message), APP_RES_OK);
+    EXPECT_TRUE(g_stub.dsap_called);
+    EXPECT_FALSE(g_stub.dsap_ssr_called);
+    EXPECT_EQ(g_stub.ssr_lookup_calls, 0);
+}
+
+TEST_F(WpcSsrUnitTest, SetSsrEnabledCanReenableSsrAfterRoutesAreRelearned)
+{
+    static const uint8_t bytes[] = { 0xAB, 0xCD };
+    ASSERT_EQ(WPC_set_node_address(0x01020304u), APP_RES_OK);
+    ASSERT_EQ(WPC_set_role(APP_ROLE_SINK), APP_RES_OK);
+    g_stub.ssr_has_route = true;
+    g_stub.ssr_first_hop = 0x11111111u;
+
+    ASSERT_EQ(WPC_set_ssr_enabled(0), APP_RES_OK);
+    ASSERT_EQ(WPC_set_ssr_enabled(1), APP_RES_OK);
+
+    g_stub.ssr_has_route = true;
+    g_stub.ssr_first_hop = 0x22222222u;
+
+    app_message_t message = {};
+    message.bytes = bytes;
+    message.num_bytes = sizeof(bytes);
+    message.pdu_id = 0x1234u;
+    message.dst_addr = 0x55667788u;
+
+    EXPECT_EQ(WPC_send_data_with_options(&message), APP_RES_OK);
+    EXPECT_TRUE(g_stub.dsap_ssr_called);
+    EXPECT_FALSE(g_stub.dsap_called);
+    ASSERT_EQ(g_stub.last_dsap_ssr_call.hops.size(), 1u);
+    EXPECT_EQ(g_stub.last_dsap_ssr_call.hops[0], 0x22222222u);
+}
+
+TEST_F(WpcSsrUnitTest, SetSsrEnabledReturnsInternalErrorWhenSsrLockFails)
+{
+    ASSERT_EQ(WPC_set_node_address(0x01020304u), APP_RES_OK);
+    ASSERT_EQ(WPC_set_role(APP_ROLE_SINK), APP_RES_OK);
+    g_stub.ssr_has_route = true;
+    g_stub.ssr_first_hop = 0x11111111u;
+    g_stub.ssr_lock_result = false;
+
+    EXPECT_EQ(WPC_set_ssr_enabled(0), APP_RES_INTERNAL_ERROR);
+
+    static const uint8_t bytes[] = { 0x01 };
+    app_message_t message = {};
+    message.bytes = bytes;
+    message.num_bytes = sizeof(bytes);
+    message.pdu_id = 1u;
+    message.dst_addr = 2u;
+
+    EXPECT_EQ(WPC_send_data_with_options(&message), APP_RES_OK);
+    EXPECT_EQ(g_stub.ssr_lookup_calls, 0);
+
+    g_stub.ssr_lock_result = true;
+    EXPECT_EQ(WPC_send_data_with_options(&message), APP_RES_OK);
+    EXPECT_EQ(g_stub.ssr_lookup_calls, 1);
+    EXPECT_TRUE(g_stub.dsap_ssr_called);
 }
 
 TEST_F(WpcSsrUnitTest, SendDataUsesSsrRequestWhenRouteExistsOnSink)

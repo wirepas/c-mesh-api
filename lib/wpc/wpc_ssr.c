@@ -16,6 +16,7 @@ static bool       m_ssr_role_known         = false;
 static app_role_t m_ssr_role               = APP_ROLE_UNKNOWN;
 static bool       m_ssr_node_address_known = false;
 static app_addr_t m_ssr_node_address       = 0;
+static bool       m_ssr_enabled            = true;
 
 static bool is_sink_role(app_role_t role)
 {
@@ -32,7 +33,7 @@ static void reset_cached_ssr_state(void)
 
 static void apply_cached_ssr_state_locked(void)
 {
-    if (!m_ssr_role_known || !is_sink_role(m_ssr_role) || !m_ssr_node_address_known)
+    if (!m_ssr_enabled || !m_ssr_role_known || !is_sink_role(m_ssr_role) || !m_ssr_node_address_known)
     {
         ssr_clear_sink_address_locked();
         return;
@@ -44,6 +45,7 @@ static void apply_cached_ssr_state_locked(void)
 void wpc_ssr_reset(void)
 {
     reset_cached_ssr_state();
+    m_ssr_enabled = true;
 }
 
 void wpc_ssr_init(void)
@@ -64,9 +66,29 @@ void wpc_ssr_close(void)
     wpc_ssr_reset();
 }
 
-void wpc_ssr_reset_routes(void)
+bool wpc_ssr_set_enabled(bool enabled)
 {
-    ssr_reset_routes();
+    if (!Platform_lock_ssr())
+    {
+        return false;
+    }
+
+    m_ssr_enabled = enabled;
+    apply_cached_ssr_state_locked();
+    Platform_unlock_ssr();
+    return true;
+}
+
+bool wpc_ssr_reset_routes(void)
+{
+    if (!Platform_lock_ssr())
+    {
+        return false;
+    }
+
+    ssr_reset_routes_locked();
+    Platform_unlock_ssr();
+    return true;
 }
 
 static void cache_role(app_role_t role)
@@ -137,7 +159,7 @@ bool wpc_ssr_get_first_hop_if_sink(app_addr_t dst_addr, uint32_t * first_hop_id)
         return false;
     }
 
-    if (!m_ssr_role_known || !is_sink_role(m_ssr_role) || !m_ssr_node_address_known)
+    if (!m_ssr_enabled || !m_ssr_role_known || !is_sink_role(m_ssr_role) || !m_ssr_node_address_known)
     {
         Platform_unlock_ssr();
         return false;

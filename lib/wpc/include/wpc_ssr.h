@@ -9,7 +9,8 @@
 void wpc_ssr_reset(void);
 void wpc_ssr_init(void);
 void wpc_ssr_close(void);
-void wpc_ssr_reset_routes(void);
+bool wpc_ssr_set_enabled(bool enabled);
+bool wpc_ssr_reset_routes(void);
 void wpc_ssr_on_role_read(app_role_t role);
 void wpc_ssr_on_role_set(app_role_t role);
 void wpc_ssr_on_node_address_known(app_addr_t node_address);
