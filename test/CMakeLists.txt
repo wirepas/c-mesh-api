@@ -94,3 +94,22 @@ target_compile_options(meshAPI_wpc_internal_unit PRIVATE -ffunction-sections -fd
 target_link_options(meshAPI_wpc_internal_unit PRIVATE -Wl,--gc-sections)
 
 gtest_discover_tests(meshAPI_wpc_internal_unit)
+
+add_executable(meshAPI_wpc_unit
+    ${WPC_LIB_DIR}/wpc/wpc.c
+    ${WPC_LIB_DIR}/wpc/wpc_ssr.c
+    ${CMAKE_CURRENT_LIST_DIR}/wpc_ssr_unit_tests.cpp
+)
+
+target_link_libraries(meshAPI_wpc_unit
+    GTest::gtest_main
+)
+
+target_include_directories(meshAPI_wpc_unit PRIVATE
+    ${WPC_INTERNAL_INCLUDE_DIRS}
+)
+
+target_compile_options(meshAPI_wpc_unit PRIVATE -ffunction-sections -fdata-sections)
+target_link_options(meshAPI_wpc_unit PRIVATE -Wl,--gc-sections)
+
+gtest_discover_tests(meshAPI_wpc_unit)

@@ -5,6 +5,7 @@ add_library(wpc STATIC
     ${CMAKE_CURRENT_LIST_DIR}/msap.c
     ${CMAKE_CURRENT_LIST_DIR}/slip.c
     ${CMAKE_CURRENT_LIST_DIR}/wpc.c
+    ${CMAKE_CURRENT_LIST_DIR}/wpc_ssr.c
     ${CMAKE_CURRENT_LIST_DIR}/wpc_internal.c
     ${CMAKE_CURRENT_LIST_DIR}/reassembly/reassembly.c
     ${CMAKE_CURRENT_LIST_DIR}/ssr/fht.c
