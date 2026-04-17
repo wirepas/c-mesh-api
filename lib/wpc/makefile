@@ -2,6 +2,7 @@
 WPC_MODULE = $(SOURCEPREFIX)wpc/
 
 SOURCES += $(WPC_MODULE)wpc.c
+SOURCES += $(WPC_MODULE)wpc_ssr.c
 SOURCES += $(WPC_MODULE)slip.c
 SOURCES += $(WPC_MODULE)wpc_internal.c
 SOURCES += $(WPC_MODULE)dsap.c

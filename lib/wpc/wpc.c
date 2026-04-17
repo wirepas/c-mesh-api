@@ -14,6 +14,7 @@
 
 #include "wpc.h"  // For DEFAULT_BITRATE
 #include "wpc_internal.h"
+#include "wpc_ssr.h"
 #include "platform.h"  // For Platform_get_timestamp_ms_monotonic()
 
 /**
@@ -42,13 +43,34 @@
 */
 static unsigned int m_timeout_after_stop_task_s = DEFAULT_TIMEOUT_AFTER_STOP_STACK_S;
 
+static void refresh_ssr_node_address_if_sink(app_role_t role)
+{
+    if (GET_BASE_ROLE(role) != APP_ROLE_SINK)
+    {
+        return;
+    }
+
+    app_addr_t node_address;
+    (void) WPC_get_node_address(&node_address);
+}
+
+static void initialize_ssr_state_from_node(void)
+{
+    app_role_t role;
+
+    (void) WPC_get_role(&role);
+}
+
 app_res_e WPC_initialize(const char * port_name, unsigned long bitrate)
 {
+    wpc_ssr_reset();
     int res = WPC_Int_initialize(port_name, bitrate);
 
     if (res == 0)
     {
         WPC_Int_set_mtu();
+        wpc_ssr_init();
+        initialize_ssr_state_from_node();
     }
 
     return res == 0 ? APP_RES_OK : APP_RES_INTERNAL_ERROR;
@@ -56,6 +78,7 @@ app_res_e WPC_initialize(const char * port_name, unsigned long bitrate)
 
 void WPC_close(void)
 {
+    wpc_ssr_close();
     WPC_Int_close();
 }
 
@@ -85,7 +108,7 @@ app_res_e WPC_set_max_poll_fail_duration(unsigned int duration_s)
 {
     if (WPC_Int_set_timeout_s_no_answer(duration_s))
     {
-        // keep track of the timeout to stay allign with the timeout for
+        // keep track of the timeout to stay aligned with the timeout for
         // status after stack is stopped
         m_timeout_after_stop_task_s = duration_s;
         return APP_RES_OK;
@@ -111,14 +134,30 @@ app_res_e  WPC_set_max_fragment_duration(unsigned int duration_s)
 app_res_e WPC_get_role(app_role_t * role_p)
 {
     int res = csap_attribute_read_request(C_NODE_ROLE_ID, 1, role_p);
-    return convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    app_res_e ret = convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+
+    if (ret == APP_RES_OK)
+    {
+        wpc_ssr_on_role_read(*role_p);
+        refresh_ssr_node_address_if_sink(*role_p);
+    }
+
+    return ret;
 }
 
 app_res_e WPC_set_role(app_role_t role)
 {
     uint8_t att = role;
     int res = csap_attribute_write_request(C_NODE_ROLE_ID, 1, &att);
-    return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
+    app_res_e ret = convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
+
+    if (ret == APP_RES_OK)
+    {
+        wpc_ssr_on_role_set(role);
+        refresh_ssr_node_address_if_sink(role);
+    }
+
+    return ret;
 }
 
 app_res_e WPC_get_node_address(app_addr_t * addr_p)
@@ -134,6 +173,7 @@ app_res_e WPC_get_node_address(app_addr_t * addr_p)
     }
 
     *addr_p = uint32_decode_le(att);
+    wpc_ssr_on_node_address_known(*addr_p);
     return APP_RES_OK;
 }
 
@@ -143,7 +183,13 @@ app_res_e WPC_set_node_address(app_addr_t add)
     uint32_encode_le(add, att);
     int res = csap_attribute_write_request(C_NODE_ADDRESS_ID, 4, att);
 
-    return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
+    app_res_e ret = convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
+    if (ret == APP_RES_OK)
+    {
+        wpc_ssr_on_node_address_known(add);
+    }
+
+    return ret;
 }
 
 app_res_e WPC_get_network_address(net_addr_t * addr_p)
@@ -644,6 +690,10 @@ app_res_e WPC_stop_stack(void)
     }
     else
     {
+        // Stopping the stack reboots the device, so all learned SSR routes
+        // become stale and must be rebuilt from fresh registrations.
+        wpc_ssr_reset_routes();
+
         // Active wait of 500ms to avoid a systematic timeout
         // at each reboot. If status is asked immediately,
         // stack cannot answer
@@ -1146,28 +1196,64 @@ static const app_res_e SEND_DATA_ERROR_CODE_LUT[] = {
     APP_RES_INVALID_VALUE,     // 9
     APP_RES_ACCESS_DENIED      // 10
 };
-app_res_e WPC_send_data_with_options(const app_message_t * message_t)
+
+static int send_data_request(const app_message_t * message_t, const uint32_t * first_hop_id)
 {
-    int res;
     uint32_t dst_addr_le;
     uint16_t pdu_id_le;
     uint32_t buffering_delay_le;
+
     uint32_encode_le(message_t->dst_addr, (uint8_t *) &dst_addr_le);
     uint16_encode_le(message_t->pdu_id, (uint8_t *) &pdu_id_le);
     uint32_encode_le(ms_to_internal_time(message_t->buffering_delay),
                      (uint8_t *) &buffering_delay_le);
 
-    res = dsap_data_tx_request(message_t->bytes,
-                               message_t->num_bytes,
-                               pdu_id_le,
-                               dst_addr_le,
-                               (message_t->qos & 0xff) == APP_QOS_HIGH ? 1 : 0,
-                               message_t->src_ep,
-                               message_t->dst_ep,
-                               message_t->on_data_sent_cb,
-                               buffering_delay_le,
-                               message_t->is_unack_csma_ca,
-                               message_t->hop_limit);
+    if (first_hop_id != NULL)
+    {
+        uint32_t first_hop_id_le;
+
+        uint32_encode_le(*first_hop_id, (uint8_t *) &first_hop_id_le);
+        return dsap_data_tx_ssr_request(message_t->bytes,
+                                        message_t->num_bytes,
+                                        pdu_id_le,
+                                        dst_addr_le,
+                                        (message_t->qos & 0xff) == APP_QOS_HIGH ? 1 : 0,
+                                        message_t->src_ep,
+                                        message_t->dst_ep,
+                                        message_t->on_data_sent_cb,
+                                        buffering_delay_le,
+                                        message_t->is_unack_csma_ca,
+                                        message_t->hop_limit,
+                                        1,
+                                        &first_hop_id_le);
+    }
+
+    return dsap_data_tx_request(message_t->bytes,
+                                message_t->num_bytes,
+                                pdu_id_le,
+                                dst_addr_le,
+                                (message_t->qos & 0xff) == APP_QOS_HIGH ? 1 : 0,
+                                message_t->src_ep,
+                                message_t->dst_ep,
+                                message_t->on_data_sent_cb,
+                                buffering_delay_le,
+                                message_t->is_unack_csma_ca,
+                                message_t->hop_limit);
+}
+
+app_res_e WPC_send_data_with_options(const app_message_t * message_t)
+{
+    int res;
+    uint32_t first_hop_id = 0;
+
+    if (wpc_ssr_get_first_hop_if_sink(message_t->dst_addr, &first_hop_id))
+    {
+        res = send_data_request(message_t, &first_hop_id);
+    }
+    else
+    {
+        res = send_data_request(message_t, NULL);
+    }
 
     if (res != 0)
     {
@@ -1203,6 +1289,16 @@ app_res_e WPC_send_data(const uint8_t * bytes,
     message.is_unack_csma_ca = false;
 
     return WPC_send_data_with_options(&message);
+}
+
+app_res_e WPC_set_ssr_enabled(uint8_t enable)
+{
+    return wpc_ssr_set_enabled(enable != 0) ? APP_RES_OK : APP_RES_INTERNAL_ERROR;
+}
+
+app_res_e WPC_flush_ssr_routes(void)
+{
+    return wpc_ssr_reset_routes() ? APP_RES_OK : APP_RES_INTERNAL_ERROR;
 }
 
 static const app_res_e CDC_ITEM_SET_ERROR_CODE_LUT[] = {

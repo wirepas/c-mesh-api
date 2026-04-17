@@ -952,8 +952,28 @@ app_res_e WPC_send_data(const uint8_t * bytes,
  * \param   message_p
  *          The message to send
  * \return  Return code of the operation
+ * \note    If the node role is sink and a valid SSR first-hop is available
+ *          for the destination, SSR routing is used automatically.
  */
 app_res_e WPC_send_data_with_options(const app_message_t * message_p);
+
+/**
+ * \brief   Enable or disable Selective Source Routing (SSR)
+ * \param   enable
+ *          True to enable SSR, false otherwise
+ * \return  Return code of the operation
+ * \note    Disabling SSR clears the learned SSR routes and prevents new
+ *          routes from being learned until SSR is enabled again.
+ */
+app_res_e WPC_set_ssr_enabled(uint8_t enable);
+
+/**
+ * \brief   Flush all learned Selective Source Routing (SSR) routes
+ * \return  Return code of the operation
+ * \note    SSR remains enabled after this call and new registrations can
+ *          repopulate the route table.
+ */
+app_res_e WPC_flush_ssr_routes(void);
 
 /**
  * \brief   Set config data item
