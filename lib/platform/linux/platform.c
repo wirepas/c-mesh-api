@@ -115,6 +115,7 @@ static void * dispatch_indication(void * unused)
 
             // Force a garbage collect (to be sure it's called even if no frag are received)
             reassembly_garbage_collect();
+            ssr_purge_expired();
 
             // Check if we wake up but nothing in queue
             if (m_queue_empty)
