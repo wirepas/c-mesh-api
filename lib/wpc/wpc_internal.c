@@ -14,6 +14,7 @@
 
 #include "serial.h"
 #include "slip.h"
+#include "ssr.h"
 #include "wpc_types.h"
 #include "wpc_internal.h"
 #include "util.h"
@@ -262,6 +263,9 @@ static void dispatch_indication(wpc_frame_t * frame, unsigned long long timestam
         case MSAP_CONFIG_DATA_ITEM_RX_INDICATION:
             msap_config_data_item_rx_indication_handler(&frame->payload.msap_config_data_item_rx_indication_payload);
             break;
+        case MSAP_SSR_REGISTRATION_INDICATION:
+            msap_ssr_registration_indication_handler(&frame->payload.msap_ssr_registration_indication_payload);
+            break;
         default:
             LOGE("Unknown indication 0x%02x\n", frame->primitive_id);
             LOG_PRINT_BUFFER((uint8_t *) frame, FRAME_SIZE(frame));
@@ -431,6 +435,13 @@ int WPC_Int_initialize(const char * port_name, unsigned long bitrate)
         return WPC_INT_GEN_ERROR;
     }
 
+    if (ssr_init() < 0)
+    {
+        Platform_close();
+        Serial_close();
+        return WPC_INT_GEN_ERROR;
+    }
+
     dsap_init();
 
     m_last_successful_answer_ts = Platform_get_timestamp_ms_monotonic();
@@ -441,6 +452,8 @@ int WPC_Int_initialize(const char * port_name, unsigned long bitrate)
 
 void WPC_Int_close(void)
 {
+    ssr_deinit();
+
     Platform_close();
 
     Serial_close();

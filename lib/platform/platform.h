@@ -92,6 +92,18 @@ bool Platform_lock_request();
 void Platform_unlock_request();
 
 /**
+ * \brief  Call at the beginning of an SSR critical section.
+ * \note   This lock protects the in-process SSR routing state, which is
+ *         accessed both from the dispatch thread and from caller threads.
+ */
+bool Platform_lock_ssr();
+
+/**
+ * \brief  Called at the end of an SSR critical section.
+ */
+void Platform_unlock_ssr();
+
+/**
  * \brief   Dynamic memory allocation
  * \param   size
  *          Size of memory to allocate

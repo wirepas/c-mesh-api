@@ -231,6 +231,22 @@ typedef struct __attribute__((__packed__))
     uint8_t payload[MAXIMUM_CDC_ITEM_PAYLOAD_SIZE];
 } msap_config_data_item_rx_ind_pl_t;
 
+/**
+ * SSR registration indication (sink → gateway).
+ *
+ * Sent by the sink's Wirepas stack each time a mesh node registers its
+ * source-routing anchor.  The gateway uses this information to update its
+ * First-Hop Table so it can build SSR-routed downlink transmissions.
+ */
+typedef struct __attribute__((__packed__))
+{
+    uint8_t  indication_status;
+    uint32_t source_address;     /**< Node that sent the registration packet. */
+    uint32_t source_routing_id;  /**< First-hop anchor (Long RD ID). */
+    uint32_t sink_address;       /**< Sink that received the registration. */
+    uint32_t delay_hp;           /**< End-to-end delay in 1/1024 second units. */
+} msap_ssr_registration_ind_pl_t;
+
 static inline void
 convert_internal_to_app_scratchpad_status(app_scratchpad_status_t * status_p,
                                           msap_scratchpad_status_conf_pl_t * internal_status_p)
@@ -560,6 +576,14 @@ void msap_scan_nbors_indication_handler(msap_scan_nbors_ind_pl_t * payload);
  *          pointer to payload
  */
 void msap_config_data_item_rx_indication_handler(msap_config_data_item_rx_ind_pl_t * payload);
+
+/**
+ * \brief   Handler for SSR registration indication
+ * \param   payload
+ *          Pointer to the received SSR registration payload.
+ *          Called by dispatch_indication() for MSAP_SSR_REGISTRATION_INDICATION.
+ */
+void msap_ssr_registration_indication_handler(msap_ssr_registration_ind_pl_t * payload);
 
 /**
  * \brief   Register for app config data
