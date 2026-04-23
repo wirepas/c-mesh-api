@@ -44,7 +44,7 @@
  * or @onStackStatusReceived
  * note : it should be higher than wp_StatusEvent_size, as it's a wp_GenericMessage
  */
-#define WPC_PROTO_MAX_EVENTSTATUS_SIZE (516 + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD)
+#define WPC_PROTO_MAX_EVENTSTATUS_SIZE (520 + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD)
 
 /*
  * Maximum size offset for data reception. Added to payload size, it can be used as an hint
