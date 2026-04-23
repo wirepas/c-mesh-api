@@ -445,6 +445,10 @@ static void fill_status_event(wp_StatusEvent * status_event_p,
     strncpy(status_event_p->gw_model, Common_get_gateway_model(), GATEWAY_MODEL_MAX_SIZE);
     strncpy(status_event_p->gw_version, Common_get_gateway_version(), GATEWAY_VERSION_MAX_SIZE);
 
+    status_event_p->gw_features_count = 2;
+    status_event_p->gw_features[0] = wp_GatewayFeature_SCRATCHPAD_CHUNK_V1;
+    status_event_p->gw_features[1] = wp_GatewayFeature_VIRTUAL_NODE_V1;
+
     Common_fill_event_header(&status_event_p->header, false);
 }
 
@@ -960,6 +964,10 @@ app_proto_res_e Proto_config_handle_get_gateway_info_request(wp_GetGwInfoReq * r
 
     resp->info.has_max_scratchpad_size = true,
     resp->info.max_scratchpad_size = member_size(wp_UploadScratchpadReq_scratchpad_t, bytes);
+
+    resp->info.gw_features_count = 2;
+    resp->info.gw_features[0] = wp_GatewayFeature_SCRATCHPAD_CHUNK_V1;
+    resp->info.gw_features[1] = wp_GatewayFeature_VIRTUAL_NODE_V1;
 
     return APP_RES_PROTO_OK;
 }
