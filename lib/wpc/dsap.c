@@ -4,7 +4,7 @@
  *
  */
 #define LOG_MODULE_NAME "dsap"
-#define MAX_LOG_LEVEL WARNING_LOG_LEVEL
+#define MAX_LOG_LEVEL INFO_LOG_LEVEL
 #include "logger.h"
 #include "wpc_types.h"
 #include "wpc_internal.h"
@@ -181,7 +181,7 @@ int dsap_data_tx_request(const uint8_t * buffer,
         {
             last_fragment_size = max_data_pdu_size;
         }
-        LOGI("Packet of size %d must be splitted in %d fragments (last is %d bytes)\n", len, fragments, last_fragment_size);
+        LOGD("Packet of size %d must be splitted in %d fragments (last is %d bytes)\n", len, fragments, last_fragment_size);
     }
 
     // Fill the tx options
@@ -230,7 +230,7 @@ int dsap_data_tx_request(const uint8_t * buffer,
                 last = true;
                 frag_len= last_fragment_size;
             }
-            LOGI("Sending frag %d/%d for id = %d\n", i, fragments, p_id);
+            LOGD("Sending frag %d/%d for id = %d\n", i, fragments, p_id);
 
             fill_tx_frag_request(&request,
                                  buffer + offset,
@@ -281,7 +281,7 @@ int dsap_data_tx_request(const uint8_t * buffer,
         set_indication_cb(on_data_sent_cb, pdu_id);
     }
 
-    LOGI("Send data result = 0x%02x capacity = %d \n",
+    LOGD("Send data result = 0x%02x capacity = %d \n",
          confirm_res,
          confirm.payload.dsap_data_tx_confirm_payload.capacity);
 
@@ -293,12 +293,12 @@ void dsap_data_tx_indication_handler(dsap_data_tx_ind_pl_t * payload)
     onDataSent_cb_f cb = get_indication_cb(payload->pdu_id);
 
     LOGD("Tx indication received: indication_status = %d, buffering_delay = "
-         "%d\n",
+         "%d, cb set = %d\n",
          payload->indication_status,
-         payload->buffering_delay);
+         payload->buffering_delay,
+         (cb != NULL));
     if (cb != NULL)
     {
-        LOGD("App cb set, call it...\n");
         cb(payload->pdu_id,
            internal_time_to_ms(payload->buffering_delay),
            payload->result);
@@ -313,7 +313,7 @@ void dsap_data_rx_frag_indication_handler(dsap_data_rx_frag_ind_pl_t * payload,
     app_qos_e qos;
     uint8_t hop_count;
     uint32_t internal_travel_time = uint32_decode_le((uint8_t *) &(payload->travel_time));
-    LOGI("Fragmented Data received: indication_status = %d, src_add = %d, lenght=%u, "
+    LOGD("Fragmented Data received: indication_status = %d, src_add = %d, lenght=%u, "
          "travel time = %d, dst_ep = %d, ts=%llu, id=%u at=%u\n",
                 payload->indication_status,
                 payload->src_add,
@@ -395,7 +395,7 @@ void dsap_data_rx_indication_handler(dsap_data_rx_ind_pl_t * payload,
     uint8_t hop_count;
     onDataReceived_cb_f cb;
 
-    LOGI("Data received: indication_status = %d, src_add = %d, lenght=%u, "
+    LOGD("Data received: indication_status = %d, src_add = %d, lenght=%u, "
          "travel time = %d, dst_ep = %d, ts=%llu\n",
          payload->indication_status,
          payload->src_add,
