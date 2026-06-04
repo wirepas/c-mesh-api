@@ -110,6 +110,15 @@ extern int *Platform_get_logging_module_level(const char *const module_name, con
 #    define MAX_LOG_LEVEL ERROR_LOG_LEVEL
 #endif
 
+#if !defined(INCLUDE_LOG)
+#   define INCLUDE_LOG 1
+#endif
+
+#if (!INCLUDE_LOG)
+#undef MAX_LOG_LEVEL
+#define MAX_LOG_LEVEL NO_LOG_LEVEL
+#endif
+
 #ifndef LOG_MODULE_NAME
 /* Name of the module */
 #    error "No module name set for logger"
