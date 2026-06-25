@@ -2,7 +2,6 @@ add_library(wpc_platform STATIC
     ${CMAKE_CURRENT_LIST_DIR}/logger.c
     ${CMAKE_CURRENT_LIST_DIR}/platform.c
     ${CMAKE_CURRENT_LIST_DIR}/serial.c
-    ${CMAKE_CURRENT_LIST_DIR}/serial_termios2.c
 )
 
 target_include_directories(wpc_platform PRIVATE

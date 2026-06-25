@@ -4,7 +4,6 @@
  *
  */
 #include <errno.h>
-#include <termios.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
@@ -12,8 +11,9 @@
 #include <sys/ioctl.h>
 #include <sys/select.h>
 #include <linux/serial.h>
+#include <sys/ioctl.h>
+#include <asm/termbits.h>
 
-#include "serial_termios2.h"
 #include "platform.h"
 
 #define LOG_MODULE_NAME "SERIAL"
@@ -31,23 +31,20 @@ static char m_port_name[256];
 /** \brief Bitrate to use */
 static unsigned long m_bitrate;
 
+// VMIN=0, VTIME=1 => blocking for max 100ms in non-canonical mode
+static const cc_t SERIAL_VMIN = 0;
+static const cc_t SERIAL_VTIME = 1;
+
 static int set_interface_attribs(int fd, unsigned long bitrate, int parity)
 {
-    struct termios tty;
+    struct termios2 tty;
     struct serial_struct serial_s;
 
-    memset(&tty, 0, sizeof tty);
-    if (tcgetattr(fd, &tty) != 0)
+    if (ioctl(fd, TCGETS2, &tty) < 0)
     {
-        LOGE("Error %d from tcgetattr", errno);
+        LOGE("Error %d from TCGETS2\n", errno);
         return -1;
     }
-
-    // default to 9600 bps, but use TCSETS2 to set the actual bitrate
-    // use a bitrate that is not 115200 or 125000 bps here, to make sure
-    // TCSETS2 actually sets the bitrate
-    cfsetospeed(&tty, B9600);
-    cfsetispeed(&tty, B9600);
 
     // 8-bit chars
     tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;
@@ -59,9 +56,9 @@ static int set_interface_attribs(int fd, unsigned long bitrate, int parity)
     tty.c_lflag = 0;
     // no remapping, no delays
     tty.c_oflag = 0;
-    // VMIN=0, VTIME=1 => blocking for max 100ms
-    tty.c_cc[VMIN] = 0;
-    tty.c_cc[VTIME] = 1;
+
+    tty.c_cc[VMIN] = SERIAL_VMIN;
+    tty.c_cc[VTIME] = SERIAL_VTIME;
 
     // shut off xon/xoff ctrl
     tty.c_iflag &= ~(IXON | IXOFF | IXANY);
@@ -74,16 +71,18 @@ static int set_interface_attribs(int fd, unsigned long bitrate, int parity)
     tty.c_cflag &= ~CSTOPB;
     tty.c_cflag &= ~CRTSCTS;
 
-    if (tcsetattr(fd, TCSANOW, &tty) != 0)
+    tty.c_cflag &= ~CBAUD;
+    tty.c_cflag |= BOTHER;
+    tty.c_ispeed = bitrate;
+    tty.c_ospeed = bitrate;
+
+    if (ioctl(fd, TCSETS2, &tty) < 0)
     {
-        LOGE("Error %d from tcsetattr", errno);
+        LOGE("Error %d from TCSETS2\n", errno);
         return -1;
     }
 
-    if (Serial_set_termios2_bitrate(fd, bitrate) != 0)
-    {
-        return -1;
-    }
+    LOGD("Custom bitrate set: %lu\n", bitrate);
 
     // Set low latency flag to serial
     ioctl(fd, TIOCGSERIAL, &serial_s);
