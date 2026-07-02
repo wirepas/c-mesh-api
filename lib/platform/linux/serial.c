@@ -297,6 +297,11 @@ static ssize_t get_single_char(unsigned char * c, unsigned int timeout_ms)
         return 1;
     }
 
+    if (read_bytes < 0)
+    {
+        LOGD("Reading the serial device failed, but treating it as a timeout: %s\n", strerror(errno));
+    }
+
     return 0;
 }
 
