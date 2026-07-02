@@ -9,7 +9,8 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <sys/select.h>
+#include <poll.h>
+#include <time.h>
 #include <linux/serial.h>
 #include <sys/ioctl.h>
 #include <asm/termbits.h>
@@ -30,10 +31,6 @@ static char m_port_name[256];
 
 /** \brief Bitrate to use */
 static unsigned long m_bitrate;
-
-// VMIN=0, VTIME=1 => blocking for max 100ms in non-canonical mode
-static const cc_t SERIAL_VMIN = 0;
-static const cc_t SERIAL_VTIME = 1;
 
 static int set_interface_attribs(int fd, unsigned long bitrate, int parity)
 {
@@ -56,9 +53,6 @@ static int set_interface_attribs(int fd, unsigned long bitrate, int parity)
     tty.c_lflag = 0;
     // no remapping, no delays
     tty.c_oflag = 0;
-
-    tty.c_cc[VMIN] = SERIAL_VMIN;
-    tty.c_cc[VTIME] = SERIAL_VTIME;
 
     // shut off xon/xoff ctrl
     tty.c_iflag &= ~(IXON | IXOFF | IXANY);
@@ -94,7 +88,7 @@ static int set_interface_attribs(int fd, unsigned long bitrate, int parity)
 
 static int int_open()
 {
-    fd = open(m_port_name, O_RDWR | O_NOCTTY | O_SYNC);
+    fd = open(m_port_name, O_RDWR | O_NOCTTY | O_SYNC | O_NONBLOCK);
     if (fd < 0)
     {
         LOGE("Error %d opening serial link %s: %s\n", errno, m_port_name, strerror(errno));
@@ -143,13 +137,141 @@ int Serial_close()
     return 0;
 }
 
+/*
+ * \brief     Get timespec representing the deadline in the future
+ * \param[in] timeout_ms
+ *            Timeout in milliseconds
+ * \return    On success: returns a timespec for the time in future
+ *            On failure: Logs a warning and returns a zero-filled dummy timespec
+ */
+static struct timespec get_deadline(const unsigned int timeout_ms)
+{
+    struct timespec deadline = {0};
+
+    struct timespec now;
+    if (0 != clock_gettime(CLOCK_MONOTONIC, &now))
+    {
+        LOGW("Could not get current time, will have invalid deadline: %s\n", strerror(errno));
+        return deadline;
+    }
+
+    const time_t timeout_s = timeout_ms / 1000;
+    const int_fast32_t timeout_nsec = (timeout_ms % 1000) * 1000000;
+
+    deadline.tv_sec = now.tv_sec + timeout_s;
+    deadline.tv_nsec = now.tv_nsec + timeout_nsec;
+    if (deadline.tv_nsec > 999999999)
+    {
+        deadline.tv_nsec -= 1000000000;
+        deadline.tv_sec++;
+    }
+
+    return deadline;
+}
+
+/*
+ * \brief     Get remaining time in milliseconds based on the deadline
+ * \param[in] deadline
+ *            Deadline
+ * \return    If deadline has not passed: Returns remaining time in milliseconds
+ *            If deadline has passed: Silently returns zero
+ *            On failure: logs a warning and returns zero
+ */
+static int get_remaining_time_ms(const struct timespec *const deadline)
+{
+    struct timespec now;
+    if (0 != clock_gettime(CLOCK_MONOTONIC, &now))
+    {
+        LOGW("Could not get current time, will assume deadline has passed: %s\n", strerror(errno));
+        return 0;
+    }
+
+    if ((deadline->tv_sec < now.tv_sec) ||
+        (deadline->tv_sec == now.tv_sec && deadline->tv_nsec < now.tv_nsec))
+    {
+        return 0;
+    }
+
+    time_t remaining_sec = deadline->tv_sec - now.tv_sec;
+    int_fast32_t remaining_nsec = deadline->tv_nsec - now.tv_nsec;
+    if (remaining_nsec < 0)
+    {
+        remaining_sec--;
+        remaining_nsec += 1000000000;
+
+    }
+
+    return (remaining_sec * 1000) + (remaining_nsec / 1000000);
+}
+
+/*
+ * \brief     Poll the serial file descriptor with the given timeout
+ *
+ * Polls the serial file descriptor with the given timeout. If poll fails with
+ * EINTR due to a signal, retries again with the remaining timeout.
+ *
+ * \param[in] timeout_ms
+ *            Timeout in milliseconds
+ * \return    If an event occured on the file descriptor: Returns true
+ *            On timeout: Silently returns false
+ *            On failure: Logs an error and returns false
+ */
+static bool poll_serial_with_timeout(const unsigned int timeout_ms)
+{
+    struct pollfd pfd = {
+        .fd = fd,
+        .events = POLLIN
+    };
+
+    const struct timespec deadline = get_deadline(timeout_ms);
+
+    int res;
+    bool interrupted;
+    int remaining = get_remaining_time_ms(&deadline);
+    do
+    {
+        res = poll(&pfd, 1, remaining);
+        interrupted = (res < 0 && errno == EINTR);
+        if (interrupted)
+        {
+            remaining = get_remaining_time_ms(&deadline);
+            if (remaining <= 0)
+            {
+                res = 0;
+                break;
+            }
+        }
+    } while (interrupted);
+
+    if (res < 0)
+    {
+        LOGE("Error when waiting for char on serial line: %s\n", strerror(errno));
+        return false;
+    }
+
+    return res > 0;
+}
+
+/*
+ * \brief      Get a single byte from the serial line
+ *
+ * Returns the next buffered byte if one is available. Otherwise waits up to
+ * the given timeout for data on the serial line, refills the internal buffer
+ * with a single read and returns the first byte from it.
+ *
+ * \param[out] c
+ *             Pointer where the read byte is stored
+ * \param[in]  timeout_ms
+ *             Timeout in milliseconds to wait
+ * \return     If a byte was read: Returns 1
+ *             On timeout or if no data could be read: Returns 0
+ */
 static ssize_t get_single_char(unsigned char * c, unsigned int timeout_ms)
 {
     static unsigned char m_buffer[128];
     static uint8_t m_elem = 0;
     static uint8_t m_read = 0;
     ssize_t read_bytes;
-    uint16_t attempts;
 
     // Do we still have char buffered?
     if (m_elem > 0)
@@ -159,24 +281,22 @@ static ssize_t get_single_char(unsigned char * c, unsigned int timeout_ms)
         return 1;
     }
 
-    // Convert timeout_ms in attempt of 100ms (timeout set)
-    attempts = ((timeout_ms + 99) / 100) - 1;
-
-    // Local buffer is empty, refill it
-    do
+    if (!poll_serial_with_timeout(timeout_ms))
     {
-        read_bytes = read(fd, m_buffer, sizeof(m_buffer));
-        if (read_bytes > 0)
-        {
-            m_elem = read_bytes;
-            m_read = 0;
-            *c = m_buffer[m_read++];
-            m_elem--;
-            return 1;
-        }
-    } while (attempts-- > 0);
+        LOGD("Timeout to wait for char on serial line\n");
+        return 0;
+    }
 
-    LOGD("Timeout to wait for char on serial line\n");
+    read_bytes = read(fd, m_buffer, sizeof(m_buffer));
+    if (read_bytes > 0)
+    {
+        m_elem = read_bytes;
+        m_read = 0;
+        *c = m_buffer[m_read++];
+        m_elem--;
+        return 1;
+    }
+
     return 0;
 }
 
