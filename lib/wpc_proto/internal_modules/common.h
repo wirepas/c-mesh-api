@@ -16,7 +16,7 @@
 /* Set the max of strings stored (including), should match values defined in proto files */
 #define GATEWAY_ID_MAX_SIZE 32
 #define GATEWAY_MODEL_MAX_SIZE 64
-#define GATEWAY_VERSION_MAX_SIZE 32
+#define GATEWAY_VERSION_MAX_SIZE 128
 #define SINK_ID_MAX_SIZE 16
 
 /**
