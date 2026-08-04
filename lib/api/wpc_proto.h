@@ -36,7 +36,7 @@
  * wp_SetScratchpadTargetAndActionResp_size
  * wp_UploadScratchpadResp_size
  */
-#define WPC_PROTO_MAX_RESPONSE_SIZE (415 + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD)
+#define WPC_PROTO_MAX_RESPONSE_SIZE (515 + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD)
 
 /*
  * Maximum size of an Event Status. It can be used as an hint
@@ -44,7 +44,7 @@
  * or @onStackStatusReceived
  * note : it should be higher than wp_StatusEvent_size, as it's a wp_GenericMessage
  */
-#define WPC_PROTO_MAX_EVENTSTATUS_SIZE (520 + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD)
+#define WPC_PROTO_MAX_EVENTSTATUS_SIZE (620 + WPC_PROTO_GENERIC_MESSAGE_OVERHEAD)
 
 /*
  * Maximum size offset for data reception. Added to payload size, it can be used as an hint

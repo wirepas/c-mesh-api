@@ -54,7 +54,7 @@ PB_BIND(wp_SetConfigResp, wp_SetConfigResp, 2)
 PB_BIND(wp_GetGwInfoReq, wp_GetGwInfoReq, AUTO)
 
 
-PB_BIND(wp_GetGwInfoResp, wp_GetGwInfoResp, AUTO)
+PB_BIND(wp_GetGwInfoResp, wp_GetGwInfoResp, 2)
 
 
 PB_BIND(wp_SetConfigurationDataItemReq, wp_SetConfigurationDataItemReq, AUTO)
