@@ -161,7 +161,7 @@ typedef struct _wp_GatewayInfo {
     char gw_model[64];
     /* Optional gateway version (gateway manufacturer specific) */
     bool has_gw_version;
-    char gw_version[32];
+    char gw_version[128];
     /* API version implemented in the gateway
  This field must be explicitly set from code and must be
  the one defined in each released version.
@@ -200,7 +200,7 @@ typedef struct _wp_StatusEvent {
     char gw_model[64];
     /* Optional gateway version (gateway manufacturer specific) */
     bool has_gw_version;
-    char gw_version[32];
+    char gw_version[128];
     /* See GatewayInfo for details of this field */
     bool has_max_scratchpad_size;
     uint32_t max_scratchpad_size;
@@ -686,13 +686,13 @@ extern const pb_msgdesc_t wp_GetConfigurationDataItemResp_msg;
 #define wp_AppConfigData_size                    94
 #define wp_ChannelRange_size                     12
 #define wp_ConfigurationDataItem_size            137
-#define wp_GatewayInfo_size                      125
+#define wp_GatewayInfo_size                      222
 #define wp_GetConfigsReq_size                    41
 #define wp_GetConfigsResp_size                   415
 #define wp_GetConfigurationDataItemReq_size      47
 #define wp_GetConfigurationDataItemResp_size     225
 #define wp_GetGwInfoReq_size                     41
-#define wp_GetGwInfoResp_size                    212
+#define wp_GetGwInfoResp_size                    310
 #define wp_NetworkKeys_size                      36
 #define wp_NodeRole_size                         6
 #define wp_SecurityKeys_size                     42
@@ -702,7 +702,7 @@ extern const pb_msgdesc_t wp_GetConfigurationDataItemResp_msg;
 #define wp_SetConfigurationDataItemResp_size     85
 #define wp_SinkNewConfig_size                    292
 #define wp_SinkReadConfig_size                   326
-#define wp_StatusEvent_size                      520
+#define wp_StatusEvent_size                      617
 
 #ifdef __cplusplus
 } /* extern "C" */
