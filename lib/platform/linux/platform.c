@@ -189,8 +189,6 @@ static void * poll_for_indication(void * unused)
     // Initially wait for 500ms before any polling
     uint32_t wait_before_next_polling_ms = 500;
 
-    m_polling_thread_state_request = POLLING_THREAD_RUN;
-
     while (m_polling_thread_state_request != POLLING_THREAD_STOP)
     {
         usleep(wait_before_next_polling_ms * 1000);
@@ -378,6 +376,7 @@ bool Platform_init(Platform_get_indication_f get_indication_f,
     }
 
     // Start a thread to poll for indication
+    m_polling_thread_state_request = POLLING_THREAD_RUN;
     if (pthread_create(&thread_polling, NULL, poll_for_indication, NULL) != 0)
     {
         LOGE("Cannot create polling thread\n");
