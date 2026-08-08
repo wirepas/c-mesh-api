@@ -13,6 +13,7 @@
 #include "platform.h"
 
 #include "string.h"
+#include "ssr.h"
 
 /**
  * \brief   Registered callback for app config
@@ -681,4 +682,19 @@ bool msap_register_for_config_data_item(onConfigDataItemReceived_cb_f cb)
 bool msap_unregister_from_config_data_item()
 {
     return UNREGISTER_CB(m_config_data_item_cb);
+}
+
+void msap_ssr_registration_indication_handler(msap_ssr_registration_ind_pl_t * payload)
+{
+    LOGI("SSR registration ind: src=%u hop=%u sink=%u delay=%u\n",
+         payload->source_address,
+         payload->source_routing_id,
+         payload->sink_address,
+         payload->delay_hp);
+
+    /* Update the First-Hop Table maintained by the SSR module. */
+    ssr_on_registration(payload->source_address,
+                        payload->source_routing_id,
+                        payload->sink_address,
+                        payload->delay_hp);
 }

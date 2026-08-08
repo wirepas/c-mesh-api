@@ -103,6 +103,84 @@ typedef struct __attribute__((__packed__))
     uint8_t capacity;
 } dsap_data_tx_conf_pl_t;
 
+/* Maximum number of source-routing hops carried in a single SSR TX frame. */
+#define SSR_MAX_HOPS 3
+
+/**
+ * SSR TX request for a single-frame payload. hop_count entries in hops[] are
+ * valid; the remaining slots are ignored on the wire (payload_length is set
+ * accordingly).
+ *
+ * The gateway fills hops[] from the First-Hop Table before sending this frame
+ * to the sink. Each entry is a 32-bit source-routing anchor (Long RD ID), not
+ * a scalar hop counter. The sink uses the routing path for selective source
+ * routing toward dest_add.
+ */
+typedef struct __attribute__((__packed__))
+{
+    uint16_t pdu_id;
+    uint8_t  src_endpoint;
+    uint32_t dest_add;
+    uint8_t  dest_endpoint;
+    uint8_t  qos;
+    uint8_t  tx_options;
+    uint32_t buffering_delay;
+    uint8_t  hop_count;              /**< Number of valid entries in hops[]. */
+    uint32_t hops[SSR_MAX_HOPS];     /**< Source-routing anchors (Long RD IDs). */
+    uint8_t  apdu_length;
+    uint8_t  apdu[MAX_APDU_DSAP_SIZE];
+} dsap_data_tx_ssr_req_pl_t;
+
+/**
+ * SSR TX fragment request: like dsap_data_tx_frag_req_pl_t but prepends a
+ * source-routing hop list. hop_count entries in hops[] are valid; the
+ * remaining slots are ignored on the wire.
+ */
+typedef struct __attribute__((__packed__))
+{
+    uint16_t pdu_id;
+    uint8_t  src_endpoint;
+    uint32_t dest_add;
+    uint8_t  dest_endpoint;
+    uint8_t  qos;
+    uint8_t  tx_options;
+    uint32_t buffering_delay;
+    uint16_t full_packet_id : 12;
+    uint16_t fragment_offset_flag;
+    uint8_t  hop_count;
+    uint32_t hops[SSR_MAX_HOPS];
+    uint8_t  apdu_length;
+    uint8_t  apdu[MAX_APDU_DSAP_SIZE];
+} dsap_data_tx_ssr_frag_req_pl_t;
+
+/**
+ * \brief   Function for sending data to the network with SSR source routing.
+ *
+ * Identical to dsap_data_tx_request but includes a pre-computed source-routing
+ * hop list obtained from the First-Hop Table. Both single-frame and
+ * fragmented payloads are supported.
+ *
+ * \param   hop_count
+ *          Number of valid entries in hops[]. Must be <= SSR_MAX_HOPS.
+ * \param   hops
+ *          Array of source-routing anchors (Long RD IDs, first hop first).
+ * \return  negative value if the request fails,
+ *          a Mesh positive result otherwise
+ */
+int dsap_data_tx_ssr_request(const uint8_t * buffer,
+                             size_t len,
+                             uint16_t pdu_id,
+                             uint32_t dest_add,
+                             uint8_t qos,
+                             uint8_t src_ep,
+                             uint8_t dest_ep,
+                             onDataSent_cb_f on_data_sent_cb,
+                             uint32_t buffering_delay,
+                             bool is_unack_csma_ca,
+                             uint8_t hop_limit,
+                             uint8_t hop_count,
+                             const uint32_t * hops);
+
 /**
  * \brief   Function for sending data to the network
  *
