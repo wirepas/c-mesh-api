@@ -32,6 +32,7 @@ add_executable(${CMAKE_PROJECT_NAME}
     ${CMAKE_CURRENT_LIST_DIR}/scratchpad_tests.cpp
     ${CMAKE_CURRENT_LIST_DIR}/callback_tests.cpp
     ${CMAKE_CURRENT_LIST_DIR}/cdd_tests.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/provisioning_tests.cpp
 )
 
 target_link_libraries(${CMAKE_PROJECT_NAME}

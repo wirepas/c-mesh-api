@@ -36,6 +36,38 @@
 #define C_RESERVED_CHANNELS 25
 #define C_NETWORK_KEY_PAIR_ID 26
 #define C_MANAGEMENT_KEY_PAIR_ID 27
+#define C_PROVISIONING_CONFIG_ID 28
+
+/* Provisioning configuration UID maximum length (the wire structs below).
+ * Must match WPC_PROVISIONING_UID_MAX_LEN (api/wpc.h, the host-API types);
+ * wpc.c static-asserts the two agree. */
+#define C_PROVISIONING_UID_MAX_LEN 79
+
+/* Provisioning configuration attribute VALUE layout, as written to the
+ * node (attribute C_PROVISIONING_CONFIG_ID): fixed fields followed by the
+ * variable-length UID (uid_len valid bytes of uid[]). */
+typedef struct __attribute__((__packed__))
+{
+    uint8_t method;
+    uint8_t retries;
+    uint16_t timeout_s;
+    uint8_t encryption_key[16];
+    uint8_t authentication_key[16];
+    uint8_t uid_len;
+    uint8_t uid[C_PROVISIONING_UID_MAX_LEN];
+} provisioning_config_req_pl_t;
+
+/* Provisioning configuration attribute VALUE layout, as read back from
+ * the node. The keys themselves are not readable: only a CRC16 over them. */
+typedef struct __attribute__((__packed__))
+{
+    uint8_t method;
+    uint8_t retries;
+    uint16_t timeout_s;
+    uint16_t key_crc16;
+    uint8_t uid_len;
+    uint8_t uid[C_PROVISIONING_UID_MAX_LEN];
+} provisioning_config_resp_pl_t;
 
 
 typedef struct __attribute__((__packed__))
@@ -77,6 +109,27 @@ static inline int csap_attribute_read_request(uint16_t attribute_id,
                                               uint8_t * attribute_value_p)
 {
     return attribute_read_request(CSAP_ATTRIBUTE_READ_REQUEST, attribute_id, attribute_length, attribute_value_p);
+}
+
+/**
+ * \brief    Request to read a variable-length configuration attribute
+ *           from the stack
+ * \param    attribute_id
+ *           The attribute id to read
+ * \param    max_length
+ *           The size of the buffer pointed by attribute_value_p
+ * \param    attribute_value_p
+ *           Pointer to store the attribute value
+ * \return   negative value if the request fails or if the confirmed
+ *           attribute does not fit in max_length bytes,
+ *           the confirmed attribute length (0 or more) otherwise.
+ *           The value is only copied when it fits the caller's buffer.
+ */
+static inline int csap_attribute_read_request_vlen(uint16_t attribute_id,
+                                                   uint8_t max_length,
+                                                   uint8_t * attribute_value_p)
+{
+    return attribute_read_request_vlen(CSAP_ATTRIBUTE_READ_REQUEST, attribute_id, max_length, attribute_value_p);
 }
 
 /**

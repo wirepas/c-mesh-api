@@ -463,6 +463,88 @@ app_res_e WPC_set_management_key_pair(const wpc_key_pair_t * key_pair)
 }
 
 
+app_res_e WPC_set_provisioning_config(const wpc_provisioning_config_t * config)
+{
+    if (config == NULL
+        || config->uid_len < 1
+        || config->uid_len > WPC_PROVISIONING_UID_MAX_LEN)
+    {
+        return APP_RES_INVALID_VALUE;
+    }
+
+    // Serialize the attribute VALUE through the wire struct (csap.h):
+    // fixed fields + the variable-length UID.
+    _Static_assert(sizeof(provisioning_config_req_pl_t) ==
+                       37 + C_PROVISIONING_UID_MAX_LEN,
+                   "provisioning wire layout drift");
+    _Static_assert(WPC_PROVISIONING_UID_MAX_LEN ==
+                       C_PROVISIONING_UID_MAX_LEN,
+                   "host API and wire UID lengths disagree");
+    provisioning_config_req_pl_t req;
+    req.method = config->method;
+    req.retries = config->retries;
+    req.timeout_s = config->timeout_s;
+    memcpy(req.encryption_key,
+           config->encryption_key, sizeof(req.encryption_key));
+    memcpy(req.authentication_key,
+           config->authentication_key, sizeof(req.authentication_key));
+    req.uid_len = config->uid_len;
+    memcpy(req.uid, config->uid, config->uid_len);
+
+    int res = csap_attribute_write_request(
+        C_PROVISIONING_CONFIG_ID,
+        sizeof(req) - sizeof(req.uid) + config->uid_len,
+        (const uint8_t *) &req);
+
+    return convert_error_code(ATT_WRITE_ERROR_CODE_LUT, res);
+}
+
+app_res_e WPC_get_provisioning_config(wpc_provisioning_config_read_t * config)
+{
+    if (config == NULL)
+    {
+        return APP_RES_INVALID_VALUE;
+    }
+
+    // Read the attribute VALUE into the wire struct (csap.h): fixed
+    // fields + the variable-length UID. The read returns the actual
+    // attribute length.
+    _Static_assert(sizeof(provisioning_config_resp_pl_t) ==
+                       7 + C_PROVISIONING_UID_MAX_LEN,
+                   "provisioning read wire layout drift");
+    provisioning_config_resp_pl_t resp;
+    uint8_t * att = (uint8_t *) &resp;
+
+    int res = csap_attribute_read_request_vlen(C_PROVISIONING_CONFIG_ID,
+                                               sizeof(resp),
+                                               att);
+
+    // On success the variable-length read returns the actual attribute
+    // length (always >= 8 for this attribute), which is not a result code:
+    // only transport failures (negative) and attribute result codes (0..6)
+    // go through the error LUT.
+    if (res < 0 || res < 8)
+    {
+        return convert_error_code(ATT_READ_ERROR_CODE_LUT, res);
+    }
+
+    config->method = resp.method;
+    config->retries = resp.retries;
+    config->timeout_s = uint16_decode_le((const uint8_t *) &resp.timeout_s);
+    config->key_crc16 = uint16_decode_le((const uint8_t *) &resp.key_crc16);
+    config->uid_len = resp.uid_len;
+    if (config->uid_len == 0
+        || config->uid_len > WPC_PROVISIONING_UID_MAX_LEN
+        || res != (int) (sizeof(resp) - sizeof(resp.uid) + config->uid_len))
+    {
+        return APP_RES_INVALID_VALUE;
+    }
+    memcpy(config->uid, resp.uid, config->uid_len);
+
+    return APP_RES_OK;
+}
+
+
 /* Error code LUT for app_config read */
 static const app_res_e APP_CONFIG_READ_ERROR_CODE_LUT[] = {
     APP_RES_OK,            // 0

@@ -17,7 +17,12 @@
 #include <stdint.h>
 
 // Maximum number of bytes in an attribute
-#define MAX_ATTRIBUTE_SIZE 40
+// Must be large enough for the biggest attribute (attribute 28,
+// C_PROVISIONING_CONFIG_ID, which carries 37 bytes of fixed fields plus a
+// variable-length UID of up to 79 bytes). The payload union of wpc_frame_t
+// stays representable by its 8-bit payload_length field: this is enforced by
+// the static assertion in wpc_types.h.
+#define MAX_ATTRIBUTE_SIZE 128
 
 typedef struct __attribute__((__packed__))
 {
@@ -73,5 +78,24 @@ int attribute_read_request(uint8_t primitive_id,
                            uint16_t attribute_id,
                            uint8_t attribute_length,
                            uint8_t * attribute_value_p);
+/**
+ * \brief    Request to read a variable-length attribute from the stack
+ * \param    primitive_id
+ *           Can be a MSAP or CSAP attribute
+ * \param    attribute_id
+ *           The attribute id to read
+ * \param    max_length
+ *           The size of the buffer pointed by attribute_value_p
+ * \param    attribute_value_p
+ *           Pointer to store the attribute value
+ * \return   negative value if the request fails or if the confirmed
+ *           attribute does not fit in max_length bytes,
+ *           the confirmed attribute length (0 or more) otherwise.
+ *           The value is only copied when it fits the caller's buffer.
+ */
+int attribute_read_request_vlen(uint8_t primitive_id,
+                                uint16_t attribute_id,
+                                uint8_t max_length,
+                                uint8_t * attribute_value_p);
 
 #endif /* ATTRIBUTE_UTIL_H_ */

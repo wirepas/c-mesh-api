@@ -42,7 +42,8 @@ SOURCES += $(SOURCEPREFIX)wpc_test.cpp \
 	$(SOURCEPREFIX)general_tests.cpp     \
 	$(SOURCEPREFIX)scratchpad_tests.cpp  \
 	$(SOURCEPREFIX)callback_tests.cpp  \
-	$(SOURCEPREFIX)cdd_tests.cpp
+	$(SOURCEPREFIX)cdd_tests.cpp \
+	$(SOURCEPREFIX)provisioning_tests.cpp
 
 OBJECTS := $(patsubst $(SOURCEPREFIX)%,                     \
                   $(BUILDPREFIX)%,                          \

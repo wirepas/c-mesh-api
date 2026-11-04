@@ -240,6 +240,44 @@ typedef struct
 #define RESERVED_CHANNELS_MAX_NUM_BYTES 16
 
 /**
+ * \brief   Maximum UID length in bytes of the provisioning configuration.
+ *          Must match C_PROVISIONING_UID_MAX_LEN (csap.h, the wire struct);
+ *          wpc.c static-asserts the two agree.
+ */
+#define WPC_PROVISIONING_UID_MAX_LEN 79
+
+/**
+ * \brief   Provisioning configuration, as written to the node
+ *          (attribute C_PROVISIONING_CONFIG_ID)
+ */
+typedef struct
+{
+    uint8_t method;                              //!< Provisioning method
+    uint8_t retries;                             //!< Number of retries
+    uint16_t timeout_s;                          //!< Timeout in seconds
+    uint8_t encryption_key[16];                  //!< Encryption key
+    uint8_t authentication_key[16];              //!< Authentication key
+    uint8_t uid_len;                             //!< UID length in bytes (1 to
+                                                 //!< WPC_PROVISIONING_UID_MAX_LEN)
+    uint8_t uid[WPC_PROVISIONING_UID_MAX_LEN];   //!< Unique identifier
+} wpc_provisioning_config_t;
+
+/**
+ * \brief   Provisioning configuration, as read back from the node.
+ *          The keys are not readable: only a CRC16 of them is reported
+ */
+typedef struct
+{
+    uint8_t method;                              //!< Provisioning method
+    uint8_t retries;                             //!< Number of retries
+    uint16_t timeout_s;                          //!< Timeout in seconds
+    uint16_t key_crc16;                          //!< CRC16 of the keys
+    uint8_t uid_len;                             //!< UID length in bytes (1 to
+                                                 //!< WPC_PROVISIONING_UID_MAX_LEN)
+    uint8_t uid[WPC_PROVISIONING_UID_MAX_LEN];   //!< Unique identifier
+} wpc_provisioning_config_read_t;
+
+/**
  * \brief   Intialize the Wirepas Mesh serial communication
  * \param   port_name
  *          the name of the serial port ("/dev/ttyACM0" for example)
@@ -413,6 +451,25 @@ app_res_e WPC_set_network_key_pair(const wpc_key_pair_t * key_pair);
  * \return  Return code of the operation
  */
 app_res_e WPC_set_management_key_pair(const wpc_key_pair_t * key_pair);
+
+/**
+ * \brief   Set the provisioning configuration
+ * \param   config
+ *          Pointer to the new provisioning configuration. The uid_len field
+ *          must be in range 1 to WPC_PROVISIONING_UID_MAX_LEN, otherwise
+ *          APP_RES_INVALID_VALUE is returned
+ * \return  Return code of the operation
+ */
+app_res_e WPC_set_provisioning_config(const wpc_provisioning_config_t * config);
+
+/**
+ * \brief   Get the provisioning configuration
+ * \param   config
+ *          Pointer to store the provisioning configuration. The keys themselves
+ *          are not readable: only their CRC16 is reported
+ * \return  Return code of the operation
+ */
+app_res_e WPC_get_provisioning_config(wpc_provisioning_config_read_t * config);
 
 
 /**

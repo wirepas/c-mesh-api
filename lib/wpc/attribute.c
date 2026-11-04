@@ -83,3 +83,45 @@ int attribute_read_request(uint8_t primitive_id,
 
     return confirm.payload.attribute_read_confirm_payload.result;
 }
+
+int attribute_read_request_vlen(uint8_t primitive_id,
+                                uint16_t attribute_id,
+                                uint8_t max_length,
+                                uint8_t * attribute_value_p)
+{
+    int res;
+    wpc_frame_t request, confirm;
+
+    request.primitive_id = primitive_id;
+    uint16_encode_le(attribute_id,
+                     (uint8_t *) &(
+                         request.payload.attribute_read_request_payload.attribute_id));
+    request.payload_length = sizeof(attribute_read_req_pl_t);
+
+    res = WPC_Int_send_request(&request, &confirm);
+
+    if (res < 0)
+        return res;
+
+    LOGD("Attribute Id = %d read result = %d\n",
+         confirm.payload.attribute_read_confirm_payload.attribute_id,
+         confirm.payload.attribute_read_confirm_payload.result);
+
+    if (confirm.payload.attribute_read_confirm_payload.result == 0)
+    {
+        uint8_t actual_size = confirm.payload.attribute_read_confirm_payload.attribute_length;
+        if (actual_size > max_length)
+        {
+            LOGE("Attribute read: attribute too large (%u received, max %u)\n",
+                 actual_size,
+                 max_length);
+            return -1;
+        }
+        memcpy(attribute_value_p,
+               confirm.payload.attribute_read_confirm_payload.attribute_value,
+               actual_size);
+        return actual_size;
+    }
+
+    return confirm.payload.attribute_read_confirm_payload.result;
+}
