@@ -33,6 +33,8 @@ protected:
         uint8_t param;
     };
 
+    inline const static uint8_t non_optional_item_count = 3;
+
 #define STACK_PROFILE ISM_24
 #if STACK_PROFILE == ISM_24
     const static uint16_t CDD_DIAG_INTERVAL_EP   = 0xF7FF;
@@ -337,31 +339,31 @@ TEST_F(WpcCddApiTest, gettingEndpointsListShouldFailIfBufferIsTooSmall)
               WPC_get_config_data_item_list(endpoints_list, sizeof(endpoints_list), &endpoints_count));
 }
 
-TEST_F(WpcCddApiTest, shouldReturnEmptyListIfNoOptionalItemIsSet)
+TEST_F(WpcCddApiTest, shouldReturnNonOptionalItemsIfNoOptionalItemIsSet)
 {
     uint16_t endpoints_list[10] = { 0 };
     uint8_t endpoints_count = 0xFF;
     ASSERT_EQ(APP_RES_OK,
               WPC_get_config_data_item_list(endpoints_list, sizeof(endpoints_list), &endpoints_count));
-    ASSERT_EQ(0, endpoints_count);
+    ASSERT_EQ(non_optional_item_count, endpoints_count);
 }
 
 TEST_F(WpcCddApiTest, gettingListOfOptionalEndpointsShouldWork)
 {
-    const std::set<uint16_t> endpoints = { 0xAABB, 0x1234, 0xD0B0 };
-    for (const auto& endpoint : endpoints) {
+    const std::vector<uint16_t> optional_endpoints = { 0xAABB, 0x1234, 0xD0B0 };
+    for (const auto& endpoint : optional_endpoints) {
         const uint8_t TEST_PAYLOAD[] = { 0x10 };
         ASSERT_EQ(APP_RES_OK, WPC_set_config_data_item(endpoint, TEST_PAYLOAD, sizeof(TEST_PAYLOAD)));
     }
 
-    uint16_t endpoints_list[3] = { 0 };
+    uint16_t endpoints_list[6] = { 0 };
     uint8_t endpoints_count = 0xFF;
     ASSERT_EQ(APP_RES_OK,
               WPC_get_config_data_item_list(endpoints_list, sizeof(endpoints_list), &endpoints_count));
 
-    ASSERT_EQ(endpoints.size(), endpoints_count);
-    for (uint8_t i = 0; i < endpoints_count; i++){
-        ASSERT_EQ(1, endpoints.count(endpoints_list[i]));
+    ASSERT_EQ(optional_endpoints.size() + non_optional_item_count, endpoints_count);
+    for (const auto ep : optional_endpoints) {
+        ASSERT_EQ(1, std::count(std::begin(endpoints_list), std::begin(endpoints_list) + endpoints_count, ep));
     }
 }
 
