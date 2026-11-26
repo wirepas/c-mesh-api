@@ -42,7 +42,7 @@ public:
 protected:
     void SetUp() override
     {
-        ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_SINK));
+        ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_SINK | APP_ROLE_OPTION_LL));
     }
 
     void TearDown() override
@@ -205,7 +205,7 @@ TEST_F(WpcCddApiTest, testWritingInvalidAppConfigDataWithCddApi)
 
 TEST_F(WpcCddApiTest, settingItemShouldFailOnNonSinkNode)
 {
-    ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_HEADNODE));
+    ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_HEADNODE | APP_ROLE_OPTION_LL));
 
     const uint8_t PAYLOAD[] = { 0xAA, 0xBB };
     ASSERT_EQ(APP_RES_NODE_NOT_A_SINK, WPC_set_config_data_item(100, PAYLOAD, sizeof(PAYLOAD)));
@@ -218,7 +218,7 @@ TEST_F(WpcCddApiTest, gettingItemShouldWorkOnNonSinkNode)
 
     ASSERT_EQ(APP_RES_OK, WPC_set_config_data_item(TEST_EP, TEST_PAYLOAD, sizeof(TEST_PAYLOAD)));
 
-    ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_HEADNODE));
+    ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_HEADNODE | APP_ROLE_OPTION_LL));
 
     uint8_t payload[UINT8_MAX] = { 0 };
     uint8_t payload_size = 0;

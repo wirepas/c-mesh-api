@@ -8,7 +8,7 @@ public:
     {
         ASSERT_NO_FATAL_FAILURE(WpcTest::SetUpTestSuite());
         ASSERT_NO_FATAL_FAILURE(WpcTest::StopStack());
-        ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_SINK));
+        ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_SINK | APP_ROLE_OPTION_LL));
     }
 
 protected:
