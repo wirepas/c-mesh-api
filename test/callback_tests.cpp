@@ -15,10 +15,10 @@ public:
         // Following parameters should be set in order to be able to start the
         // stack, and stack should be stopped in order to be able to set them.
         ASSERT_NO_FATAL_FAILURE(WpcTest::StopStack());
-        ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_SINK));
+        ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_SINK | APP_ROLE_OPTION_LL));
         ASSERT_EQ(APP_RES_OK, WPC_set_node_address(2345));
         ASSERT_EQ(APP_RES_OK, WPC_set_network_address(0x65432));
-        ASSERT_EQ(APP_RES_OK, WPC_set_network_channel(38));
+        ASSERT_EQ(APP_RES_OK, WPC_set_network_channel(9));
 
         // Set diagnostics interval to zero, so that data callbacks are not called.
         const uint8_t TEST_CONFIG[] = { 0 };

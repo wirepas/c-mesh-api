@@ -20,10 +20,10 @@ public:
         // Following parameters should be set in order to be able to start the
         // stack, and stack should be stopped in order to be able to set them.
         ASSERT_NO_FATAL_FAILURE(WpcTest::StopStack());
-        ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_SINK));
+        ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_SINK | APP_ROLE_OPTION_LL));
         ASSERT_EQ(APP_RES_OK, WPC_set_node_address(1234));
         ASSERT_EQ(APP_RES_OK, WPC_set_network_address(0x654321));
-        ASSERT_EQ(APP_RES_OK, WPC_set_network_channel(38));
+        ASSERT_EQ(APP_RES_OK, WPC_set_network_channel(8));
         ASSERT_NO_FATAL_FAILURE(WpcTest::StartStack());
     }
 };
@@ -32,7 +32,7 @@ TEST_F(WpcGeneralTestStackOff, testFactoryReset)
 {
     ASSERT_EQ(APP_RES_OK, WPC_set_node_address(200));
     ASSERT_EQ(APP_RES_OK, WPC_set_network_address(0x12123));
-    ASSERT_EQ(APP_RES_OK, WPC_set_network_channel(39));
+    ASSERT_EQ(APP_RES_OK, WPC_set_network_channel(7));
 
     ASSERT_EQ(APP_RES_OK, WPC_do_factory_reset());
 
@@ -48,10 +48,10 @@ TEST_F(WpcGeneralTestStackOff, testFactoryReset)
 
 TEST_F(WpcGeneralTestStackOff, testSetCSAPAddressingAttributes)
 {
-    const app_role_t TEST_ROLE = APP_ROLE_HEADNODE;
+    const app_role_t TEST_ROLE = APP_ROLE_HEADNODE | APP_ROLE_OPTION_LL;
     const app_addr_t TEST_NODE_ADDRESS = 3211;
     const app_addr_t TEST_NETWORK_ADDRESS = 45457;
-    const net_channel_t TEST_NETWORK_CHANNEL = 36;
+    const net_channel_t TEST_NETWORK_CHANNEL = 6;
 
     ASSERT_EQ(APP_RES_OK, WPC_set_role(TEST_ROLE));
     ASSERT_EQ(APP_RES_OK, WPC_set_node_address(TEST_NODE_ADDRESS));
@@ -150,7 +150,7 @@ TEST_F(WpcGeneralTestStackOff, testAuthenticationKey)
 
 TEST_F(WpcGeneralTestStackOff, testScratchpadTarget)
 {
-    ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_SINK));
+    ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_SINK | APP_ROLE_OPTION_LL));
 
     ASSERT_EQ(APP_RES_OK, WPC_write_target_scratchpad(12, 0x1234, 2, 13));
 
@@ -180,7 +180,7 @@ TEST_F(WpcGeneralTestStackOff, gettingAppConfigShouldFailIfBufferIsTooSmall)
 
 TEST_F(WpcGeneralTestStackOff, settingAppConfigShouldFailIfConfigTooLarge)
 {
-    ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_SINK));
+    ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_SINK | APP_ROLE_OPTION_LL));
 
     uint8_t max_size;
     ASSERT_EQ(APP_RES_OK, WPC_get_app_config_data_size(&max_size));
@@ -192,7 +192,7 @@ TEST_F(WpcGeneralTestStackOff, settingAppConfigShouldFailIfConfigTooLarge)
 
 TEST_F(WpcGeneralTestStackOff, testSettingAppConfigDataWithInvalidInterval)
 {
-    ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_SINK));
+    ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_SINK | APP_ROLE_OPTION_LL));
 
     const uint8_t INVALID_INTERVAL = 62;
     const uint8_t config[1] = {0};
@@ -201,7 +201,7 @@ TEST_F(WpcGeneralTestStackOff, testSettingAppConfigDataWithInvalidInterval)
 
 TEST_F(WpcGeneralTestStackOff, testSettingAppConfigData)
 {
-    ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_SINK));
+    ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_SINK | APP_ROLE_OPTION_LL));
 
     uint8_t max_size;
     ASSERT_EQ(APP_RES_OK, WPC_get_app_config_data_size(&max_size));
@@ -236,6 +236,12 @@ TEST_F(WpcGeneralTestStackOff, testSettingAppConfigData)
 
 TEST_F(WpcGeneralTestStackOff, testSettingAccesCycleRange)
 {
+    if (GetProfile() == NodeStackProfile::DECT_NR) {
+        GTEST_SKIP() << "Low energy mode and setting access cycle ranges is not supported on the current profile.";
+    }
+
+    ASSERT_EQ(APP_RES_OK, WPC_set_role(APP_ROLE_SINK));
+
     const uint16_t RANGE_MIN = 2000;
     const uint16_t RANGE_MAX = 4000;
 
