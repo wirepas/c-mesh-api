@@ -22,21 +22,20 @@ An example on how to use and extend the library is available from:
 To run the tests you will to connect a device running WM's dual mcu api on
 your host machine.
 
-Tests require Google Test. On Debian and Ununtu, you can install the package
-libgtest-dev.
+Tests require Google Test. When using CMake, it is downloaded automatically.
 
 Build the tests with
 
 ```shell
-    cd test
-    make
+    cmake -B build_test -S test
+    cmake --build build_test -j $(nproc)
 ```
 
 When executing the tests, environment variables WPC_SERIAL_PORT and
 WPC_WPC_BAUD_RATE should be set. For example:
 
 ```shell
-    WPC_SERIAL_PORT=/dev/ttyACM0 WPC_BAUD_RATE=125000 ./build/meshAPItest
+    WPC_SERIAL_PORT=/dev/ttyACM0 WPC_BAUD_RATE=125000 ./build_test/meshAPItest
 ```
 
 ### Running on nodes with different stack profiles
