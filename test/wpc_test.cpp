@@ -25,6 +25,27 @@ unsigned long WpcTestEnvironment::GetBaudRate() const
     }
 }
 
+void WpcTestEnvironment::ReadStackProfile()
+{
+    if (const auto envVar = std::getenv("WPC_NODE_STACK_PROFILE"); envVar != nullptr) {
+        if (std::string_view(envVar) == "ISM_24") {
+            profile = NodeStackProfile::ISM_24;
+        }
+        else if (std::string_view(envVar) == "DECT_NR") {
+            profile = NodeStackProfile::DECT_NR;
+        }
+        else {
+            std::cerr << "Invalid stack profile given: " << envVar << std::endl;
+            profile = NodeStackProfile::INVALID;
+        }
+    }
+}
+
+NodeStackProfile WpcTestEnvironment::GetProfile()
+{
+    return profile;
+}
+
 void WpcTestEnvironment::SetUp()
 {
     const auto& serial_port = GetSerialPort();
@@ -32,13 +53,20 @@ void WpcTestEnvironment::SetUp()
 
     Platform_set_log_level(NO_LOG_LEVEL);
 
+    bool have_errors = false;
+
     if (WPC_initialize(serial_port.c_str(), baud_rate) != APP_RES_OK) {
         std::cerr << "Could not initialize WPC with port: " << serial_port
                   << " baud rate:" << baud_rate << std::endl;
-        is_initialized = false;
-    } else {
-        is_initialized = true;
+        have_errors = true;
     }
+
+    ReadStackProfile();
+    if (profile == NodeStackProfile::INVALID) {
+        have_errors = true;
+    }
+
+    is_initialized = !have_errors;
 }
 
 void WpcTestEnvironment::TearDown()
@@ -68,3 +96,7 @@ void WpcTest::StopStack()
     ASSERT_TRUE(APP_RES_OK == res || APP_RES_STACK_ALREADY_STOPPED == res);
 }
 
+NodeStackProfile WpcTest::GetProfile()
+{
+    return WpcTestEnvironment::GetProfile();
+}

@@ -39,6 +39,15 @@ WPC_WPC_BAUD_RATE should be set. For example:
     WPC_SERIAL_PORT=/dev/ttyACM0 WPC_BAUD_RATE=125000 ./build/meshAPItest
 ```
 
+### Running on nodes with different stack profiles
+Some tests might use values that should be different depending on the stack
+profile. The profile of the node can be specified with the
+WPC_NODE_STACK_PROFILE environment variable.
+
+The following values are supported:
+- ISM_24 (default)
+- DECT_NR
+
 ## Contributing
 
 We welcome your contributions!

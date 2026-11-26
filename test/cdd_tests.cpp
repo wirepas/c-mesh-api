@@ -3,6 +3,14 @@
 
 class WpcCddApiTest : public WpcTest
 {
+protected:
+    struct NonOptionalEndpoints
+    {
+        uint16_t diag_interval;
+        uint16_t app_config;
+        uint16_t scratchpad_data;
+    };
+    inline static NonOptionalEndpoints non_optional_endpoints;
 public:
     static void SetUpTestSuite()
     {
@@ -12,6 +20,23 @@ public:
         // started for these tests.
         ASSERT_NO_FATAL_FAILURE(WpcTest::StopStack());
         ASSERT_EQ(APP_RES_OK, WPC_do_factory_reset());
+
+        const auto profile = GetProfile();
+        ASSERT_NE(NodeStackProfile::INVALID, profile);
+        if (profile == NodeStackProfile::ISM_24) {
+            non_optional_endpoints = {
+                .diag_interval = 0xF7FF,
+                .app_config = 0xF9FF,
+                .scratchpad_data = 0xFAFA,
+            };
+        }
+        else if (profile == NodeStackProfile::DECT_NR) {
+            non_optional_endpoints = {
+                .diag_interval = 0xA029,
+                .app_config = 0x4004,
+                .scratchpad_data = 0x4002,
+            };
+        }
     }
 
 protected:
@@ -35,16 +60,20 @@ protected:
 
     inline const static uint8_t non_optional_item_count = 3;
 
-#define STACK_PROFILE ISM_24
-#if STACK_PROFILE == ISM_24
-    const static uint16_t CDD_DIAG_INTERVAL_EP   = 0xF7FF;
-    const static uint16_t CDD_APP_CONFIG_EP      = 0xF9FF;
-    const static uint16_t CDD_SCRATCHPAD_DATA_EP = 0xFAFA;
-#elif STACK_PROFILE == DECT_NR
-    const static uint16_t CDD_DIAG_INTERVAL_EP   = 0xA029;
-    const static uint16_t CDD_APP_CONFIG_EP      = 0x4004;
-    const static uint16_t CDD_SCRATCHPAD_DATA_EP = 0x4002;
-#endif
+    uint16_t GetDiagIntervalEp() const
+    {
+        return non_optional_endpoints.diag_interval;
+    }
+
+    uint16_t GetAppConfigEp() const
+    {
+        return non_optional_endpoints.app_config;
+    }
+
+    uint16_t GetScratchpadDataEp() const
+    {
+        return non_optional_endpoints.scratchpad_data;
+    }
 };
 
 
@@ -64,7 +93,7 @@ TEST_F(WpcCddApiTest, testReadingAppConfigAndDiagWithCddApi)
     {
         uint8_t payload[UINT8_MAX] = { 0 };
         uint8_t payload_size = 0;
-        ASSERT_EQ(APP_RES_OK, WPC_get_config_data_item(CDD_APP_CONFIG_EP, payload, sizeof(payload), &payload_size));
+        ASSERT_EQ(APP_RES_OK, WPC_get_config_data_item(GetAppConfigEp(), payload, sizeof(payload), &payload_size));
         ASSERT_EQ(app_config_size, payload_size);
         ASSERT_EQ_ARRAY(TEST_CONFIG, payload, sizeof(TEST_CONFIG));
     }
@@ -72,7 +101,7 @@ TEST_F(WpcCddApiTest, testReadingAppConfigAndDiagWithCddApi)
     {
         uint8_t payload[UINT8_MAX] = { 0 };
         uint8_t payload_size = 0;
-        ASSERT_EQ(APP_RES_OK, WPC_get_config_data_item(CDD_DIAG_INTERVAL_EP, payload, sizeof(payload), &payload_size));
+        ASSERT_EQ(APP_RES_OK, WPC_get_config_data_item(GetDiagIntervalEp(), payload, sizeof(payload), &payload_size));
         ASSERT_EQ(1, payload_size);
         ASSERT_EQ(EXPECTED_RAW_DIAG_INTERVAL, payload[0]);
     }
@@ -90,9 +119,9 @@ TEST_F(WpcCddApiTest, testWritingAppConfigAndDiagWithCddApi)
     const uint16_t EXPECTED_DIAG_INTERVAL_SECONDS = 120;
 
     const uint8_t PAYLOAD[] = { RAW_DIAG_INTERVAL };
-    ASSERT_EQ(APP_RES_OK, WPC_set_config_data_item(CDD_DIAG_INTERVAL_EP, PAYLOAD, sizeof(PAYLOAD)));
+    ASSERT_EQ(APP_RES_OK, WPC_set_config_data_item(GetDiagIntervalEp(), PAYLOAD, sizeof(PAYLOAD)));
 
-    ASSERT_EQ(APP_RES_OK, WPC_set_config_data_item(CDD_APP_CONFIG_EP, TEST_CONFIG, app_config_size));
+    ASSERT_EQ(APP_RES_OK, WPC_set_config_data_item(GetAppConfigEp(), TEST_CONFIG, app_config_size));
 
     uint8_t seq = 0;
     uint16_t interval = 0;
@@ -113,7 +142,7 @@ TEST_F(WpcCddApiTest, testReadingScratchpatTargetWithCddApi)
 
     uint8_t payload[255] = {0};
     uint8_t payload_size = 0;
-    ASSERT_EQ(APP_RES_OK, WPC_get_config_data_item(CDD_SCRATCHPAD_DATA_EP, payload, sizeof(payload), &payload_size));
+    ASSERT_EQ(APP_RES_OK, WPC_get_config_data_item(GetScratchpadDataEp(), payload, sizeof(payload), &payload_size));
     ASSERT_EQ(sizeof(CddScratchpadDataItem), payload_size);
     CddScratchpadDataItem* scratchpad_data = (CddScratchpadDataItem*) payload;
     ASSERT_EQ(TEST_SEQ, scratchpad_data->seq);
@@ -132,7 +161,7 @@ TEST_F(WpcCddApiTest, testWritingScratchpatTargetWithCddApi)
     };
 
     ASSERT_EQ(APP_RES_OK,
-              WPC_set_config_data_item(CDD_SCRATCHPAD_DATA_EP,
+              WPC_set_config_data_item(GetScratchpadDataEp(),
                                        (uint8_t const*) &SCRATCHPAD_DATA,
                                        sizeof(SCRATCHPAD_DATA)));
 
@@ -151,14 +180,14 @@ TEST_F(WpcCddApiTest, testWritingInvalidScratchpadTargetSizeWithCddApi)
 {
     const uint8_t TEST_PAYLOAD[10] = { 0 };
     ASSERT_EQ(APP_RES_DATA_ERROR,
-              WPC_set_config_data_item(CDD_SCRATCHPAD_DATA_EP, TEST_PAYLOAD, sizeof(TEST_PAYLOAD)));
+              WPC_set_config_data_item(GetScratchpadDataEp(), TEST_PAYLOAD, sizeof(TEST_PAYLOAD)));
 }
 
 TEST_F(WpcCddApiTest, testWritingInvalidDiagIntervalSizeWithCddApi)
 {
     const uint8_t TEST_PAYLOAD[10] = { 0 };
     ASSERT_EQ(APP_RES_DATA_ERROR,
-              WPC_set_config_data_item(CDD_DIAG_INTERVAL_EP, TEST_PAYLOAD, sizeof(TEST_PAYLOAD)));
+              WPC_set_config_data_item(GetDiagIntervalEp(), TEST_PAYLOAD, sizeof(TEST_PAYLOAD)));
 }
 
 TEST_F(WpcCddApiTest, testWritingInvalidAppConfigDataWithCddApi)
@@ -171,7 +200,7 @@ TEST_F(WpcCddApiTest, testWritingInvalidAppConfigDataWithCddApi)
     const uint8_t INVALID_APP_CONFIG_SIZE = app_config_size - 1;
 
     const uint8_t PAYLOAD[UINT8_MAX] = { 0 };
-    ASSERT_EQ(APP_RES_DATA_ERROR, WPC_set_config_data_item(CDD_APP_CONFIG_EP, PAYLOAD, INVALID_APP_CONFIG_SIZE));
+    ASSERT_EQ(APP_RES_DATA_ERROR, WPC_set_config_data_item(GetAppConfigEp(), PAYLOAD, INVALID_APP_CONFIG_SIZE));
 }
 
 TEST_F(WpcCddApiTest, settingItemShouldFailOnNonSinkNode)
