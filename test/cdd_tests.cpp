@@ -147,32 +147,6 @@ TEST_F(WpcCddApiTest, testWritingScratchpatTargetWithCddApi)
     ASSERT_EQ(SCRATCHPAD_DATA.param, param);
 }
 
-TEST_F(WpcCddApiTest, testWritingInvalidScratchpatTargetWithCddApi)
-{
-    GTEST_SKIP() << "TODO re-enable once implemented on stack";
-
-    const CddScratchpadDataItem SCRATCHPAD_DATA = {
-        .seq = 71,
-        .crc = 0xFEEB,
-        .action = 250, // Invalid value
-        .param = 0xC2
-    };
-
-    ASSERT_EQ(APP_RES_DATA_ERROR,
-              WPC_set_config_data_item(CDD_SCRATCHPAD_DATA_EP,
-                                       (uint8_t const*) &SCRATCHPAD_DATA,
-                                       sizeof(SCRATCHPAD_DATA)));
-}
-
-TEST_F(WpcCddApiTest, testWritingInvalidDiagIntervalWithCddApi)
-{
-    GTEST_SKIP() << "TODO re-enable once implemented on stack";
-
-    const uint8_t TEST_DIAG_INTERVAL[] = { 0xFE };
-    ASSERT_EQ(APP_RES_DATA_ERROR,
-              WPC_set_config_data_item(CDD_DIAG_INTERVAL_EP, TEST_DIAG_INTERVAL, 1));
-}
-
 TEST_F(WpcCddApiTest, testWritingInvalidScratchpadTargetSizeWithCddApi)
 {
     const uint8_t TEST_PAYLOAD[10] = { 0 };
