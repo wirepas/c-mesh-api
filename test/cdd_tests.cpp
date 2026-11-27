@@ -144,12 +144,15 @@ TEST_F(WpcCddApiTest, testReadingScratchpatTargetWithCddApi)
     uint8_t payload[255] = {0};
     uint8_t payload_size = 0;
     ASSERT_EQ(APP_RES_OK, WPC_get_config_data_item(GetScratchpadDataEp(), payload, sizeof(payload), &payload_size));
+
     ASSERT_EQ(sizeof(CddScratchpadDataItem), payload_size);
-    CddScratchpadDataItem* scratchpad_data = (CddScratchpadDataItem*) payload;
-    ASSERT_EQ(TEST_SEQ, scratchpad_data->seq);
-    ASSERT_EQ(TEST_CRC, scratchpad_data->crc);
-    ASSERT_EQ(TEST_ACTION, scratchpad_data->action);
-    ASSERT_EQ(TEST_PARAM, scratchpad_data->param);
+    CddScratchpadDataItem item;
+    std::memcpy(&item, payload, sizeof(item));
+
+    ASSERT_EQ(TEST_SEQ, item.seq);
+    ASSERT_EQ(TEST_CRC, uint16_t{item.crc});
+    ASSERT_EQ(TEST_ACTION, item.action);
+    ASSERT_EQ(TEST_PARAM, item.param);
 }
 
 TEST_F(WpcCddApiTest, testWritingScratchpatTargetWithCddApi)
@@ -172,7 +175,7 @@ TEST_F(WpcCddApiTest, testWritingScratchpatTargetWithCddApi)
     uint8_t param  = 0;
     ASSERT_EQ(APP_RES_OK, WPC_read_target_scratchpad(&seq, &crc, &action, &param));
     ASSERT_EQ(SCRATCHPAD_DATA.seq, seq);
-    ASSERT_EQ(SCRATCHPAD_DATA.crc, crc);
+    ASSERT_EQ(uint16_t{SCRATCHPAD_DATA.crc}, crc);
     ASSERT_EQ(SCRATCHPAD_DATA.action, action);
     ASSERT_EQ(SCRATCHPAD_DATA.param, param);
 }
