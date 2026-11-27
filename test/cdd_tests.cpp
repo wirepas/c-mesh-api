@@ -1,6 +1,7 @@
 #include "wpc_test.hpp"
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <cstring>
 
 class WpcCddApiTest : public WpcTest
 {

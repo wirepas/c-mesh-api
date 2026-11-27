@@ -32,7 +32,7 @@ Build the tests with
 ```
 
 When executing the tests, environment variables WPC_SERIAL_PORT and
-WPC_WPC_BAUD_RATE should be set. For example:
+WPC_BAUD_RATE should be set. For example:
 
 ```shell
     WPC_SERIAL_PORT=/dev/ttyACM0 WPC_BAUD_RATE=125000 ./build_test/meshAPItest
